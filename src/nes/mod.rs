@@ -1,12 +1,18 @@
 pub mod apu;
 pub mod cpu;
 pub mod dma;
-pub mod eram;
-pub mod erom;
-pub mod pad;
 pub mod ppu;
+
+pub mod pad;
+
+pub mod erom;
 pub mod prom;
-pub mod system;
+
+pub mod eram;
 pub mod vram;
 pub mod wram;
+
+pub mod system;
+
+pub mod interface;
 

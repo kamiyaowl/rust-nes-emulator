@@ -4,11 +4,7 @@ use super::prom::ProgramRom;
 use super::vram::VideoRam;
 use super::wram::WorkRam;
 
-/// System Bus経由でR/Wできる
-pub trait MemoryIo {
-    fn read_u8(&self, addr: usize) -> u8;
-    fn write_u8(&mut self, addr: usize, data: u8);
-}
+use super::interface::SystemBus;
 
 /// Memory Access Dispatcher
 pub struct System {
@@ -31,7 +27,7 @@ pub struct System {
     prom: ProgramRom,
 }
 
-impl MemoryIo for System {
+impl SystemBus for System {
     fn read_u8(&self, addr: usize) -> u8 {
         if addr < 0x0800 {
             // WRAM

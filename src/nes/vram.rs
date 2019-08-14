@@ -1,4 +1,4 @@
-use super::system::MemoryIo;
+use super::interface::SystemBus;
 
 const SIZE: usize = 0x0800;
 
@@ -6,7 +6,7 @@ pub struct VideoRam {
     ram: [u8; SIZE],
 }
 
-impl MemoryIo for VideoRam {
+impl SystemBus for VideoRam {
     fn read_u8(&self, addr: usize) -> u8 {
         assert!(addr < self.ram.len());
         return self.ram[addr];
