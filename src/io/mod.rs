@@ -1,3 +1,3 @@
-pub mod controller;
+pub mod apu;
 pub mod memory;
-pub mod sound;
+pub mod pad;
