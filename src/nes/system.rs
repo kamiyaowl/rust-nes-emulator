@@ -1,3 +1,4 @@
+use super::cpu::Cpu;
 use super::eram::ExtendedRam;
 use super::erom::ExtendedRom;
 use super::prom::ProgramRom;
@@ -8,6 +9,8 @@ use super::interface::{SystemBus, EmulateControl};
 
 /// Memory Access Dispatcher
 pub struct System {
+    /// CPU
+    pub cpu: Cpu,
     /// Video RAM
     pub vram: VideoRam,
 
@@ -73,5 +76,22 @@ impl SystemBus for System {
         } else {
             panic!("Memory Write Request Error. Out of Index. addr:{:x}, data:{:x}", addr, data);
         }
+    }
+}
+
+impl EmulateControl for System {
+    fn reset(&mut self){
+        self.cpu.reset();
+        self.vram.reset();
+        self.wram.reset();
+        self.erom.reset();
+        self.eram.reset();
+        self.prom.reset();
+    }
+    fn store(&self, read_callback: fn(usize, u8)){
+        unimplemented!();
+    }
+    fn restore(&mut self, write_callback: fn(usize) -> u8){
+        unimplemented!();
     }
 }

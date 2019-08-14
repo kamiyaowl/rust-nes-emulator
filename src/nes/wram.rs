@@ -16,3 +16,20 @@ impl SystemBus for WorkRam {
         self.ram[addr] = data;
     }
 }
+
+impl EmulateControl for WorkRam {
+    fn reset(&mut self){
+        self.ram = [0; SIZE];
+    }
+    fn store(&self, read_callback: fn(usize, u8)){
+        for i in 0..self.ram.len() {
+            read_callback(i, self.ram[i]);
+        }
+    }
+    fn restore(&mut self, write_callback: fn(usize) -> u8){
+        for i in 0..self.ram.len() {
+            let data = write_callback(i);
+             self.ram[i] = data;
+        }
+    }
+}

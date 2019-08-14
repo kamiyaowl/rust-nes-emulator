@@ -9,7 +9,10 @@ use nes::interface::*;
 /* for desktop simulation driver */
 
 fn main() {
-    let sys = System{
+    let mut sys = System {
+        cpu: Cpu {
+            a: 0, x: 0, y: 0, pc: 0, sp: 0, p: 0,
+        },
         vram: VideoRam {
             ram: [0; vram::SIZE]
         },
@@ -26,6 +29,7 @@ fn main() {
             rom: [0; prom::SIZE]
         },
     };
+    sys.reset();
 
     // test
     sys.eram.store(|addr, data| {

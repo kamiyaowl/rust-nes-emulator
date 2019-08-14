@@ -14,6 +14,7 @@ pub mod vram;
 pub mod wram;
 
 pub use system::System;
+pub use cpu::Cpu;
 
 pub use erom::ExtendedRom;
 pub use prom::ProgramRom;

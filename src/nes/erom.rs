@@ -15,3 +15,20 @@ impl SystemBus for ExtendedRom {
         panic!("Memory Write Request Error. PRG-ROM. addr:{:x}, data:{:x}", addr, data);
     }
 }
+
+impl EmulateControl for ExtendedRom {
+    fn reset(&mut self){
+        self.rom = [0; SIZE];
+    }
+    fn store(&self, read_callback: fn(usize, u8)){
+        for i in 0..self.rom.len() {
+            read_callback(i, self.rom[i]);
+        }
+    }
+    fn restore(&mut self, write_callback: fn(usize) -> u8){
+        for i in 0..self.rom.len() {
+            let data = write_callback(i);
+             self.rom[i] = data;
+        }
+    }
+}

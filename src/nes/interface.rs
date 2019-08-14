@@ -6,7 +6,7 @@ pub trait SystemBus {
 
 /// 外部から内容の変更やクリアが可能
 pub trait EmulateControl {
-    /// 内部状態をリセットします
+    /// 内部変数を強制的にリセットします。リセットベクタに飛ぶ挙動ではありません。
     fn reset(&mut self);
     /// 内部状態をcallbackに出力します
     /// * `read_callback` - (address, data)が呼ばれる
