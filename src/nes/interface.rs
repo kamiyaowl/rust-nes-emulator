@@ -10,8 +10,8 @@ pub trait EmulateControl {
     fn reset(&mut self);
     /// 内部状態をcallbackに出力します
     /// * `read_callback` - (address, data)が呼ばれる
-    fn store(&self, read_callback: dyn FnMut(u32, u8));
+    fn store(&self, read_callback: fn(usize, u8));
     /// 内部状態をcallbackから復元します
     /// * `write_callback - (address)が呼ばれるので対応するdataを返す
-    fn restore(&self, write_callback: dyn FnMut(u32) -> u8);
+    fn restore(&mut self, write_callback: fn(usize) -> u8);
 }

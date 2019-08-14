@@ -1,9 +1,9 @@
-use super::interface::SystemBus;
+use super::interface::{SystemBus, EmulateControl};
 
-const SIZE: usize = 0x0800;
+pub const SIZE: usize = 0x0800;
 
 pub struct WorkRam {
-    ram: [u8; SIZE],
+    pub ram: [u8; SIZE],
 }
 
 impl SystemBus for WorkRam {

@@ -4,27 +4,27 @@ use super::prom::ProgramRom;
 use super::vram::VideoRam;
 use super::wram::WorkRam;
 
-use super::interface::SystemBus;
+use super::interface::{SystemBus, EmulateControl};
 
 /// Memory Access Dispatcher
 pub struct System {
     /// Video RAM
-    vram: VideoRam,
+    pub vram: VideoRam,
 
     /// 0x0000 - 0x07ff: WRAM 
     /// 0x0800 - 0x1f7ff: WRAM  Mirror x3
-    wram: WorkRam,
+    pub wram: WorkRam,
     //  0x2000 - 0x2007: PPU I/O
     //  0x2008 - 0x3fff: PPU I/O Mirror x1023
     
     //  0x4000 - 0x401f: APU I/O, PAD
 
     ///  0x4020 - 0x5fff: Extended ROM
-    erom: ExtendedRom,
+    pub erom: ExtendedRom,
     /// 0x6000 - 0x7FFF: Extended RAM
-    eram: ExtendedRam,
+    pub eram: ExtendedRam,
     //  0x8000 - 0xbfff, 0xc000 - 0xffff: PRG-ROM
-    prom: ProgramRom,
+    pub prom: ProgramRom,
 }
 
 impl SystemBus for System {

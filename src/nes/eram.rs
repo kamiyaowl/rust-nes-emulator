@@ -1,9 +1,9 @@
-use super::interface::SystemBus;
+use super::interface::{SystemBus, EmulateControl};
 
-const SIZE: usize = 0x2000;
+pub const SIZE: usize = 0x2000;
 
 pub struct ExtendedRam {
-    ram: [u8; SIZE],
+    pub ram: [u8; SIZE],
 }
 
 impl SystemBus for ExtendedRam {
@@ -14,5 +14,22 @@ impl SystemBus for ExtendedRam {
     fn write_u8(&mut self, addr: usize, data: u8) {
         assert!(addr < self.ram.len());
         self.ram[addr] = data;
+    }
+}
+
+impl EmulateControl for ExtendedRam {
+    fn reset(&mut self){
+        self.ram = [0; SIZE];
+    }
+    fn store(&self, read_callback: fn(usize, u8)){
+        for i in 0..self.ram.len() {
+            read_callback(i, self.ram[i]);
+        }
+    }
+    fn restore(&mut self, write_callback: fn(usize) -> u8){
+        for i in 0..self.ram.len() {
+            let data = write_callback(i);
+             self.ram[i] = data;
+        }
     }
 }

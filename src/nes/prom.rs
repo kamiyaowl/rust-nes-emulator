@@ -1,9 +1,9 @@
-use super::interface::SystemBus;
+use super::interface::{SystemBus, EmulateControl};
 
-const SIZE: usize = 0x8000;
+pub const SIZE: usize = 0x8000;
 
 pub struct ProgramRom {
-    rom: [u8; SIZE],
+    pub rom: [u8; SIZE],
 }
 
 impl SystemBus for ProgramRom {

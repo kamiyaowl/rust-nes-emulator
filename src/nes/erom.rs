@@ -1,9 +1,9 @@
-use super::interface::SystemBus;
+use super::interface::{SystemBus, EmulateControl};
 
-const SIZE: usize = 0x1fe0;
+pub const SIZE: usize = 0x1fe0;
 
 pub struct ExtendedRom {
-    rom: [u8; SIZE],
+    pub rom: [u8; SIZE],
 }
 
 impl SystemBus for ExtendedRom {
