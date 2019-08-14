@@ -88,10 +88,10 @@ impl EmulateControl for System {
         self.eram.reset();
         self.prom.reset();
     }
-    fn store(&self, read_callback: fn(usize, u8)){
+    fn store(&self, _read_callback: fn(usize, u8)){
         unimplemented!();
     }
-    fn restore(&mut self, write_callback: fn(usize) -> u8){
+    fn restore(&mut self, _write_callback: fn(usize) -> u8){
         unimplemented!();
     }
 }
