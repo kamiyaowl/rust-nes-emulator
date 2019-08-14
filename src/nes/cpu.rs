@@ -182,7 +182,104 @@ enum Addressing {
 }
 /// Fetch and Adressing Implementation
 impl Cpu {
-    fn fetch_accumulator() -> u16 { return 0x0; }
+    fn fetch_accumulator() -> u8 { return 0x0; }
+    fn fetch_immediate(&self, system: &System) -> u8 {
+        let data_addr = self.pc + 1;
+        let data = system.read_u8(data_addr as usize);
+        return data;
+    }
+    fn fetch_absolute(&self, system: &System) -> u8 {
+        let lower_addr = self.pc + 1;
+        let upper_addr = self.pc + 2;
+        let lower = system.read_u8(lower_addr as usize);
+        let upper = system.read_u8(upper_addr as usize);
+        let addr  = (lower as u16) | ((upper as u16) << 8);
+        let data  = system.read_u8(addr as usize);
+        return data;
+    }
+    fn fetch_zero_page(&self, system: &System) -> u8 {
+        let lower_addr = self.pc + 1;
+        let lower = system.read_u8(lower_addr as usize);
+        let addr  = (lower as u16);
+        let data  = system.read_u8(addr as usize);
+        return data;
+    }
+    fn fetch_indexed_zero_page_x(&self, system: &System) -> u8 {
+        let lower_addr = self.pc + 1;
+        let lower = system.read_u8(lower_addr as usize);
+        let addr  = (lower as u16) + (self.x as u16);
+        let data  = system.read_u8(addr as usize);
+        return data;
+    }
+    fn fetch_indexed_zero_page_y(&self, system: &System) -> u8 {
+        let lower_addr = self.pc + 1;
+        let lower = system.read_u8(lower_addr as usize);
+        let addr  = (lower as u16) + (self.y as u16);
+        let data  = system.read_u8(addr as usize);
+        return data;
+    }
+    fn fetch_indexed_absolute_x(&self, system: &System) -> u8 {
+        let lower_addr = self.pc + 1;
+        let upper_addr = self.pc + 2;
+        let lower = system.read_u8(lower_addr as usize);
+        let upper = system.read_u8(upper_addr as usize);
+        let addr  = (lower as u16) | ((upper as u16) << 8) + (self.x as u16);
+        let data  = system.read_u8(addr as usize);
+        return data;
+    }
+    fn fetch_indexed_absolute_y(&self, system: &System) -> u8 {
+        let lower_addr = self.pc + 1;
+        let upper_addr = self.pc + 2;
+        let lower = system.read_u8(lower_addr as usize);
+        let upper = system.read_u8(upper_addr as usize);
+        let addr  = (lower as u16) | ((upper as u16) << 8) + (self.y as u16);
+        let data  = system.read_u8(addr as usize);
+        return data;
+    }
+    fn fetch_implied() -> u8 { return 0x0; }
+    fn fetch_relative(&self, system: &System) -> u8 {
+        let offset_addr = self.pc + 1;
+        let offset = system.read_u8(offset_addr as usize);
+        let addr_signed  = ((offset as i8) as i32) + (self.pc as i32);
+        assert!(addr_signed >= 0);
+        assert!(addr_signed < 0x1000);
+        let addr = addr_signed as u16;
+        let data = system.read_u8(addr as usize);
+        return data;
+    }
+    fn fetch_indexed_indirect(&self, system: &System) -> u8 {
+        let addr1 = self.pc + 1;
+        let data1 = system.read_u8(addr1 as usize);
+        let addr2 = (data1 as u16) + (self.x as u16);
+        let data2_lower = system.read_u8(addr2 as usize);
+        let data2_upper = system.read_u8((addr2 + 1) as usize);
+        let addr3 = (data2_lower as u16) | ((data2_upper as u16) << 8);
+        let data3 = system.read_u8(addr3 as usize);
+        return data3;
+    }
+    fn fetch_indirect_indexed(&self, system: &System) -> u8 {
+        let addr1 = self.pc + 1;
+        let data1 = system.read_u8(addr1 as usize);
+        let addr2 = (data1 as u16);
+        // TODO: upper, lower逆かもしれない
+        let data2_upper = system.read_u8(addr2 as usize);
+        let data2_lower = system.read_u8((addr2 + 1) as usize);
+        let addr3 = (data2_lower as u16) | ((data2_upper as u16) << 8) + (self.y as u16);
+        let data3 = system.read_u8(addr3 as usize);
+        return data3;
+    }
+    fn fetch_absolute_indirect(&self, system: &System) -> u8 {
+        let addr1_lower = self.pc + 1;
+        let addr1_upper = self.pc + 2;
+        let addr1 = (addr1_lower) + (addr1_upper << 8);
+        let data1 = system.read_u8(addr1 as usize);
+        let addr2 = (data1 as u16);
+        let data2_lower = system.read_u8(addr2 as usize);
+        let data2_upper = system.read_u8((addr2 + 1) as usize);
+        let addr3 = (data2_lower as u16) | ((data2_upper as u16) << 8);
+        let data3 = system.read_u8(addr3 as usize);
+        return data3;
+    }
 }
 
 /// Processor Status Flag Implementation
