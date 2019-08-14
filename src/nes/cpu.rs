@@ -262,8 +262,8 @@ impl Cpu {
         let data1 = system.read_u8(addr1 as usize);
         let addr2 = (data1 as u16);
         // TODO: upper, lower逆かもしれない
-        let data2_upper = system.read_u8(addr2 as usize);
-        let data2_lower = system.read_u8((addr2 + 1) as usize);
+        let data2_lower = system.read_u8(addr2 as usize);
+        let data2_upper = system.read_u8((addr2 + 1) as usize);
         let addr3 = (data2_lower as u16) | ((data2_upper as u16) << 8) + (self.y as u16);
         let data3 = system.read_u8(addr3 as usize);
         return data3;
