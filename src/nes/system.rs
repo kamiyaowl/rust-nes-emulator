@@ -32,7 +32,7 @@ pub struct System {
 
 impl SystemBus for System {
     fn read_u8(&self, addr: usize) -> u8 {
-        if addr < 0x0800 {
+        if addr < 0x2000 {
             // WRAM
             return self.wram.read_u8((addr) % 0x0800 as usize); // mirror support
         } else if addr < 0x4000 {
@@ -56,7 +56,7 @@ impl SystemBus for System {
         }
     }
     fn write_u8(&mut self, addr: usize, data: u8) {
-        if addr < 0x0800 {
+        if addr < 0x2000 {
             self.wram.write_u8(addr, data);
         } else if addr < 0x4000 {
             // PPU I/O
@@ -89,9 +89,7 @@ impl EmulateControl for System {
         self.prom.reset();
     }
     fn store(&self, _read_callback: fn(usize, u8)){
-        unimplemented!();
     }
     fn restore(&mut self, _write_callback: fn(usize) -> u8){
-        unimplemented!();
     }
 }

@@ -66,12 +66,13 @@ impl EmulateControl for Cpu {
     }
 }
 
+/// Public Functions Implementation
 impl Cpu {
     /// 割り込みを処理します
-    pub fn interrupt(&mut self, irq_type: Interrupt, system: &System) {
+    pub fn interrupt(&mut self, system: &mut System, irq_type: Interrupt) {
         let is_nested_interrupt = self.read_interrupt_flag();
         // RESET, NMI以外は多重割り込みを許容しない
-        if (is_nested_interrupt) {
+        if is_nested_interrupt {
             if (irq_type == Interrupt::IRQ) || (irq_type == Interrupt::BRK) {
                 return;
             }
@@ -80,7 +81,10 @@ impl Cpu {
         match irq_type {
             Interrupt::NMI   => {
                 self.write_break_flag(false);
-                // TODO: PCのUpper, Lower, Status RegisterをStackに格納する
+                // PCのUpper, Lower, Status RegisterをStackに格納する
+                self.stack_push(system, (self.sp >> 8) as u8);
+                self.stack_push(system, (self.sp & 0xff) as u8);
+                self.stack_push(system, self.p);
                 self.write_interrupt_flag(true);
             },
             Interrupt::RESET => {
@@ -88,13 +92,19 @@ impl Cpu {
             },
             Interrupt::IRQ   => {
                 self.write_break_flag(false);
-                // TODO: PCのUpper, Lower, Status RegisterをStackに格納する
+                // PCのUpper, Lower, Status RegisterをStackに格納する
+                self.stack_push(system, (self.sp >> 8) as u8);
+                self.stack_push(system, (self.sp & 0xff) as u8);
+                self.stack_push(system, self.p);
                 self.write_interrupt_flag(true);
             },
             Interrupt::BRK   => {
                 self.write_break_flag(true);
                 self.pc = self.pc + 1;
-                // TODO: PCのUpper, Lower, Status RegisterをStackに格納する
+                // PCのUpper, Lower, Status RegisterをStackに格納する
+                self.stack_push(system, (self.sp >> 8) as u8);
+                self.stack_push(system, (self.sp & 0xff) as u8);
+                self.stack_push(system, self.p);
                 self.write_interrupt_flag(true);
             },
         }
@@ -116,7 +126,67 @@ impl Cpu {
         let upper = system.read_u8(upper_addr);
         self.pc = (lower as u16) | ((upper as u16) << 8);
     }
+}
 
+/// Stack Control Implementation
+impl Cpu {
+    /// Stack Push操作を行います
+    fn stack_push(&mut self, system: &mut System, data: u8) {
+        // data store
+        system.write_u8(self.sp as usize, data);
+        // decrement
+        self.sp = self.sp - 1;
+    }
+
+    /// Stack Pop操作を行います
+    fn stack_pop(&mut self, system: &System) -> u8 {
+        // increment
+        self.sp = self.sp + 1;
+        // data fetch
+        let data = system.read_u8(self.sp as usize);
+        return data;
+    }
+
+}
+
+enum Addressing {
+    /// アキュームレータ上の値だけで十分(0を返しとく)
+    Accumulator,
+    /// opcode, data
+    Immediate,
+    /// opcode, lower address, upper address
+    Absolute,
+    /// opcode, lower (upperは0x00固定)
+    ZeroPage,
+    /// opcode, lower+x (upperは0x00固定)
+    IndexedZeroPageX,
+    /// opcode, lower+y (upperは0x00固定)
+    IndexedZeroPageY,
+    ///opcode, lower, upper => (lower | upper << 8) + x
+    IndexedAbsoluteX,
+    ///opcode, lower, upper => (lower | upper << 8) + y
+    IndexedAbsoluteY,
+    /// 不要
+    Implied,
+    /// opcode, offset(符号拡張 s8) =>次の命令を示すpc+offset
+    Relative,
+    /// opcode, lower => (lower+x)のアドレスに格納されているデータをlower_byte, その次をupper_byteとして完成したアドレスを実行アドレスとしてfetch
+    /// キャリーは無視
+    IndexedIndirect,
+    /// opcode, lower => lowerのアドレスに格納されているデータをupper, 次をlowerとして作った実効アドレスにyを加算してからfetch
+    /// キャリーは無視
+    IndirectIndexed,
+    /// opcode, lower, upper, lowerとupperで作った実効アドレスでfetch
+    /// 下位バイトのキャリーは無視
+    AbsoluteIndirect,
+}
+/// Fetch and Adressing Implementation
+impl Cpu {
+    fn fetch_accumulator() -> u16 { return 0x0; }
+}
+
+/// Processor Status Flag Implementation
+impl Cpu {
     fn write_negative_flag(&mut self, is_active: bool) {
         if is_active {
             self.p = self.p | 0x80u8;
