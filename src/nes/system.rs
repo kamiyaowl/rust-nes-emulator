@@ -1,51 +1,64 @@
+use super::eram::ExtendedRam;
+use super::erom::ExtendedRom;
+use super::prom::ProgramRom;
+use super::vram::VideoRam;
+use super::wram::WorkRam;
+
+/// System Bus経由でR/Wできる
 pub trait MemoryIo {
     fn read_u8(&self, addr: usize) -> u8;
     fn write_u8(&mut self, addr: usize, data: u8);
 }
 
 /// Memory Access Dispatcher
-pub struct Memory {
+pub struct System {
+    /// Video RAM
+    vram: VideoRam,
+
     /// 0x0000 - 0x07ff: WRAM 
-    wram: [u8; 0x800],
-    //  0x0800 - 0x1f7ff: WRAM  Mirror x3
+    /// 0x0800 - 0x1f7ff: WRAM  Mirror x3
+    wram: WorkRam,
     //  0x2000 - 0x2007: PPU I/O
     //  0x2008 - 0x3fff: PPU I/O Mirror x1023
+    
     //  0x4000 - 0x401f: APU I/O, PAD
 
-    //  0x4020 - 0x5fff: Extended ROM
+    ///  0x4020 - 0x5fff: Extended ROM
+    erom: ExtendedRom,
     /// 0x6000 - 0x7FFF: Extended RAM
-    eram: [u8; 0x2000],
-
+    eram: ExtendedRam,
     //  0x8000 - 0xbfff, 0xc000 - 0xffff: PRG-ROM
-
+    prom: ProgramRom,
 }
 
-impl MemoryIo for Memory {
+impl MemoryIo for System {
     fn read_u8(&self, addr: usize) -> u8 {
         if addr < 0x0800 {
-            return self.wram[addr];
+            // WRAM
+            return self.wram.read_u8((addr) % 0x0800 as usize); // mirror support
         } else if addr < 0x4000 {
             // PPU I/O
+            // TODO: Mirror
             unimplemented!();
         } else if addr < 0x4020 {
             // APU I/O, PAD
             unimplemented!();
         } else if addr < 0x6000 {
             // Extended ROM
-            unimplemented!();
+            return self.erom.read_u8((addr - 0x4020) as usize);
         } else if addr < 0x8000 {
             // Extended RAM
-            return self.eram[(addr - 0x8000) as usize];
+            return self.eram.read_u8((addr - 0x6000) as usize);
         } else if addr < 0x10000 {
             // PRG-ROM
-            unimplemented!();
+            return self.prom.read_u8((addr - 0x6000) as usize);
         } else {
-            panic!("Memory Read Request Error. addr:{:x}", addr);
+            panic!("Memory Read Request Error. Out of Index. addr:{:x}", addr);
         }
     }
     fn write_u8(&mut self, addr: usize, data: u8) {
         if addr < 0x0800 {
-            self.wram[addr] = data;
+            self.wram.write_u8(addr, data);
         } else if addr < 0x4000 {
             // PPU I/O
             unimplemented!();
@@ -54,15 +67,15 @@ impl MemoryIo for Memory {
             unimplemented!();
         } else if addr < 0x6000 {
             // Extended ROM
-            unimplemented!();
+            panic!("Memory Write Request Error. Extended ROM. addr:{:x}, data:{:x}", addr, data);
         } else if addr < 0x8000 {
             // Extended RAM
-            self.eram[(addr - 0x8000) as usize] = data;
+            self.eram.write_u8((addr - 0x6000) as usize, data);
         } else if addr < 0x10000 {
             // PRG-ROM
-            unimplemented!();
+            panic!("Memory Write Request Error. PRG-ROM. addr:{:x}, data:{:x}", addr, data);
         } else {
-            panic!("Memory Write Request Error. addr:{:x}", addr);
+            panic!("Memory Write Request Error. Out of Index. addr:{:x}, data:{:x}", addr, data);
         }
     }
 }
