@@ -173,6 +173,21 @@ impl Cpu {
         let data  = system.read_u8(addr as usize);
         return data;
     }
+    /// (a) for JMP
+    /// absolute indirect
+    fn fetch_indirect(&self, system: &System) -> u8 {
+        let lower_addr1 = self.pc + 1;
+        let upper_addr1 = self.pc + 2;
+        let lower1 = system.read_u8(lower_addr1 as usize);
+        let upper1 = system.read_u8(upper_addr1 as usize);
+        let lower_addr2 = (lower1 as u16) | ((upper1 as u16) << 8);
+        let upper_addr2 = lower_addr2.wrapping_add(1);
+        let lower3 = system.read_u8(lower_addr2 as usize);
+        let upper3 = system.read_u8(upper_addr2 as usize);
+        let addr3 = (lower3 as u16) | ((upper3 as u16) << 8);
+        let data = system.read_u8(addr3 as usize);
+        return data;
+    }
     /// d
     fn fetch_zero_page(&self, system: &System) -> u8 {
         let lower_addr = self.pc + 1;
