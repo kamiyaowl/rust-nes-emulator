@@ -152,7 +152,7 @@ impl Cpu {
         self.sp = self.sp + 1;
         // data fetch
         let data = system.read_u8(self.sp as usize);
-        return data;
+        data
     }
 
 }
@@ -283,12 +283,12 @@ impl Cpu {
 /// Fetch and Adressing Implementation
 impl Cpu {
     /// A
-    fn fetch_accumulator(&self) -> u8 { return 0x0; }
+    fn fetch_accumulator(&self) -> u8 { 0x0 }
     /// #v
     fn fetch_immediate(&self, system: &System, base_addr: u16) -> u8 {
         let data_addr = base_addr;
         let data = system.read_u8(data_addr as usize);
-        return data;
+        data
     }
     /// a
     fn fetch_absolute(&self, system: &System, base_addr: u16) -> u8 {
@@ -298,7 +298,7 @@ impl Cpu {
         let upper = system.read_u8(upper_addr as usize);
         let addr  = (lower as u16) | ((upper as u16) << 8);
         let data  = system.read_u8(addr as usize);
-        return data;
+        data
     }
     /// (a) for JMP
     /// absolute indirect
@@ -313,7 +313,7 @@ impl Cpu {
         let upper3 = system.read_u8(upper_addr2 as usize);
         let addr3 = (lower3 as u16) | ((upper3 as u16) << 8);
         let data = system.read_u8(addr3 as usize);
-        return data;
+        data
     }
     /// d
     fn fetch_zero_page(&self, system: &System, base_addr: u16) -> u8 {
@@ -321,7 +321,7 @@ impl Cpu {
         let lower = system.read_u8(lower_addr as usize);
         let addr  = lower as u16;
         let data  = system.read_u8(addr as usize);
-        return data;
+        data
     }
     /// d,x
     fn fetch_zero_page_indexed_x(&self, system: &System, base_addr: u16) -> u8 {
@@ -329,7 +329,7 @@ impl Cpu {
         let lower = system.read_u8(lower_addr as usize);
         let addr  = (lower as u16).wrapping_add(self.x as u16);
         let data  = system.read_u8(addr as usize);
-        return data;
+        data
     }
     /// d,y
     fn fetch_zero_page_indexed_y(&self, system: &System, base_addr: u16) -> u8 {
@@ -337,7 +337,7 @@ impl Cpu {
         let lower = system.read_u8(lower_addr as usize);
         let addr  = (lower as u16).wrapping_add(self.y as u16);
         let data  = system.read_u8(addr as usize);
-        return data;
+        data
     }
     /// a,x
     fn fetch_absolute_indexed_x(&self, system: &System, base_addr: u16) -> u8 {
@@ -347,7 +347,7 @@ impl Cpu {
         let upper = system.read_u8(upper_addr as usize);
         let addr  = ((lower as u16) | ((upper as u16) << 8)).wrapping_add(self.x as u16);
         let data  = system.read_u8(addr as usize);
-        return data;
+        data
     }
     /// a,y
     fn fetch_absolute_indexed_y(&self, system: &System, base_addr: u16) -> u8 {
@@ -357,10 +357,10 @@ impl Cpu {
         let upper = system.read_u8(upper_addr as usize);
         let addr  = ((lower as u16) | ((upper as u16) << 8)).wrapping_add(self.y as u16);
         let data  = system.read_u8(addr as usize);
-        return data;
+        data
     }
     ///
-    fn fetch_implicit(&self) -> u8 { return 0x0; }
+    fn fetch_implicit(&self) -> u8 { 0x0 }
     /// label
     fn fetch_relative(&self, system: &System, base_addr: u16) -> u8 {
         let offset_addr = base_addr;
@@ -370,7 +370,7 @@ impl Cpu {
         assert!(addr_signed < 0x10000);
         let addr = addr_signed as u16;
         let data = system.read_u8(addr as usize);
-        return data;
+        data
     }
     /// (d,x)
     fn fetch_indexed_indirect(&self, system: &System, base_addr: u16) -> u8 {
@@ -381,7 +381,7 @@ impl Cpu {
         let data2_upper = system.read_u8((addr2.wrapping_add(1)) as usize);
         let addr3 = (data2_lower as u16) | ((data2_upper as u16) << 8);
         let data3 = system.read_u8(addr3 as usize);
-        return data3;
+        data3
     }
     /// (d),y
     fn fetch_indirect_indexed(&self, system: &System, base_addr: u16) -> u8 {
@@ -391,7 +391,7 @@ impl Cpu {
         let data1_upper = system.read_u8(addr1_upper as usize);
         let addr2 = ((data1_lower as u16) | ((data1_upper as u16) << 8)) + (self.y as u16);
         let data2 = system.read_u8(addr2 as usize);
-        return data2;
+        data2
     }
 }
 
@@ -453,13 +453,13 @@ impl Cpu {
             self.p = self.p & (!0x01u8);
         }
     }
-    fn read_negative_flag(&self)  -> bool { return (self.p & 0x80u8) != 0x00u8; }
-    fn read_overflow_flag(&self)  -> bool { return (self.p & 0x40u8) != 0x00u8; }
-    fn read_reserved_flag(&self)  -> bool { return (self.p & 0x20u8) != 0x00u8; }
-    fn read_break_flag(&self)     -> bool { return (self.p & 0x10u8) != 0x00u8; }
-    fn read_decimal_flag(&self)   -> bool { return (self.p & 0x08u8) != 0x00u8; }
-    fn read_interrupt_flag(&self) -> bool { return (self.p & 0x04u8) != 0x00u8; }
-    fn read_zero_flag(&self)      -> bool { return (self.p & 0x02u8) != 0x00u8; }
-    fn read_carry_flag(&self)     -> bool { return (self.p & 0x01u8) != 0x00u8; }
+    fn read_negative_flag(&self)  -> bool { (self.p & 0x80u8) != 0x00u8 }
+    fn read_overflow_flag(&self)  -> bool { (self.p & 0x40u8) != 0x00u8 }
+    fn read_reserved_flag(&self)  -> bool { (self.p & 0x20u8) != 0x00u8 }
+    fn read_break_flag(&self)     -> bool { (self.p & 0x10u8) != 0x00u8 }
+    fn read_decimal_flag(&self)   -> bool { (self.p & 0x08u8) != 0x00u8 }
+    fn read_interrupt_flag(&self) -> bool { (self.p & 0x04u8) != 0x00u8 }
+    fn read_zero_flag(&self)      -> bool { (self.p & 0x02u8) != 0x00u8 }
+    fn read_carry_flag(&self)     -> bool { (self.p & 0x01u8) != 0x00u8 }
 
 }

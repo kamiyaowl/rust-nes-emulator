@@ -34,7 +34,7 @@ impl SystemBus for System {
     fn read_u8(&self, addr: usize) -> u8 {
         if addr < 0x2000 {
             // WRAM
-            return self.wram.read_u8((addr) % 0x0800 as usize); // mirror support
+            self.wram.read_u8((addr) % 0x0800 as usize) // mirror support
         } else if addr < 0x4000 {
             // PPU I/O
             // TODO: Mirror
@@ -44,13 +44,13 @@ impl SystemBus for System {
             unimplemented!();
         } else if addr < 0x6000 {
             // Extended ROM
-            return self.erom.read_u8((addr - 0x4020) as usize);
+            self.erom.read_u8((addr - 0x4020) as usize)
         } else if addr < 0x8000 {
             // Extended RAM
-            return self.eram.read_u8((addr - 0x6000) as usize);
+            self.eram.read_u8((addr - 0x6000) as usize)
         } else if addr < 0x10000 {
             // PRG-ROM
-            return self.prom.read_u8((addr - 0x6000) as usize);
+            self.prom.read_u8((addr - 0x6000) as usize)
         } else {
             panic!("Memory Read Request Error. Out of Index. addr:{:x}", addr);
         }
