@@ -30,6 +30,8 @@ pub struct Cpu {
     /// Processor Status Register
     /// Negative, oVerflow, Reserved(1固定), Break, Decimal, Interrupt, Zero, Carry
     pub p  : u8,
+    /// emulation cpu clock cycles
+    pub cycles: u32,
 }
 
 impl EmulateControl for Cpu {
@@ -38,20 +40,24 @@ impl EmulateControl for Cpu {
         self.x  = 0;
         self.y  = 0;
         self.pc = 0;
-        // Stack Pointerの上位byteは固定値
         self.sp = 0x01fd;
         self.p  = 0x34;
+        self.cycles = 0;
     }
     fn store(&self, read_callback: fn(usize, u8)) {
         // レジスタダンプを連番で取得する(little endian)
-        read_callback(0, self.a);
-        read_callback(1, self.x);
-        read_callback(2, self.y);
-        read_callback(3, (self.pc & 0xff) as u8);
-        read_callback(4, ((self.pc >> 8) & 0xff) as u8);
-        read_callback(5, (self.sp & 0xff) as u8);
-        read_callback(6, ((self.sp >> 8) & 0xff) as u8);
-        read_callback(7, self.p);
+        read_callback( 0, self.a);
+        read_callback( 1, self.x);
+        read_callback( 2, self.y);
+        read_callback( 3, (self.pc & 0xff) as u8);
+        read_callback( 4, ((self.pc >> 8) & 0xff) as u8);
+        read_callback( 5, (self.sp & 0xff) as u8);
+        read_callback( 6, ((self.sp >> 8) & 0xff) as u8);
+        read_callback( 7, self.p);
+        read_callback( 8, (self.cycles & 0xff) as u8);
+        read_callback( 9, ((self.cycles >>  8) & 0xff) as u8);
+        read_callback(10, ((self.cycles >> 16) & 0xff) as u8);
+        read_callback(11, ((self.cycles >> 24) & 0xff) as u8);
     }
     fn restore(&mut self, write_callback: fn(usize) -> u8) {
         // store通りに復元してあげる
@@ -61,13 +67,20 @@ impl EmulateControl for Cpu {
         self.pc = (write_callback(3) as u16) | ((write_callback(4) as u16) << 8);
         self.sp = (write_callback(5) as u16) | ((write_callback(6) as u16) << 8);
         self.p  = write_callback(7);
+
+        self.cycles = (write_callback(8) as u32) | ((write_callback(9) as u32) << 8) | ((write_callback(10) as u32) << 8) | ((write_callback(11) as u32) << 24);
     }
 }
 
 /// Public Functions Implementation
 impl Cpu {
+    /// かかったクロックサイクルを加算します
+    pub fn add_cycles(&mut self, cycle: u32) {
+        self.cycles = self.cycles.wrapping_add(cycle);
+    }
+
     /// 割り込みを処理します
-    pub fn interrupt(&mut self, system: &mut System, irq_type: Interrupt) {
+    pub fn do_interrupt(&mut self, system: &mut System, irq_type: Interrupt) {
         let is_nested_interrupt = self.read_interrupt_flag();
         // RESET, NMI以外は多重割り込みを許容しない
         if is_nested_interrupt {
@@ -124,10 +137,7 @@ impl Cpu {
         let upper = system.read_u8(upper_addr);
         self.pc = (lower as u16) | ((upper as u16) << 8);
     }
-}
 
-/// Stack Control Implementation
-impl Cpu {
     /// Stack Push操作を行います
     fn stack_push(&mut self, system: &mut System, data: u8) {
         // data store
@@ -147,26 +157,143 @@ impl Cpu {
 
 }
 /// Instruction Implementation
+/// http://obelisk.me.uk/6502/reference.html
 impl Cpu {
-    fn inst_adc(&mut self, m: u8) {
-        let data = self.a + m + (if self.read_carry_flag() { 1u8 } else { 0u8 });
-        self.a = data;
+    /// add with carry
+    fn inst_adc(&mut self, arg: u8) {
+        let (data1, is_carry1) = (self.a as i8).overflowing_add(arg as i8);
+        let (data2, is_carry2) = data1.overflowing_add(if self.read_carry_flag() { 1i8 } else { 0i8 });
+        let result = data2 as u8;
+
+        let is_carry    = is_carry1 || is_carry2;
+        let is_zero     = result == 0;
+        let is_negative = (result as i8) < 0;
+        let is_overflow = (!(self.a ^ arg) & (self.a ^ result) & 0x80) == 0x80;
+
+        self.write_carry_flag(is_carry);
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.write_overflow_flag(is_overflow);
+        self.a = result;
     }
+    /// logical and
+    fn inst_and(&mut self, arg: u8) {
+        let result = self.a & arg;
+
+        let is_zero     = result == 0;
+        let is_negative = (result as i8) < 0;
+
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.a = result;
+    }
+    /// arithmetic shift left
+    fn inst_asl(&mut self, arg: u8) {
+        let (result, is_carry) = arg.overflowing_shl(1);
+
+        let is_zero     = result == 0;
+        let is_negative = (result as i8) < 0;
+
+        self.write_carry_flag(is_carry);
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.a = result;
+    }
+    /// branch if carry clear
+    fn inst_bcc(&mut self, arg: u8) {
+        if !self.read_carry_flag() {
+            self.pc = 0x0100u16 | (arg as u16);
+        }
+    }
+    /// branch if carry set
+    fn inst_bcs(&mut self, arg: u8) {
+        if self.read_carry_flag() {
+            self.pc = 0x0100u16 | (arg as u16);
+        }
+    }
+    /// branch if equal
+    fn inst_beq(&mut self, arg: u8) {
+        if self.read_zero_flag() {
+            self.pc = 0x0100u16 | (arg as u16);
+        }
+    }
+    /// bit test
+    fn inst_bit(&mut self, arg: u8) {
+        let is_negative = (arg & 0x80) == 0x80;
+        let is_overflow = (arg & 0x40) == 0x40;
+        let is_zero     = is_negative && is_overflow;
+
+        self.write_negative_flag(is_negative);
+        self.write_zero_flag(is_zero);
+        self.write_overflow_flag(is_overflow);
+    }
+    /// branch if minus
+    fn inst_bmi(&mut self, arg: u8) {
+        if self.read_negative_flag() {
+            self.pc = 0x0100u16 | (arg as u16);
+        }
+    }
+    /// branch if not equal
+    fn inst_bne(&mut self, arg: u8) {
+        if !self.read_zero_flag() {
+            self.pc = 0x0100u16 | (arg as u16);
+        }
+    }
+    /// branch if plus
+    fn inst_bpl(&mut self, arg: u8) {
+        if !self.read_negative_flag() {
+            self.pc = 0x0100u16 | (arg as u16);
+        }
+    }
+    /// force interrupt
+    fn inst_brk(&mut self, system: &mut System) {
+        self.write_break_flag(true);
+        self.do_interrupt(system, Interrupt::BRK);
+    }
+    /// branch if overflow clear
+    fn inst_bvc(&mut self, arg: u8) {
+        if !self.read_overflow_flag() {
+            self.pc = 0x0100u16 | (arg as u16);
+        }
+    }
+    /// branch if overflow set
+    fn inst_bvs(&mut self, arg: u8) {
+        if self.read_overflow_flag() {
+            self.pc = 0x0100u16 | (arg as u16);
+        }
+    }
+    /// clear carry flag
+    fn inst_clc(&mut self) {
+        self.write_carry_flag(false);
+    }
+    /// clear decimal mode
+    fn inst_cld(&mut self) {
+        self.write_decimal_flag(false);
+    }
+    /// clear interrupt disable
+    fn inst_cli(&mut self) {
+        self.write_interrupt_flag(false);
+    }
+    /// clear overflow flag
+    fn inst_clv(&mut self) {
+        self.write_overflow_flag(false);
+    }
+    // TODO: Compareより下
 }
 /// Fetch and Adressing Implementation
 impl Cpu {
     /// A
-    fn fetch_accumulator() -> u8 { return 0x0; }
+    fn fetch_accumulator(&self) -> u8 { return 0x0; }
     /// #v
-    fn fetch_immediate(&self, system: &System) -> u8 {
-        let data_addr = self.pc + 1;
+    fn fetch_immediate(&self, system: &System, base_addr: u16) -> u8 {
+        let data_addr = base_addr;
         let data = system.read_u8(data_addr as usize);
         return data;
     }
     /// a
-    fn fetch_absolute(&self, system: &System) -> u8 {
-        let lower_addr = self.pc + 1;
-        let upper_addr = self.pc + 2;
+    fn fetch_absolute(&self, system: &System, base_addr: u16) -> u8 {
+        let lower_addr = base_addr;
+        let upper_addr = base_addr + 1;
         let lower = system.read_u8(lower_addr as usize);
         let upper = system.read_u8(upper_addr as usize);
         let addr  = (lower as u16) | ((upper as u16) << 8);
@@ -175,9 +302,9 @@ impl Cpu {
     }
     /// (a) for JMP
     /// absolute indirect
-    fn fetch_indirect(&self, system: &System) -> u8 {
-        let lower_addr1 = self.pc + 1;
-        let upper_addr1 = self.pc + 2;
+    fn fetch_indirect(&self, system: &System, base_addr: u16) -> u8 {
+        let lower_addr1 = base_addr;
+        let upper_addr1 = base_addr + 1;
         let lower1 = system.read_u8(lower_addr1 as usize);
         let upper1 = system.read_u8(upper_addr1 as usize);
         let lower_addr2 = (lower1 as u16) | ((upper1 as u16) << 8);
@@ -189,33 +316,33 @@ impl Cpu {
         return data;
     }
     /// d
-    fn fetch_zero_page(&self, system: &System) -> u8 {
-        let lower_addr = self.pc + 1;
+    fn fetch_zero_page(&self, system: &System, base_addr: u16) -> u8 {
+        let lower_addr = base_addr;
         let lower = system.read_u8(lower_addr as usize);
         let addr  = lower as u16;
         let data  = system.read_u8(addr as usize);
         return data;
     }
     /// d,x
-    fn fetch_zero_page_indexed_x(&self, system: &System) -> u8 {
-        let lower_addr = self.pc + 1;
+    fn fetch_zero_page_indexed_x(&self, system: &System, base_addr: u16) -> u8 {
+        let lower_addr = base_addr;
         let lower = system.read_u8(lower_addr as usize);
         let addr  = (lower as u16).wrapping_add(self.x as u16);
         let data  = system.read_u8(addr as usize);
         return data;
     }
     /// d,y
-    fn fetch_zero_page_indexed_y(&self, system: &System) -> u8 {
-        let lower_addr = self.pc + 1;
+    fn fetch_zero_page_indexed_y(&self, system: &System, base_addr: u16) -> u8 {
+        let lower_addr = base_addr;
         let lower = system.read_u8(lower_addr as usize);
         let addr  = (lower as u16).wrapping_add(self.y as u16);
         let data  = system.read_u8(addr as usize);
         return data;
     }
     /// a,x
-    fn fetch_absolute_indexed_x(&self, system: &System) -> u8 {
-        let lower_addr = self.pc + 1;
-        let upper_addr = self.pc + 2;
+    fn fetch_absolute_indexed_x(&self, system: &System, base_addr: u16) -> u8 {
+        let lower_addr = base_addr;
+        let upper_addr = base_addr + 1;
         let lower = system.read_u8(lower_addr as usize);
         let upper = system.read_u8(upper_addr as usize);
         let addr  = ((lower as u16) | ((upper as u16) << 8)).wrapping_add(self.x as u16);
@@ -223,9 +350,9 @@ impl Cpu {
         return data;
     }
     /// a,y
-    fn fetch_absolute_indexed_y(&self, system: &System) -> u8 {
-        let lower_addr = self.pc + 1;
-        let upper_addr = self.pc + 2;
+    fn fetch_absolute_indexed_y(&self, system: &System, base_addr: u16) -> u8 {
+        let lower_addr = base_addr;
+        let upper_addr = base_addr + 1;
         let lower = system.read_u8(lower_addr as usize);
         let upper = system.read_u8(upper_addr as usize);
         let addr  = ((lower as u16) | ((upper as u16) << 8)).wrapping_add(self.y as u16);
@@ -233,10 +360,10 @@ impl Cpu {
         return data;
     }
     ///
-    fn fetch_implied() -> u8 { return 0x0; }
+    fn fetch_implicit(&self) -> u8 { return 0x0; }
     /// label
-    fn fetch_relative(&self, system: &System) -> u8 {
-        let offset_addr = self.pc + 1;
+    fn fetch_relative(&self, system: &System, base_addr: u16) -> u8 {
+        let offset_addr = base_addr;
         let offset = system.read_u8(offset_addr as usize);
         let addr_signed  = ((offset as i8) as i32) + (self.pc as i32);
         assert!(addr_signed >= 0);
@@ -246,8 +373,8 @@ impl Cpu {
         return data;
     }
     /// (d,x)
-    fn fetch_indexed_indirect(&self, system: &System) -> u8 {
-        let addr1 = self.pc + 1;
+    fn fetch_indexed_indirect(&self, system: &System, base_addr: u16) -> u8 {
+        let addr1 = base_addr;
         let data1 = system.read_u8(addr1 as usize);
         let addr2 = (data1 as u16).wrapping_add(self.x as u16);
         let data2_lower = system.read_u8(addr2 as usize);
@@ -257,8 +384,8 @@ impl Cpu {
         return data3;
     }
     /// (d),y
-    fn fetch_indirect_indexed(&self, system: &System) -> u8 {
-        let addr1_lower = self.pc + 1;
+    fn fetch_indirect_indexed(&self, system: &System, base_addr: u16) -> u8 {
+        let addr1_lower = base_addr;
         let addr1_upper = self.pc.wrapping_add(2);
         let data1_lower = system.read_u8(addr1_lower as usize);
         let data1_upper = system.read_u8(addr1_upper as usize);

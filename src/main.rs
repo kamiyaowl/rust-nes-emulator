@@ -11,7 +11,7 @@ use nes::interface::*;
 fn main() {
     let mut sys = System {
         cpu: Cpu {
-            a: 0, x: 0, y: 0, pc: 0, sp: 0, p: 0,
+            a: 0, x: 0, y: 0, pc: 0, sp: 0, p: 0, cycles: 0,
         },
         vram: VideoRam {
             ram: [0; vram::SIZE]
