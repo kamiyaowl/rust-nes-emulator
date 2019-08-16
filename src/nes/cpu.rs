@@ -92,8 +92,8 @@ impl Cpu {
             Interrupt::NMI   => {
                 self.write_break_flag(false);
                 // PCのUpper, Lower, Status RegisterをStackに格納する
-                self.stack_push(system, (self.sp >> 8) as u8);
-                self.stack_push(system, (self.sp & 0xff) as u8);
+                self.stack_push(system, (self.pc >> 8) as u8);
+                self.stack_push(system, (self.pc & 0xff) as u8);
                 self.stack_push(system, self.p);
                 self.write_interrupt_flag(true);
             },
@@ -103,8 +103,8 @@ impl Cpu {
             Interrupt::IRQ   => {
                 self.write_break_flag(false);
                 // PCのUpper, Lower, Status RegisterをStackに格納する
-                self.stack_push(system, (self.sp >> 8) as u8);
-                self.stack_push(system, (self.sp & 0xff) as u8);
+                self.stack_push(system, (self.pc >> 8) as u8);
+                self.stack_push(system, (self.pc & 0xff) as u8);
                 self.stack_push(system, self.p);
                 self.write_interrupt_flag(true);
             },
@@ -112,8 +112,8 @@ impl Cpu {
                 self.write_break_flag(true);
                 self.pc = self.pc + 1;
                 // PCのUpper, Lower, Status RegisterをStackに格納する
-                self.stack_push(system, (self.sp >> 8) as u8);
-                self.stack_push(system, (self.sp & 0xff) as u8);
+                self.stack_push(system, (self.pc >> 8) as u8);
+                self.stack_push(system, (self.pc & 0xff) as u8);
                 self.stack_push(system, self.p);
                 self.write_interrupt_flag(true);
             },
@@ -160,19 +160,18 @@ impl Cpu {
     /// add with carry
     fn inst_adc(&mut self, arg: u8) {
         let (data1, is_carry1) = (self.a as i8).overflowing_add(arg as i8);
-        let (data2, is_carry2) = data1.overflowing_add(if self.read_carry_flag() { 1i8 } else { 0i8 });
-        let result = data2 as u8;
+        let (result, is_carry2) = data1.overflowing_add(if self.read_carry_flag() { 1i8 } else { 0i8 } );
 
         let is_carry    = is_carry1 || is_carry2;
         let is_zero     = result == 0;
-        let is_negative = (result as i8) < 0;
-        let is_overflow = (!(self.a ^ arg) & (self.a ^ result) & 0x80) == 0x80;
+        let is_negative = result < 0;
+        let is_overflow = (!(self.a ^ arg) & (self.a ^ (result as u8)) & 0x80) == 0x80;
 
         self.write_carry_flag(is_carry);
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
         self.write_overflow_flag(is_overflow);
-        self.a = result;
+        self.a = result as u8;
     }
     /// logical and
     fn inst_and(&mut self, arg: u8) {
@@ -276,9 +275,31 @@ impl Cpu {
     fn inst_clv(&mut self) {
         self.write_overflow_flag(false);
     }
-    /// Compare
+    /// compare
     fn inst_cmp(&mut self, arg: u8) {
         let (result, is_carry) =(self.a as i8).overflowing_sub(arg as i8);
+
+        let is_zero     = result == 0;
+        let is_negative = (result as i8) < 0;
+
+        self.write_carry_flag(is_carry);
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+    }
+    /// compare x register
+    fn inst_cpx(&mut self, arg: u8) {
+        let (result, is_carry) =(self.x as i8).overflowing_sub(arg as i8);
+
+        let is_zero     = result == 0;
+        let is_negative = (result as i8) < 0;
+
+        self.write_carry_flag(is_carry);
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+    }
+    /// compare y register
+    fn inst_cpy(&mut self, arg: u8) {
+        let (result, is_carry) =(self.y as i8).overflowing_sub(arg as i8);
 
         let is_zero     = result == 0;
         let is_negative = (result as i8) < 0;
@@ -290,26 +311,24 @@ impl Cpu {
 
 }
 /// Fetch and Adressing Implementation
+/// Accumulatorとimplicitは実装の必要なし
 impl Cpu {
-    /// A
-    fn fetch_accumulator(&self) -> u8 { 0x0 }
     /// #v
-    fn fetch_immediate(&self, system: &System, base_addr: u16) -> u8 {
-        let data_addr = base_addr;
-        system.read_u8(data_addr as usize)
+    fn addressing_immediate(&self, _system: &System, base_addr: u16)-> u16 {
+        base_addr
     }
     /// a
-    fn fetch_absolute(&self, system: &System, base_addr: u16) -> u8 {
+    fn addressing_absolute(&self, system: &System, base_addr: u16)-> u16 {
         let lower_addr = base_addr;
         let upper_addr = base_addr + 1;
         let lower = system.read_u8(lower_addr as usize);
         let upper = system.read_u8(upper_addr as usize);
         let addr  = (lower as u16) | ((upper as u16) << 8);
-        system.read_u8(addr as usize)
+        addr
     }
     /// (a) for JMP
     /// absolute indirect
-    fn fetch_indirect(&self, system: &System, base_addr: u16) -> u8 {
+    fn addressing_indirect(&self, system: &System, base_addr: u16)-> u16 {
         let lower_addr1 = base_addr;
         let upper_addr1 = base_addr + 1;
         let lower1 = system.read_u8(lower_addr1 as usize);
@@ -319,77 +338,75 @@ impl Cpu {
         let lower3 = system.read_u8(lower_addr2 as usize);
         let upper3 = system.read_u8(upper_addr2 as usize);
         let addr3 = (lower3 as u16) | ((upper3 as u16) << 8);
-        system.read_u8(addr3 as usize)
+        addr3
     }
     /// d
-    fn fetch_zero_page(&self, system: &System, base_addr: u16) -> u8 {
+    fn addressing_zero_page(&self, system: &System, base_addr: u16)-> u16 {
         let lower_addr = base_addr;
         let lower = system.read_u8(lower_addr as usize);
         let addr  = lower as u16;
-        system.read_u8(addr as usize)
+        addr
     }
     /// d,x
-    fn fetch_zero_page_indexed_x(&self, system: &System, base_addr: u16) -> u8 {
+    fn addressing_zero_page_indexed_x(&self, system: &System, base_addr: u16)-> u16 {
         let lower_addr = base_addr;
         let lower = system.read_u8(lower_addr as usize);
         let addr  = (lower as u16).wrapping_add(self.x as u16);
-        system.read_u8(addr as usize)
+        addr
     }
     /// d,y
-    fn fetch_zero_page_indexed_y(&self, system: &System, base_addr: u16) -> u8 {
+    fn addressing_zero_page_indexed_y(&self, system: &System, base_addr: u16)-> u16 {
         let lower_addr = base_addr;
         let lower = system.read_u8(lower_addr as usize);
         let addr  = (lower as u16).wrapping_add(self.y as u16);
-        system.read_u8(addr as usize)
+        addr
     }
     /// a,x
-    fn fetch_absolute_indexed_x(&self, system: &System, base_addr: u16) -> u8 {
+    fn addressing_absolute_indexed_x(&self, system: &System, base_addr: u16)-> u16 {
         let lower_addr = base_addr;
         let upper_addr = base_addr + 1;
         let lower = system.read_u8(lower_addr as usize);
         let upper = system.read_u8(upper_addr as usize);
         let addr  = ((lower as u16) | ((upper as u16) << 8)).wrapping_add(self.x as u16);
-        system.read_u8(addr as usize)
+        addr
     }
     /// a,y
-    fn fetch_absolute_indexed_y(&self, system: &System, base_addr: u16) -> u8 {
+    fn addressing_absolute_indexed_y(&self, system: &System, base_addr: u16)-> u16 {
         let lower_addr = base_addr;
         let upper_addr = base_addr + 1;
         let lower = system.read_u8(lower_addr as usize);
         let upper = system.read_u8(upper_addr as usize);
         let addr  = ((lower as u16) | ((upper as u16) << 8)).wrapping_add(self.y as u16);
-        system.read_u8(addr as usize)
+        addr
     }
-    ///
-    fn fetch_implicit(&self) -> u8 { 0x0 }
     /// label
-    fn fetch_relative(&self, system: &System, base_addr: u16) -> u8 {
+    fn addressing_relative(&self, system: &System, base_addr: u16)-> u16 {
         let offset_addr = base_addr;
         let offset = system.read_u8(offset_addr as usize);
         let addr_signed  = ((offset as i8) as i32) + (self.pc as i32);
         assert!(addr_signed >= 0);
         assert!(addr_signed < 0x10000);
         let addr = addr_signed as u16;
-        system.read_u8(addr as usize)
+        addr
     }
     /// (d,x)
-    fn fetch_indexed_indirect(&self, system: &System, base_addr: u16) -> u8 {
+    fn addressing_indexed_indirect(&self, system: &System, base_addr: u16)-> u16 {
         let addr1 = base_addr;
         let data1 = system.read_u8(addr1 as usize);
         let addr2 = (data1 as u16).wrapping_add(self.x as u16);
         let data2_lower = system.read_u8(addr2 as usize);
         let data2_upper = system.read_u8((addr2.wrapping_add(1)) as usize);
         let addr3 = (data2_lower as u16) | ((data2_upper as u16) << 8);
-        system.read_u8(addr3 as usize)
+        addr3
     }
     /// (d),y
-    fn fetch_indirect_indexed(&self, system: &System, base_addr: u16) -> u8 {
+    fn addressing_indirect_indexed(&self, system: &System, base_addr: u16)-> u16 {
         let addr1_lower = base_addr;
         let addr1_upper = self.pc.wrapping_add(2);
         let data1_lower = system.read_u8(addr1_lower as usize);
         let data1_upper = system.read_u8(addr1_upper as usize);
         let addr2 = ((data1_lower as u16) | ((data1_upper as u16) << 8)) + (self.y as u16);
-        system.read_u8(addr2 as usize)
+        addr2
     }
 }
 
