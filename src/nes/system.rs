@@ -1,4 +1,3 @@
-use super::cpu::Cpu;
 use super::eram::ExtendedRam;
 use super::erom::ExtendedRom;
 use super::prom::ProgramRom;
@@ -9,8 +8,6 @@ use super::interface::{SystemBus, EmulateControl};
 
 /// Memory Access Dispatcher
 pub struct System {
-    /// CPU
-    pub cpu: Cpu,
     /// Video RAM
     pub vram: VideoRam,
 
@@ -81,7 +78,6 @@ impl SystemBus for System {
 
 impl EmulateControl for System {
     fn reset(&mut self){
-        self.cpu.reset();
         self.vram.reset();
         self.wram.reset();
         self.erom.reset();

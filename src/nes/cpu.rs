@@ -122,6 +122,22 @@ impl Cpu {
         self.pc = (lower as u16) | ((upper as u16) << 8);
     }
 
+    /// 1命令実行します
+    /// return: かかったclock cycle count`
+    pub fn step(&mut self, system: &mut System) -> u8 {
+        let opcode = system.read_u8(self.pc as usize);
+        let cycles = match opcode {
+            _ => {
+                panic!("invalid Operation. opcode:{:02x} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:02x}", opcode, self.pc, self.a, self.x, self.y, self.sp, self.p);
+            }
+        };
+        cycles
+    }
+
+}
+
+/// Stack Control Implementation
+impl Cpu {
     /// Stack Push操作を行います
     fn stack_push(&mut self, system: &mut System, data: u8) {
         // data store
@@ -137,8 +153,8 @@ impl Cpu {
         // data fetch
         system.read_u8(self.sp as usize)
     }
-
 }
+
 /// Instruction Implementation
 /// http://obelisk.me.uk/6502/reference.html
 impl Cpu {

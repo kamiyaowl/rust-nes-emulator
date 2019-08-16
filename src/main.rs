@@ -9,10 +9,10 @@ use nes::interface::*;
 /* for desktop simulation driver */
 
 fn main() {
+    let mut cpu = Cpu {
+        a: 0, x: 0, y: 0, pc: 0, sp: 0, p: 0, 
+    };
     let mut sys = System {
-        cpu: Cpu {
-            a: 0, x: 0, y: 0, pc: 0, sp: 0, p: 0, 
-        },
         vram: VideoRam {
             ram: [0; vram::SIZE]
         },
@@ -30,10 +30,11 @@ fn main() {
         },
     };
     sys.reset();
+    cpu.reset();
+    let cycles = cpu.step(&mut sys);
 
     // test
-    sys.eram.store(|addr, data| {
-        println!("addr:{:x}, data:{:x}", addr, data);
-    });
-    println!("Hello, world!");
+    // sys.eram.store(|addr, data| {
+    //     println!("addr:{:x}, data:{:x}", addr, data);
+    // });
 }
