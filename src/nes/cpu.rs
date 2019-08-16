@@ -30,9 +30,6 @@ pub struct Cpu {
     /// Processor Status Register
     /// Negative, oVerflow, Reserved(1固定), Break, Decimal, Interrupt, Zero, Carry
     pub p  : u8,
-    // TODO: 削除
-    /// emulation cpu clock cycles
-    pub cycles: u32,
 }
 
 impl EmulateControl for Cpu {
@@ -43,7 +40,6 @@ impl EmulateControl for Cpu {
         self.pc = 0;
         self.sp = 0x01fd;
         self.p  = 0x34;
-        self.cycles = 0;
     }
     fn store(&self, read_callback: fn(usize, u8)) {
         // レジスタダンプを連番で取得する(little endian)
@@ -55,10 +51,6 @@ impl EmulateControl for Cpu {
         read_callback( 5, (self.sp & 0xff) as u8);
         read_callback( 6, ((self.sp >> 8) & 0xff) as u8);
         read_callback( 7, self.p);
-        read_callback( 8, (self.cycles & 0xff) as u8);
-        read_callback( 9, ((self.cycles >>  8) & 0xff) as u8);
-        read_callback(10, ((self.cycles >> 16) & 0xff) as u8);
-        read_callback(11, ((self.cycles >> 24) & 0xff) as u8);
     }
     fn restore(&mut self, write_callback: fn(usize) -> u8) {
         // store通りに復元してあげる
@@ -68,18 +60,11 @@ impl EmulateControl for Cpu {
         self.pc = (write_callback(3) as u16) | ((write_callback(4) as u16) << 8);
         self.sp = (write_callback(5) as u16) | ((write_callback(6) as u16) << 8);
         self.p  = write_callback(7);
-
-        self.cycles = (write_callback(8) as u32) | ((write_callback(9) as u32) << 8) | ((write_callback(10) as u32) << 8) | ((write_callback(11) as u32) << 24);
     }
 }
 
 /// Public Functions Implementation
 impl Cpu {
-    /// かかったクロックサイクルを加算します
-    pub fn add_cycles(&mut self, cycle: u32) {
-        self.cycles = self.cycles.wrapping_add(cycle);
-    }
-
     /// 割り込みを処理します
     pub fn do_interrupt(&mut self, system: &mut System, irq_type: Interrupt) {
         let is_nested_interrupt = self.read_interrupt_flag();
