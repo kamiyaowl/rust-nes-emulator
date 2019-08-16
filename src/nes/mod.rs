@@ -1,6 +1,7 @@
 mod system;
 pub mod interface;
 
+pub mod addressing;
 pub mod apu;
 pub mod cpu;
 pub mod dma;
