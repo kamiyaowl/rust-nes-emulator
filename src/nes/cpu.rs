@@ -464,6 +464,40 @@ impl Cpu {
         self.write_negative_flag(is_negative);
         result
     }
+    /// logical inclusive or
+    fn inst_ora(&mut self, arg: u8) {
+        let result = self.a | arg;
+
+        let is_zero     = result == 0;
+        let is_negative = (result & 0x80) == 0x80;
+
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.a = result;
+    }
+    /// push accumulator
+    fn inst_pha(&mut self, system: &mut System) {
+        self.stack_push(system, self.a);
+    }
+    /// push processor status
+    fn inst_php(&mut self, system: &mut System) {
+        self.stack_push(system, self.p);
+    }
+    /// pull accumulator
+    fn inst_pla(&mut self, system: &mut System) {
+        let result = self.stack_pop(system);
+
+        let is_zero     = result == 0;
+        let is_negative = (result & 0x80) == 0x80;
+
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.a = result;
+    }
+    /// pull processor status
+    fn inst_plp(&mut self, system: &mut System) {
+        self.p = self.stack_pop(system);
+    }
 }
 /// Fetch and Adressing Implementation
 /// Accumulatorとimplicitは実装の必要なし
