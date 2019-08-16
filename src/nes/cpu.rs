@@ -30,6 +30,7 @@ pub struct Cpu {
     /// Processor Status Register
     /// Negative, oVerflow, Reserved(1固定), Break, Decimal, Interrupt, Zero, Carry
     pub p  : u8,
+    // TODO: 削除
     /// emulation cpu clock cycles
     pub cycles: u32,
 }
@@ -275,7 +276,18 @@ impl Cpu {
     fn inst_clv(&mut self) {
         self.write_overflow_flag(false);
     }
-    // TODO: Compareより下
+    /// Compare
+    fn inst_cmp(&mut self, arg: u8) {
+        let (result, is_carry) =(self.a as i8).overflowing_sub(arg as i8);
+
+        let is_zero     = result == 0;
+        let is_negative = (result as i8) < 0;
+
+        self.write_carry_flag(is_carry);
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+    }
+
 }
 /// Fetch and Adressing Implementation
 impl Cpu {

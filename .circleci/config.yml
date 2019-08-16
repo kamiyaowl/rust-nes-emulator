@@ -16,20 +16,12 @@ jobs:
       # - run:
       #     name: fmt
       #     command: cargo fmt -- --check
-      - restore_cache:
-          keys:
-            - v1-cargo-lock-{{ checksum "Cargo.lock" }}
       - run:
           name: build
           command: cargo build
       - run:
           name: lint
           command: cargo clippy -- -D warnings
-      - save_cache:
-          key: v1-cargo-lock-{{ checksum "Cargo.lock" }}
-          paths:
-            - "/usr/local/cargo/registry"
-            - "target"
       - run:
           name: test
           command: cargo test
