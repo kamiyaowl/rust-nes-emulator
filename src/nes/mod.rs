@@ -1,9 +1,12 @@
 mod system;
 pub mod interface;
 
-pub mod addressing;
 pub mod apu;
 pub mod cpu;
+pub mod cpu_addressing;
+pub mod cpu_instruction;
+pub mod cpu_opcode;
+pub mod cpu_register;
 pub mod dma;
 pub mod ppu;
 pub mod pad;
