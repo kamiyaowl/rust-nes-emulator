@@ -7,11 +7,11 @@ pub struct ExtendedRom {
 }
 
 impl SystemBus for ExtendedRom {
-    fn read_u8(&self, addr: usize) -> u8 {
-        assert!(addr < self.rom.len());
-        self.rom[addr]
+    fn read_u8(&self, addr: u16) -> u8 {
+        assert!((addr as usize) < self.rom.len());
+        self.rom[addr as usize]
     }
-    fn write_u8(&mut self, addr: usize, data: u8) {
+    fn write_u8(&mut self, addr: u16, data: u8) {
         panic!("Memory Write Request Error. PRG-ROM. addr:{:x}, data:{:x}", addr, data);
     }
 }

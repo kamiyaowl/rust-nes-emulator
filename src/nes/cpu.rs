@@ -1,14 +1,14 @@
 use super::system::System;
 use super::interface::{SystemBus, EmulateControl};
 
-const NMI_READ_LOWER:   usize = 0xfffa;
-const NMI_READ_UPPER:   usize = 0xfffb;
-const RESET_READ_LOWER: usize = 0xfffc;
-const RESET_READ_UPPER: usize = 0xfffd;
-const IRQ_READ_LOWER:   usize = 0xfffe;
-const IRQ_READ_UPPER:   usize = 0xffff;
-const BRK_READ_LOWER:   usize = 0xfffe;
-const BRK_READ_UPPER:   usize = 0xffff;
+const NMI_READ_LOWER:   u16 = 0xfffa;
+const NMI_READ_UPPER:   u16 = 0xfffb;
+const RESET_READ_LOWER: u16 = 0xfffc;
+const RESET_READ_UPPER: u16 = 0xfffd;
+const IRQ_READ_LOWER:   u16 = 0xfffe;
+const IRQ_READ_UPPER:   u16 = 0xffff;
+const BRK_READ_LOWER:   u16 = 0xfffe;
+const BRK_READ_UPPER:   u16 = 0xffff;
 
 #[derive(PartialEq, Eq)]
 pub enum Interrupt {
@@ -125,10 +125,20 @@ impl Cpu {
     /// 1命令実行します
     /// return: かかったclock cycle count`
     pub fn step(&mut self, system: &mut System) -> u8 {
-        let opcode = system.read_u8(self.pc as usize);
+        let opcode = system.read_u8(self.pc);
+        self.increment_pc(1);
+
         let cycles = match opcode {
+            0x69 => {
+                // adc immediate
+                let addr = self.addressing_immediate(self.pc);
+                let data = system.read_u8(addr);
+                self.increment_pc(1);
+                self.inst_adc(data);
+                2
+            }
             _ => {
-                panic!("invalid Operation. opcode:{:02x} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:02x}", opcode, self.pc, self.a, self.x, self.y, self.sp, self.p);
+                panic!("invalid Operation. opcode:{:02x} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", opcode, self.pc, self.a, self.x, self.y, self.sp, self.p);
             }
         };
         cycles
@@ -136,12 +146,16 @@ impl Cpu {
 
 }
 
-/// Stack Control Implementation
+/// Internal Control Implementation
 impl Cpu {
+    /// プログラムカウンタを指定した数進めます
+    fn increment_pc(&mut self, incr: u16) {
+        self.pc = self.pc + incr;
+    }
     /// Stack Push操作を行います
     fn stack_push(&mut self, system: &mut System, data: u8) {
         // data store
-        system.write_u8(self.sp as usize, data);
+        system.write_u8(self.sp, data);
         // decrement
         self.sp = self.sp - 1;
     }
@@ -151,7 +165,7 @@ impl Cpu {
         // increment
         self.sp = self.sp + 1;
         // data fetch
-        system.read_u8(self.sp as usize)
+        system.read_u8(self.sp)
     }
 }
 
@@ -207,7 +221,7 @@ impl Cpu {
         self.write_carry_flag(is_carry);
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
-        system.write_u8(dst_addr as usize, result);
+        system.write_u8(dst_addr, result);
     }
     /// branch if carry clear
     fn inst_bcc(&mut self, arg: u8) {
@@ -374,7 +388,7 @@ impl Cpu {
 
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
-        system.write_u8(dst_addr as usize, result);
+        system.write_u8(dst_addr, result);
     }
     /// increment x register
     fn inst_inx(&mut self, arg: u8) {
@@ -464,7 +478,7 @@ impl Cpu {
         self.write_carry_flag(is_carry);
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
-        system.write_u8(dst_addr as usize, arg);
+        system.write_u8(dst_addr, arg);
     }
     /// logical inclusive or
     fn inst_ora(&mut self, arg: u8) {
@@ -524,7 +538,7 @@ impl Cpu {
         self.write_carry_flag(is_carry);
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
-        system.write_u8(dst_addr as usize, result);
+        system.write_u8(dst_addr, result);
     }
     /// rorate right(Accumulator)
     fn inst_ror_a(&mut self) {
@@ -550,7 +564,7 @@ impl Cpu {
         self.write_carry_flag(is_carry);
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
-        system.write_u8(dst_addr as usize, result);
+        system.write_u8(dst_addr, result);
     }
     /// return from interuppt
     fn inst_rti(&mut self, system: &mut System) {
@@ -596,15 +610,15 @@ impl Cpu {
     }
     /// store accumulator
     fn inst_sta(&self, system: &mut System, dst_addr: u16) {
-        system.write_u8(dst_addr as usize, self.a);
+        system.write_u8(dst_addr, self.a);
     }
     /// store x register
     fn inst_stx(&self, system: &mut System, dst_addr: u16) {
-        system.write_u8(dst_addr as usize, self.x);
+        system.write_u8(dst_addr, self.x);
     }
     /// store y register
     fn inst_sty(&self, system: &mut System, dst_addr: u16) {
-        system.write_u8(dst_addr as usize, self.y);
+        system.write_u8(dst_addr, self.y);
     }
     /// transfer accumulator to x
     fn inst_tax(&mut self) {
@@ -663,16 +677,16 @@ impl Cpu {
 /// Fetch and Adressing Implementation
 /// Accumulatorとimplicitは実装の必要なし
 impl Cpu {
-    /// #v
-    fn addressing_immediate(&self, _system: &System, base_addr: u16)-> u16 {
+    /// #v 即値をそのまま帰す
+    fn addressing_immediate(&self, base_addr: u16)-> u16 {
         base_addr
     }
     /// a
     fn addressing_absolute(&self, system: &System, base_addr: u16)-> u16 {
         let lower_addr = base_addr;
         let upper_addr = base_addr + 1;
-        let lower = system.read_u8(lower_addr as usize);
-        let upper = system.read_u8(upper_addr as usize);
+        let lower = system.read_u8(lower_addr);
+        let upper = system.read_u8(upper_addr);
         let addr  = (lower as u16) | ((upper as u16) << 8);
         addr
     }
@@ -681,33 +695,33 @@ impl Cpu {
     fn addressing_indirect(&self, system: &System, base_addr: u16)-> u16 {
         let lower_addr1 = base_addr;
         let upper_addr1 = base_addr + 1;
-        let lower1 = system.read_u8(lower_addr1 as usize);
-        let upper1 = system.read_u8(upper_addr1 as usize);
+        let lower1 = system.read_u8(lower_addr1);
+        let upper1 = system.read_u8(upper_addr1);
         let lower_addr2 = (lower1 as u16) | ((upper1 as u16) << 8);
         let upper_addr2 = lower_addr2.wrapping_add(1);
-        let lower3 = system.read_u8(lower_addr2 as usize);
-        let upper3 = system.read_u8(upper_addr2 as usize);
+        let lower3 = system.read_u8(lower_addr2);
+        let upper3 = system.read_u8(upper_addr2);
         let addr3 = (lower3 as u16) | ((upper3 as u16) << 8);
         addr3
     }
     /// d
     fn addressing_zero_page(&self, system: &System, base_addr: u16)-> u16 {
         let lower_addr = base_addr;
-        let lower = system.read_u8(lower_addr as usize);
+        let lower = system.read_u8(lower_addr);
         let addr  = lower as u16;
         addr
     }
     /// d,x
     fn addressing_zero_page_indexed_x(&self, system: &System, base_addr: u16)-> u16 {
         let lower_addr = base_addr;
-        let lower = system.read_u8(lower_addr as usize);
+        let lower = system.read_u8(lower_addr);
         let addr  = (lower as u16).wrapping_add(self.x as u16);
         addr
     }
     /// d,y
     fn addressing_zero_page_indexed_y(&self, system: &System, base_addr: u16)-> u16 {
         let lower_addr = base_addr;
-        let lower = system.read_u8(lower_addr as usize);
+        let lower = system.read_u8(lower_addr);
         let addr  = (lower as u16).wrapping_add(self.y as u16);
         addr
     }
@@ -715,8 +729,8 @@ impl Cpu {
     fn addressing_absolute_indexed_x(&self, system: &System, base_addr: u16)-> u16 {
         let lower_addr = base_addr;
         let upper_addr = base_addr + 1;
-        let lower = system.read_u8(lower_addr as usize);
-        let upper = system.read_u8(upper_addr as usize);
+        let lower = system.read_u8(lower_addr);
+        let upper = system.read_u8(upper_addr);
         let addr  = ((lower as u16) | ((upper as u16) << 8)).wrapping_add(self.x as u16);
         addr
     }
@@ -724,15 +738,15 @@ impl Cpu {
     fn addressing_absolute_indexed_y(&self, system: &System, base_addr: u16)-> u16 {
         let lower_addr = base_addr;
         let upper_addr = base_addr + 1;
-        let lower = system.read_u8(lower_addr as usize);
-        let upper = system.read_u8(upper_addr as usize);
+        let lower = system.read_u8(lower_addr);
+        let upper = system.read_u8(upper_addr);
         let addr  = ((lower as u16) | ((upper as u16) << 8)).wrapping_add(self.y as u16);
         addr
     }
     /// label
     fn addressing_relative(&self, system: &System, base_addr: u16)-> u16 {
         let offset_addr = base_addr;
-        let offset = system.read_u8(offset_addr as usize);
+        let offset = system.read_u8(offset_addr);
         let addr_signed  = ((offset as i8) as i32) + (self.pc as i32);
         assert!(addr_signed >= 0);
         assert!(addr_signed < 0x10000);
@@ -742,10 +756,10 @@ impl Cpu {
     /// (d,x)
     fn addressing_indexed_indirect(&self, system: &System, base_addr: u16)-> u16 {
         let addr1 = base_addr;
-        let data1 = system.read_u8(addr1 as usize);
+        let data1 = system.read_u8(addr1);
         let addr2 = (data1 as u16).wrapping_add(self.x as u16);
-        let data2_lower = system.read_u8(addr2 as usize);
-        let data2_upper = system.read_u8((addr2.wrapping_add(1)) as usize);
+        let data2_lower = system.read_u8(addr2);
+        let data2_upper = system.read_u8(addr2.wrapping_add(1));
         let addr3 = (data2_lower as u16) | ((data2_upper as u16) << 8);
         addr3
     }
@@ -753,8 +767,8 @@ impl Cpu {
     fn addressing_indirect_indexed(&self, system: &System, base_addr: u16)-> u16 {
         let addr1_lower = base_addr;
         let addr1_upper = self.pc.wrapping_add(2);
-        let data1_lower = system.read_u8(addr1_lower as usize);
-        let data1_upper = system.read_u8(addr1_upper as usize);
+        let data1_lower = system.read_u8(addr1_lower);
+        let data1_upper = system.read_u8(addr1_upper);
         let addr2 = ((data1_lower as u16) | ((data1_upper as u16) << 8)) + (self.y as u16);
         addr2
     }

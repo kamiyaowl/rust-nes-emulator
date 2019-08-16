@@ -28,10 +28,10 @@ pub struct System {
 }
 
 impl SystemBus for System {
-    fn read_u8(&self, addr: usize) -> u8 {
+    fn read_u8(&self, addr: u16) -> u8 {
         if addr < 0x2000 {
             // WRAM
-            self.wram.read_u8((addr) % 0x0800 as usize) // mirror support
+            self.wram.read_u8(addr % 0x0800) // mirror support
         } else if addr < 0x4000 {
             // PPU I/O
             // TODO: Mirror
@@ -41,18 +41,16 @@ impl SystemBus for System {
             unimplemented!();
         } else if addr < 0x6000 {
             // Extended ROM
-            self.erom.read_u8((addr - 0x4020) as usize)
+            self.erom.read_u8(addr - 0x4020)
         } else if addr < 0x8000 {
             // Extended RAM
-            self.eram.read_u8((addr - 0x6000) as usize)
-        } else if addr < 0x10000 {
-            // PRG-ROM
-            self.prom.read_u8((addr - 0x6000) as usize)
+            self.eram.read_u8(addr - 0x6000)
         } else {
-            panic!("Memory Read Request Error. Out of Index. addr:{:x}", addr);
+            // PRG-ROM
+            self.prom.read_u8(addr - 0x6000)
         }
     }
-    fn write_u8(&mut self, addr: usize, data: u8) {
+    fn write_u8(&mut self, addr: u16, data: u8) {
         if addr < 0x2000 {
             self.wram.write_u8(addr, data);
         } else if addr < 0x4000 {
@@ -66,12 +64,10 @@ impl SystemBus for System {
             panic!("Memory Write Request Error. Extended ROM. addr:{:x}, data:{:x}", addr, data);
         } else if addr < 0x8000 {
             // Extended RAM
-            self.eram.write_u8((addr - 0x6000) as usize, data);
-        } else if addr < 0x10000 {
+            self.eram.write_u8(addr - 0x6000, data);
+        } else {
             // PRG-ROM
             panic!("Memory Write Request Error. PRG-ROM. addr:{:x}, data:{:x}", addr, data);
-        } else {
-            panic!("Memory Write Request Error. Out of Index. addr:{:x}, data:{:x}", addr, data);
         }
     }
 }

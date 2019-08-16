@@ -1,7 +1,7 @@
 /// System Bus経由でR/Wできる
 pub trait SystemBus {
-    fn read_u8(&self, addr: usize) -> u8;
-    fn write_u8(&mut self, addr: usize, data: u8);
+    fn read_u8(&self, addr: u16) -> u8;
+    fn write_u8(&mut self, addr: u16, data: u8);
 }
 
 /// 外部から内容の変更やクリアが可能
