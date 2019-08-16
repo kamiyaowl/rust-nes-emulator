@@ -164,7 +164,7 @@ impl Cpu {
 
         let is_carry    = is_carry1 || is_carry2;
         let is_zero     = result == 0;
-        let is_negative = (result as i8) < 0;
+        let is_negative = (result & 0x80) == 0x80;
         let is_overflow = (!(self.a ^ arg) & (self.a ^ result) & 0x80) == 0x80;
 
         self.write_carry_flag(is_carry);
@@ -178,23 +178,35 @@ impl Cpu {
         let result = self.a & arg;
 
         let is_zero     = result == 0;
-        let is_negative = (result as i8) < 0;
+        let is_negative = (result & 0x80) == 0x80;
 
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
         self.a = result;
     }
-    /// arithmetic shift left
-    fn inst_asl(&mut self, arg: u8) {
-        let (result, is_carry) = arg.overflowing_shl(1);
+    /// arithmetic shift left(Accumulator)
+    fn inst_asl_a(&mut self) {
+        let (result, is_carry) = self.a.overflowing_shl(1);
 
         let is_zero     = result == 0;
-        let is_negative = (result as i8) < 0;
+        let is_negative = (result & 0x80) == 0x80;
 
         self.write_carry_flag(is_carry);
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
         self.a = result;
+    }
+    /// arithmetic shift left
+    fn inst_asl(&mut self, arg: u8) -> u8 {
+        let (result, is_carry) = arg.overflowing_shl(1);
+
+        let is_zero     = result == 0;
+        let is_negative = (result & 0x80) == 0x80;
+
+        self.write_carry_flag(is_carry);
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        result
     }
     /// branch if carry clear
     fn inst_bcc(&mut self, arg: u8) {
@@ -280,7 +292,7 @@ impl Cpu {
         let (result, is_carry) = self.a.overflowing_sub(arg);
 
         let is_zero     = result == 0;
-        let is_negative = (result as i8) < 0;
+        let is_negative = (result & 0x80) == 0x80;
 
         self.write_carry_flag(is_carry);
         self.write_zero_flag(is_zero);
@@ -291,7 +303,7 @@ impl Cpu {
         let (result, is_carry) = self.x.overflowing_sub(arg);
 
         let is_zero     = result == 0;
-        let is_negative = (result as i8) < 0;
+        let is_negative = (result & 0x80) == 0x80;
 
         self.write_carry_flag(is_carry);
         self.write_zero_flag(is_zero);
@@ -302,7 +314,7 @@ impl Cpu {
         let (result, is_carry) = self.y.overflowing_sub(arg);
 
         let is_zero     = result == 0;
-        let is_negative = (result as i8) < 0;
+        let is_negative = (result & 0x80) == 0x80;
 
         self.write_carry_flag(is_carry);
         self.write_zero_flag(is_zero);
@@ -313,7 +325,7 @@ impl Cpu {
         let result = arg.wrapping_sub(1);
 
         let is_zero     = result == 0;
-        let is_negative = (result as i8) < 0;
+        let is_negative = (result & 0x80) == 0x80;
 
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
@@ -324,7 +336,7 @@ impl Cpu {
         let result = self.x.wrapping_sub(1);
 
         let is_zero     = result == 0;
-        let is_negative = (result as i8) < 0;
+        let is_negative = (result & 0x80) == 0x80;
 
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
@@ -335,7 +347,7 @@ impl Cpu {
         let result = self.y.wrapping_sub(1);
 
         let is_zero     = result == 0;
-        let is_negative = (result as i8) < 0;
+        let is_negative = (result & 0x80) == 0x80;
 
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
@@ -346,7 +358,7 @@ impl Cpu {
         let result =self.a ^ arg;
 
         let is_zero     = result == 0;
-        let is_negative = (result as i8) < 0;
+        let is_negative = (result & 0x80) == 0x80;
 
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
@@ -357,7 +369,7 @@ impl Cpu {
         let result = arg.wrapping_add(1);
 
         let is_zero     = result == 0;
-        let is_negative = (result as i8) < 0;
+        let is_negative = (result & 0x80) == 0x80;
 
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
@@ -368,7 +380,7 @@ impl Cpu {
         let result = self.x.wrapping_add(1);
 
         let is_zero     = result == 0;
-        let is_negative = (result as i8) < 0;
+        let is_negative = (result & 0x80) == 0x80;
 
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
@@ -376,16 +388,82 @@ impl Cpu {
     }
     /// increment y register
     fn inst_iny(&mut self, arg: u8) {
-        let result = self.x.wrapping_add(1);
+        let result = self.y.wrapping_add(1);
 
         let is_zero     = result == 0;
-        let is_negative = (result as i8) < 0;
+        let is_negative = (result & 0x80) == 0x80;
 
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
-        self.x = result;
+        self.y = result;
     }
+    /// jump
+    /// `dst_addr` - Addressing Absolute/Indirectで指定されたJump先Address
+    fn inst_jmp(&mut self, dst_addr: u16) {
+        self.pc = dst_addr;
+    }
+    /// jump to subroutine
+    /// `dst_addr` - Addressing Absoluteで指定されたJump先Address
+    /// `opcode_addr` - JSR命令が格納されていたアドレス
+    fn inst_jsr(&mut self, system: &mut System, dst_addr: u16, opcode_addr: u16) {
+        let ret_addr = opcode_addr + 2;
+        self.stack_push(system, (ret_addr >>   8) as u8);
+        self.stack_push(system, (ret_addr & 0xff) as u8);
+        self.pc = dst_addr;
+    }
+    /// load accumulator
+    fn inst_lda(&mut self, arg: u8) {
+        let is_zero     = arg == 0;
+        let is_negative = (arg as i8) < 0;
 
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.a = arg;
+    }
+    /// load x register
+    fn inst_ldx(&mut self, arg: u8) {
+        let is_zero     = arg == 0;
+        let is_negative = (arg as i8) < 0;
+
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.x = arg;
+    }
+    /// load y register
+    fn inst_ldy(&mut self, arg: u8) {
+        let is_zero     = arg == 0;
+        let is_negative = (arg as i8) < 0;
+
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.y = arg;
+    }
+    /// logical shift right(Accumulator)
+    fn inst_lsr_a(&mut self) {
+        let result = self.a.wrapping_shr(1);
+
+        let is_carry    = (result & 0x01) == 0x01;
+        let is_zero     = result == 0;
+        let is_negative = (result & 0x80) == 0x80;
+
+        self.write_carry_flag(is_carry);
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.a = result;
+    }
+    /// logical shift right
+    fn inst_lsr(&mut self, arg: u8) -> u8 {
+        let result = arg.wrapping_shr(1);
+
+        let is_carry    = (result & 0x01) == 0x01;
+        let is_zero     = result == 0;
+        let is_negative = (result & 0x80) == 0x80;
+
+        self.write_carry_flag(is_carry);
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        result
+    }
 }
 /// Fetch and Adressing Implementation
 /// Accumulatorとimplicitは実装の必要なし
