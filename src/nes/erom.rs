@@ -8,7 +8,7 @@ pub struct ExtendedRom {
 
 impl SystemBus for ExtendedRom {
     fn read_u8(&self, addr: u16) -> u8 {
-        assert!((addr as usize) < self.rom.len());
+        debug_assert!((addr as usize) < self.rom.len());
         self.rom[addr as usize]
     }
     fn write_u8(&mut self, addr: u16, data: u8) {

@@ -8,11 +8,11 @@ pub struct WorkRam {
 
 impl SystemBus for WorkRam {
     fn read_u8(&self, addr: u16) -> u8 {
-        assert!((addr as usize) < self.ram.len());
+        debug_assert!((addr as usize) < self.ram.len());
         self.ram[addr as usize]
     }
     fn write_u8(&mut self, addr: u16, data: u8) {
-        assert!((addr as usize) < self.ram.len());
+        debug_assert!((addr as usize) < self.ram.len());
         self.ram[addr as usize] = data;
     }
 }

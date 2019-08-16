@@ -8,6 +8,10 @@ impl Cpu {
     /// return: かかったclock cycle count`
     pub fn step(&mut self, system: &mut System) -> u8 {
         let opcode = system.read_u8(self.pc);
+        if cfg!(debug_assertions) {
+            println!("# opcode:{:02x} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", opcode, self.pc, self.a, self.x, self.y, self.sp, self.p);
+        }
+
         self.increment_pc(1);
 
         let cycles = match opcode {
@@ -123,7 +127,7 @@ impl Cpu {
             /**************** TXA ****************/
             /**************** TXS ****************/
             /**************** TYA ****************/
-            
+
             /*********** unimplemented ***********/
             _ => {
                 panic!("invalid Operation. opcode:{:02x} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", opcode, self.pc, self.a, self.x, self.y, self.sp, self.p);

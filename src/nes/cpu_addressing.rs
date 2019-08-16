@@ -76,8 +76,8 @@ impl Cpu {
         let offset_addr = base_addr;
         let offset = system.read_u8(offset_addr);
         let addr_signed  = ((offset as i8) as i32) + (self.pc as i32);
-        assert!(addr_signed >= 0);
-        assert!(addr_signed < 0x10000);
+        debug_assert!(addr_signed >= 0);
+        debug_assert!(addr_signed < 0x10000);
         let addr = addr_signed as u16;
         addr
     }
