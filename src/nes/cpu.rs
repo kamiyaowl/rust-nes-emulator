@@ -159,19 +159,19 @@ impl Cpu {
 impl Cpu {
     /// add with carry
     fn inst_adc(&mut self, arg: u8) {
-        let (data1, is_carry1) = (self.a as i8).overflowing_add(arg as i8);
-        let (result, is_carry2) = data1.overflowing_add(if self.read_carry_flag() { 1i8 } else { 0i8 } );
+        let (data1, is_carry1) = self.a.overflowing_add(arg);
+        let (result, is_carry2) = data1.overflowing_add(if self.read_carry_flag() { 1 } else { 0 } );
 
         let is_carry    = is_carry1 || is_carry2;
         let is_zero     = result == 0;
-        let is_negative = result < 0;
-        let is_overflow = (!(self.a ^ arg) & (self.a ^ (result as u8)) & 0x80) == 0x80;
+        let is_negative = (result as i8) < 0;
+        let is_overflow = (!(self.a ^ arg) & (self.a ^ result) & 0x80) == 0x80;
 
         self.write_carry_flag(is_carry);
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
         self.write_overflow_flag(is_overflow);
-        self.a = result as u8;
+        self.a = result;
     }
     /// logical and
     fn inst_and(&mut self, arg: u8) {
@@ -277,7 +277,7 @@ impl Cpu {
     }
     /// compare
     fn inst_cmp(&mut self, arg: u8) {
-        let (result, is_carry) =(self.a as i8).overflowing_sub(arg as i8);
+        let (result, is_carry) = self.a.overflowing_sub(arg);
 
         let is_zero     = result == 0;
         let is_negative = (result as i8) < 0;
@@ -288,7 +288,7 @@ impl Cpu {
     }
     /// compare x register
     fn inst_cpx(&mut self, arg: u8) {
-        let (result, is_carry) =(self.x as i8).overflowing_sub(arg as i8);
+        let (result, is_carry) = self.x.overflowing_sub(arg);
 
         let is_zero     = result == 0;
         let is_negative = (result as i8) < 0;
@@ -299,7 +299,7 @@ impl Cpu {
     }
     /// compare y register
     fn inst_cpy(&mut self, arg: u8) {
-        let (result, is_carry) =(self.y as i8).overflowing_sub(arg as i8);
+        let (result, is_carry) = self.y.overflowing_sub(arg);
 
         let is_zero     = result == 0;
         let is_negative = (result as i8) < 0;
@@ -307,6 +307,83 @@ impl Cpu {
         self.write_carry_flag(is_carry);
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
+    }
+    /// decrement memory
+    fn inst_dec(&mut self, arg: u8) -> u8 {
+        let result = arg.wrapping_sub(1);
+
+        let is_zero     = result == 0;
+        let is_negative = (result as i8) < 0;
+
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        result
+    }
+    /// decrement x register
+    fn inst_dex(&mut self, arg: u8) {
+        let result = self.x.wrapping_sub(1);
+
+        let is_zero     = result == 0;
+        let is_negative = (result as i8) < 0;
+
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.x = result;
+    }
+    /// decrement y register
+    fn inst_dey(&mut self, arg: u8) {
+        let result = self.y.wrapping_sub(1);
+
+        let is_zero     = result == 0;
+        let is_negative = (result as i8) < 0;
+
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.y = result;
+    }
+    /// exclusive or
+    fn inst_eor(&mut self, arg: u8) {
+        let result =self.a ^ arg;
+
+        let is_zero     = result == 0;
+        let is_negative = (result as i8) < 0;
+
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.a = result;
+    }
+    /// increment memory
+    fn inst_inc(&mut self, arg: u8) -> u8 {
+        let result = arg.wrapping_add(1);
+
+        let is_zero     = result == 0;
+        let is_negative = (result as i8) < 0;
+
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        result
+    }
+    /// increment x register
+    fn inst_inx(&mut self, arg: u8) {
+        let result = self.x.wrapping_add(1);
+
+        let is_zero     = result == 0;
+        let is_negative = (result as i8) < 0;
+
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.x = result;
+    }
+    /// increment y register
+    fn inst_iny(&mut self, arg: u8) {
+        let result = self.x.wrapping_add(1);
+
+        let is_zero     = result == 0;
+        let is_negative = (result as i8) < 0;
+
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.x = result;
     }
 
 }
