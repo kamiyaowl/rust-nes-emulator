@@ -197,7 +197,7 @@ impl Cpu {
         self.a = result;
     }
     /// arithmetic shift left
-    fn inst_asl(&mut self, arg: u8) -> u8 {
+    fn inst_asl(&mut self, system: &mut System, dst_addr: u16, arg: u8) {
         let (result, is_carry) = arg.overflowing_shl(1);
 
         let is_zero     = result == 0;
@@ -206,7 +206,7 @@ impl Cpu {
         self.write_carry_flag(is_carry);
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
-        result
+        system.write_u8(dst_addr as usize, result);
     }
     /// branch if carry clear
     fn inst_bcc(&mut self, arg: u8) {
@@ -365,7 +365,7 @@ impl Cpu {
         self.a = result;
     }
     /// increment memory
-    fn inst_inc(&mut self, arg: u8) -> u8 {
+    fn inst_inc(&mut self, system: &mut System, dst_addr: u16, arg: u8) {
         let result = arg.wrapping_add(1);
 
         let is_zero     = result == 0;
@@ -373,7 +373,7 @@ impl Cpu {
 
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
-        result
+        system.write_u8(dst_addr as usize, result);
     }
     /// increment x register
     fn inst_inx(&mut self, arg: u8) {
@@ -407,6 +407,7 @@ impl Cpu {
     /// `opcode_addr` - JSR命令が格納されていたアドレス
     fn inst_jsr(&mut self, system: &mut System, dst_addr: u16, opcode_addr: u16) {
         let ret_addr = opcode_addr + 2;
+        // pushはUpper, Lower
         self.stack_push(system, (ret_addr >>   8) as u8);
         self.stack_push(system, (ret_addr & 0xff) as u8);
         self.pc = dst_addr;
@@ -442,7 +443,7 @@ impl Cpu {
     fn inst_lsr_a(&mut self) {
         let result = self.a.wrapping_shr(1);
 
-        let is_carry    = (result & 0x01) == 0x01;
+        let is_carry    = (self.a & 0x01) == 0x01;
         let is_zero     = result == 0;
         let is_negative = (result & 0x80) == 0x80;
 
@@ -452,17 +453,17 @@ impl Cpu {
         self.a = result;
     }
     /// logical shift right
-    fn inst_lsr(&mut self, arg: u8) -> u8 {
+    fn inst_lsr(&mut self, system: &mut System, dst_addr: u16, arg: u8) {
         let result = arg.wrapping_shr(1);
 
-        let is_carry    = (result & 0x01) == 0x01;
+        let is_carry    = (arg    & 0x01) == 0x01;
         let is_zero     = result == 0;
         let is_negative = (result & 0x80) == 0x80;
 
         self.write_carry_flag(is_carry);
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
-        result
+        system.write_u8(dst_addr as usize, arg);
     }
     /// logical inclusive or
     fn inst_ora(&mut self, arg: u8) {
@@ -497,6 +498,165 @@ impl Cpu {
     /// pull processor status
     fn inst_plp(&mut self, system: &mut System) {
         self.p = self.stack_pop(system);
+    }
+    /// rorate left(Accumulator)
+    fn inst_rol_a(&mut self) {
+        let result = self.a.wrapping_shl(1) | (if self.read_carry_flag() { 0x01 } else { 0x00 } );
+
+        let is_carry    = (self.a & 0x80) == 0x80;
+        let is_zero     = result == 0;
+        let is_negative = (result & 0x80) == 0x80;
+
+        self.write_carry_flag(is_carry);
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.a = result;
+    }
+    /// rorate left
+    fn inst_rol(&mut self, system: &mut System, dst_addr: u16, arg: u8) {
+        let result = arg.wrapping_shl(1) | (if self.read_carry_flag() { 0x01 } else { 0x00 } );
+
+        let is_carry    = (arg    & 0x80) == 0x80;
+        let is_zero     = result == 0;
+        let is_negative = (result & 0x80) == 0x80;
+
+        self.write_carry_flag(is_carry);
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        system.write_u8(dst_addr as usize, result);
+    }
+    /// rorate right(Accumulator)
+    fn inst_ror_a(&mut self) {
+        let result = self.a.wrapping_shr(1) | (if self.read_carry_flag() { 0x80 } else { 0x00 } );
+
+        let is_carry    = (self.a & 0x01) == 0x01;
+        let is_zero     = result == 0;
+        let is_negative = (result & 0x80) == 0x80;
+
+        self.write_carry_flag(is_carry);
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.a = result;
+    }
+    /// rorate right
+    fn inst_ror(&mut self, system: &mut System, dst_addr: u16, arg: u8) {
+        let result = arg.wrapping_shr(1) | (if self.read_carry_flag() { 0x80 } else { 0x00 } );
+
+        let is_carry    = (arg & 0x01) == 0x01;
+        let is_zero     = result == 0;
+        let is_negative = (result & 0x80) == 0x80;
+
+        self.write_carry_flag(is_carry);
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        system.write_u8(dst_addr as usize, result);
+    }
+    /// return from interuppt
+    fn inst_rti(&mut self, system: &mut System) {
+        self.p = self.stack_pop(system);
+        let pc_lower = self.stack_pop(system);
+        let pc_upper = self.stack_pop(system);
+        self.pc = ((pc_upper as u16) << 8) | (pc_lower as u16);
+    }
+    /// return from subroutine
+    fn inst_rts(&mut self, system: &mut System) {
+        let pc_lower = self.stack_pop(system);
+        let pc_upper = self.stack_pop(system);
+        self.pc = (((pc_upper as u16) << 8) | (pc_lower as u16)) + 1;
+    }
+    /// subtract with carry
+    /// A = A-arg-(1-Carry)
+    fn inst_sbc(&mut self, arg: u8) {
+        let (data1, is_carry1) = self.a.overflowing_sub(arg);
+        let (result, is_carry2) = data1.overflowing_sub(if self.read_carry_flag() { 0 } else { 1 } );
+
+        let is_carry    = !(is_carry1 || is_carry2); // アンダーフローが発生したら0
+        let is_zero     = result == 0;
+        let is_negative = (result & 0x80) == 0x80;
+        let is_overflow = (!(self.a ^ arg) & (self.a ^ result) & 0x80) == 0x80;
+
+        self.write_carry_flag(is_carry);
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.write_overflow_flag(is_overflow);
+        self.a = result;
+    }
+    /// set carry flag
+    fn inst_sec(&mut self) {
+        self.write_carry_flag(true);
+    }
+    /// set decimal mode
+    fn inst_sed(&mut self) {
+        self.write_decimal_flag(true);
+    }
+    /// set interrupt disable
+    fn inst_sei(&mut self) {
+        self.write_interrupt_flag(true);
+    }
+    /// store accumulator
+    fn inst_sta(&self, system: &mut System, dst_addr: u16) {
+        system.write_u8(dst_addr as usize, self.a);
+    }
+    /// store x register
+    fn inst_stx(&self, system: &mut System, dst_addr: u16) {
+        system.write_u8(dst_addr as usize, self.x);
+    }
+    /// store y register
+    fn inst_sty(&self, system: &mut System, dst_addr: u16) {
+        system.write_u8(dst_addr as usize, self.y);
+    }
+    /// transfer accumulator to x
+    fn inst_tax(&mut self) {
+        let is_zero     = self.a == 0;
+        let is_negative = (self.a & 0x80) == 0x80;
+
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.x = self.a;
+    }
+    /// transfer accumulator to y
+    fn inst_tay(&mut self) {
+        let is_zero     = self.a == 0;
+        let is_negative = (self.a & 0x80) == 0x80;
+        
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.y = self.a;
+    }
+    /// transfer stack pointer to x
+    fn inst_tsx(&mut self) {
+        let result = (self.sp & 0xff) as u8;
+
+        let is_zero     = result == 0;
+        let is_negative = (result & 0x80) == 0x80;
+        
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.x = result;
+    }
+    /// transfer x to accumulator
+    fn inst_txa(&mut self) {
+        let is_zero     = self.x == 0;
+        let is_negative = (self.x & 0x80) == 0x80;
+
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.a = self.x;
+    }
+    /// transfer x to stack pointer
+    fn inst_txs(&mut self) {
+        // spの上位バイトは0x01固定
+        // txsはstatus書き換えなし
+        self.sp = (self.x as u16) | 0x0100u16; 
+    }
+    /// transfer y to accumulator
+    fn inst_tya(&mut self) {
+        let is_zero     = self.y == 0;
+        let is_negative = (self.y & 0x80) == 0x80;
+
+        self.write_zero_flag(is_zero);
+        self.write_negative_flag(is_negative);
+        self.a = self.y;
     }
 }
 /// Fetch and Adressing Implementation
