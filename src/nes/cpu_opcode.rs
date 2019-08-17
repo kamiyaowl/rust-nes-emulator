@@ -2,6 +2,29 @@ use super::cpu::*;
 use super::system::System;
 use super::interface::{SystemBus, EmulateControl};
 
+macro_rules! inst {
+    (
+        $self:expr, $system:expr,
+        $name:expr, cycle => $cycle:expr, pc_incr => $pc_incr:expr,
+        $adressing_closure:expr,
+        $inst_closure:expr
+    ) => {
+        {
+            if cfg!(debug_assertions) {
+                println!("[before][#{}] cycle:{} pc_incr:{} pc{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
+            }
+            let addr = $adressing_closure();
+            let data = $system.read_u8(addr);
+            $self.increment_pc($pc_incr);
+            $inst_closure(addr, data);
+            if cfg!(debug_assertions) {
+                println!("[after][#{}] cycle:{} pc_incr:{} pc{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
+            }
+            $cycle
+        }
+    };
+}
+
 /// Decode and Run
 impl Cpu {
     /// 1命令実行します
@@ -9,20 +32,25 @@ impl Cpu {
     pub fn step(&mut self, system: &mut System) -> u8 {
         let opcode = system.read_u8(self.pc);
         if cfg!(debug_assertions) {
-            println!("# opcode:{:02x} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", opcode, self.pc, self.a, self.x, self.y, self.sp, self.p);
+            println!("[opcode fetched] opcode:{:02x} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", opcode, self.pc, self.a, self.x, self.y, self.sp, self.p);
         }
 
         self.increment_pc(1);
 
         let cycles = match opcode {
             /**************** ADC ****************/
-            0x69 => {
-                let addr = self.addressing_immediate(self.pc);
-                let data = system.read_u8(addr);
-                self.increment_pc(1);
-                self.inst_adc(data);
-                2
-            },
+            0x69 => inst!(self, system,
+                "ADC imm", cycle => 2, pc_incr => 1, 
+                || self.addressing_immediate(system, self.pc),
+                |_addr, data| self.inst_adc(data)
+            ),
+            // 0x69 => {
+            //     let addr = self.addressing_immediate(system, self.pc);
+            //     let data = system.read_u8(addr);
+            //     self.increment_pc(1);
+            //     self.inst_adc(data);
+            //     2
+            // },
             0x65 => {
                 let addr = self.addressing_zero_page(system, self.pc);
                 let data = system.read_u8(addr);

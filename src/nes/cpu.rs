@@ -85,7 +85,7 @@ impl Cpu {
         system.read_u8(self.sp)
     }
     /// 割り込みを処理します
-    pub fn do_interrupt(&mut self, system: &mut System, irq_type: Interrupt) {
+    pub fn interrupt(&mut self, system: &mut System, irq_type: Interrupt) {
         let is_nested_interrupt = self.read_interrupt_flag();
         // RESET, NMI以外は多重割り込みを許容しない
         if is_nested_interrupt && (irq_type == Interrupt::IRQ) || (irq_type == Interrupt::BRK) {

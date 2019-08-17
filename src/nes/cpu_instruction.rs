@@ -2,7 +2,6 @@ use super::cpu::*;
 use super::system::System;
 use super::interface::{SystemBus, EmulateControl};
 
-
 /// Instruction Implementation
 /// http://obelisk.me.uk/6502/reference.html
 impl Cpu {
@@ -106,7 +105,7 @@ impl Cpu {
     /// force interrupt
     pub fn inst_brk(&mut self, system: &mut System) {
         self.write_break_flag(true);
-        self.do_interrupt(system, Interrupt::BRK);
+        self.interrupt(system, Interrupt::BRK);
     }
     /// branch if overflow clear
     pub fn inst_bvc(&mut self, arg: u8) {

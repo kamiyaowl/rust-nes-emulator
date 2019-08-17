@@ -6,7 +6,7 @@ use super::interface::{SystemBus, EmulateControl};
 /// Accumulatorとimplicitは実装の必要なし
 impl Cpu {
     /// #v 即値をそのまま帰す
-    pub fn addressing_immediate(&self, base_addr: u16)-> u16 {
+    pub fn addressing_immediate(&self, _system: &System, base_addr: u16)-> u16 {
         base_addr
     }
     /// a
