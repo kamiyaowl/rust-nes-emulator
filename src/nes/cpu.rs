@@ -1,3 +1,4 @@
+use super::system::System;
 use super::interface::{SystemBus, EmulateControl};
 
 const NMI_READ_LOWER:   u16 = 0xfffa;
@@ -69,7 +70,7 @@ impl Cpu {
         self.pc = self.pc + incr;
     }
     /// Stack Push操作を行います
-    pub fn stack_push(&mut self, system: &mut impl SystemBus, data: u8) {
+    pub fn stack_push(&mut self, system: &mut System, data: u8) {
         // data store
         system.write_u8(self.sp, data);
         // decrement
@@ -77,14 +78,14 @@ impl Cpu {
     }
 
     /// Stack Pop操作を行います
-    pub fn stack_pop(&mut self, system: & impl SystemBus) -> u8 {
+    pub fn stack_pop(&mut self, system: &System) -> u8 {
         // increment
         self.sp = self.sp + 1;
         // data fetch
         system.read_u8(self.sp)
     }
     /// 割り込みを処理します
-    pub fn interrupt(&mut self, system: &mut impl SystemBus, irq_type: Interrupt) {
+    pub fn interrupt(&mut self, system: &mut System, irq_type: Interrupt) {
         let is_nested_interrupt = self.read_interrupt_flag();
         // RESET, NMI以外は多重割り込みを許容しない
         if is_nested_interrupt && (irq_type == Interrupt::IRQ) || (irq_type == Interrupt::BRK) {

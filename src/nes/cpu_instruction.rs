@@ -1,4 +1,5 @@
 use super::cpu::*;
+use super::system::System;
 use super::interface::{SystemBus};
 
 /// Instruction Implementation
@@ -44,7 +45,7 @@ impl Cpu {
         self.a = result;
     }
     /// arithmetic shift left
-    pub fn inst_asl(&mut self, system: &mut impl SystemBus, dst_addr: u16, arg: u8) {
+    pub fn inst_asl(&mut self, system: &mut System, dst_addr: u16, arg: u8) {
         let (result, is_carry) = arg.overflowing_shl(1);
 
         let is_zero     = result == 0;
@@ -102,7 +103,7 @@ impl Cpu {
         }
     }
     /// force interrupt
-    pub fn inst_brk(&mut self, system: &mut impl SystemBus) {
+    pub fn inst_brk(&mut self, system: &mut System) {
         self.write_break_flag(true);
         self.interrupt(system, Interrupt::BRK);
     }
@@ -168,7 +169,7 @@ impl Cpu {
         self.write_negative_flag(is_negative);
     }
     /// decrement memory
-    pub fn inst_dec(&mut self, system: &mut impl SystemBus, dst_addr: u16, arg: u8) {
+    pub fn inst_dec(&mut self, system: &mut System, dst_addr: u16, arg: u8) {
         let result = arg.wrapping_sub(1);
 
         let is_zero     = result == 0;
@@ -212,7 +213,7 @@ impl Cpu {
         self.a = result;
     }
     /// increment memory
-    pub fn inst_inc(&mut self, system: &mut impl SystemBus, dst_addr: u16, arg: u8) {
+    pub fn inst_inc(&mut self, system: &mut System, dst_addr: u16, arg: u8) {
         let result = arg.wrapping_add(1);
 
         let is_zero     = result == 0;
@@ -252,7 +253,7 @@ impl Cpu {
     /// jump to subroutine
     /// `dst_addr` - Addressing Absoluteで指定されたJump先Address
     /// `opcode_addr` - JSR命令が格納されていたアドレス
-    pub fn inst_jsr(&mut self, system: &mut impl SystemBus, dst_addr: u16, opcode_addr: u16) {
+    pub fn inst_jsr(&mut self, system: &mut System, dst_addr: u16, opcode_addr: u16) {
         let ret_addr = opcode_addr + 2;
         // pushはUpper, Lower
         self.stack_push(system, (ret_addr >>   8) as u8);
@@ -300,7 +301,7 @@ impl Cpu {
         self.a = result;
     }
     /// logical shift right
-    pub fn inst_lsr(&mut self, system: &mut impl SystemBus, dst_addr: u16, arg: u8) {
+    pub fn inst_lsr(&mut self, system: &mut System, dst_addr: u16, arg: u8) {
         let result = arg.wrapping_shr(1);
 
         let is_carry    = (arg    & 0x01) == 0x01;
@@ -324,15 +325,15 @@ impl Cpu {
         self.a = result;
     }
     /// push accumulator
-    pub fn inst_pha(&mut self, system: &mut impl SystemBus) {
+    pub fn inst_pha(&mut self, system: &mut System) {
         self.stack_push(system, self.a);
     }
     /// push processor status
-    pub fn inst_php(&mut self, system: &mut impl SystemBus) {
+    pub fn inst_php(&mut self, system: &mut System) {
         self.stack_push(system, self.p);
     }
     /// pull accumulator
-    pub fn inst_pla(&mut self, system: &mut impl SystemBus) {
+    pub fn inst_pla(&mut self, system: &mut System) {
         let result = self.stack_pop(system);
 
         let is_zero     = result == 0;
@@ -343,7 +344,7 @@ impl Cpu {
         self.a = result;
     }
     /// pull processor status
-    pub fn inst_plp(&mut self, system: &mut impl SystemBus) {
+    pub fn inst_plp(&mut self, system: &mut System) {
         self.p = self.stack_pop(system);
     }
     /// rorate left(Accumulator)
@@ -360,7 +361,7 @@ impl Cpu {
         self.a = result;
     }
     /// rorate left
-    pub fn inst_rol(&mut self, system: &mut impl SystemBus, dst_addr: u16, arg: u8) {
+    pub fn inst_rol(&mut self, system: &mut System, dst_addr: u16, arg: u8) {
         let result = arg.wrapping_shl(1) | (if self.read_carry_flag() { 0x01 } else { 0x00 } );
 
         let is_carry    = (arg    & 0x80) == 0x80;
@@ -386,7 +387,7 @@ impl Cpu {
         self.a = result;
     }
     /// rorate right
-    pub fn inst_ror(&mut self, system: &mut impl SystemBus, dst_addr: u16, arg: u8) {
+    pub fn inst_ror(&mut self, system: &mut System, dst_addr: u16, arg: u8) {
         let result = arg.wrapping_shr(1) | (if self.read_carry_flag() { 0x80 } else { 0x00 } );
 
         let is_carry    = (arg & 0x01) == 0x01;
@@ -399,14 +400,14 @@ impl Cpu {
         system.write_u8(dst_addr, result);
     }
     /// return from interuppt
-    pub fn inst_rti(&mut self, system: &mut impl SystemBus) {
+    pub fn inst_rti(&mut self, system: &mut System) {
         self.p = self.stack_pop(system);
         let pc_lower = self.stack_pop(system);
         let pc_upper = self.stack_pop(system);
         self.pc = ((pc_upper as u16) << 8) | (pc_lower as u16);
     }
     /// return from subroutine
-    pub fn inst_rts(&mut self, system: &mut impl SystemBus) {
+    pub fn inst_rts(&mut self, system: &mut System) {
         let pc_lower = self.stack_pop(system);
         let pc_upper = self.stack_pop(system);
         self.pc = (((pc_upper as u16) << 8) | (pc_lower as u16)) + 1;
@@ -441,15 +442,15 @@ impl Cpu {
         self.write_interrupt_flag(true);
     }
     /// store accumulator
-    pub fn inst_sta(&self, system: &mut impl SystemBus, dst_addr: u16) {
+    pub fn inst_sta(&self, system: &mut System, dst_addr: u16) {
         system.write_u8(dst_addr, self.a);
     }
     /// store x register
-    pub fn inst_stx(&self, system: &mut impl SystemBus, dst_addr: u16) {
+    pub fn inst_stx(&self, system: &mut System, dst_addr: u16) {
         system.write_u8(dst_addr, self.x);
     }
     /// store y register
-    pub fn inst_sty(&self, system: &mut impl SystemBus, dst_addr: u16) {
+    pub fn inst_sty(&self, system: &mut System, dst_addr: u16) {
         system.write_u8(dst_addr, self.y);
     }
     /// transfer accumulator to x
