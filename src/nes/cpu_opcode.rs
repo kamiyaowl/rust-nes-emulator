@@ -746,32 +746,301 @@ impl Cpu {
                 |_addr, data| self.inst_ora(data)
             },
             /**************** PHA ****************/
-            /**************** PHP ****************/
-            /**************** PLA ****************/
-            /**************** PLP ****************/
-            /**************** ROL ****************/
-            /**************** ROR ****************/
-            /**************** RTI ****************/
-            /**************** RTS ****************/
-            /**************** SBC ****************/
-            /**************** SEC ****************/
-            /**************** SED ****************/
-            /**************** SEI ****************/
-            /**************** STA ****************/
-            /**************** STX ****************/
-            /**************** STY ****************/
-            /**************** TAX ****************/
-            /**************** TAY ****************/
-            /**************** TSX ****************/
-            /**************** TXA ****************/
-            /**************** TXS ****************/
-            /**************** TYA ****************/
-
-
             {
-                "Dummy", opcode => 0xff, pc_incr => 1, cycle => 1,
+                "PHA implied",
+                opcode => 0x48, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_pha(system)
+            },
+            /**************** PHP ****************/
+            {
+                "PHP implied",
+                opcode => 0x08, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_php(system)
+            },
+            /**************** PLA ****************/
+            {
+                "PLA implied",
+                opcode => 0x68, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_pla(system)
+            },
+            /**************** PLP ****************/
+            {
+                "PLP implied",
+                opcode => 0x28, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_plp(system)
+            },
+            /**************** ROL ****************/
+            {
+                "ROL accumulator",
+                opcode => 0x2a, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_rol_a()
+            },
+            {
+                "ROL zero page",
+                opcode => 0x26, pc_incr => 1, cycle => 5, 
+                || self.addressing_zero_page(system, self.pc),
+                |addr, data| self.inst_rol(system, addr, data)
+            },
+            {
+                "ROL zero page x",
+                opcode => 0x36, pc_incr => 1, cycle => 6, 
+                || self.addressing_zero_page_x(system, self.pc),
+                |addr, data| self.inst_rol(system, addr, data)
+            },
+            {
+                "ROL absolute",
+                opcode => 0x2e, pc_incr => 2, cycle => 6, 
+                || self.addressing_absolute(system, self.pc),
+                |addr, data| self.inst_rol(system, addr, data)
+            },
+            {
+                "ROL absolute x",
+                opcode => 0x3e, pc_incr => 2, cycle => 7, 
+                || self.addressing_absolute_x(system, self.pc),
+                |addr, data| self.inst_rol(system, addr, data)
+            },
+            /**************** ROR ****************/
+            {
+                "ROR accumulator",
+                opcode => 0x6a, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_ror_a()
+            },
+            {
+                "ROR zero page",
+                opcode => 0x66, pc_incr => 1, cycle => 5, 
+                || self.addressing_zero_page(system, self.pc),
+                |addr, data| self.inst_ror(system, addr, data)
+            },
+            {
+                "ROR zero page x",
+                opcode => 0x76, pc_incr => 1, cycle => 6, 
+                || self.addressing_zero_page_x(system, self.pc),
+                |addr, data| self.inst_ror(system, addr, data)
+            },
+            {
+                "ROR absolute",
+                opcode => 0x6e, pc_incr => 2, cycle => 6, 
+                || self.addressing_absolute(system, self.pc),
+                |addr, data| self.inst_ror(system, addr, data)
+            },
+            {
+                "ROR absolute x",
+                opcode => 0x7e, pc_incr => 2, cycle => 7, 
+                || self.addressing_absolute_x(system, self.pc),
+                |addr, data| self.inst_ror(system, addr, data)
+            },
+            /**************** RTI ****************/
+            {
+                "RTI implied",
+                opcode => 0x40, pc_incr => 0, cycle => 6, 
+                || 0,
+                |_addr, _data| self.inst_rti(system)
+            },
+            /**************** RTS ****************/
+            {
+                "RTS implied",
+                opcode => 0x60, pc_incr => 0, cycle => 6, 
+                || 0,
+                |_addr, _data| self.inst_rti(system)
+            },
+            /**************** SBC ****************/
+            {
+                "SBC imm",
+                opcode => 0xe9, pc_incr => 1, cycle => 2, 
                 || self.addressing_immediate(system, self.pc),
-                |addr, data| println!("Hello macro! addr:{:04x} data:{:02x}", addr, data)
+                |_addr, data| self.inst_sbc(data)
+            },
+            {
+                "SBC zero page", 
+                opcode => 0xe5, pc_incr => 1, cycle => 3, 
+                || self.addressing_zero_page(system, self.pc),
+                |_addr, data| self.inst_sbc(data)
+            },
+            {
+                "SBC zero page x", 
+                opcode => 0xf5, pc_incr => 1, cycle => 4, 
+                || self.addressing_zero_page_x(system, self.pc),
+                |_addr, data| self.inst_sbc(data)
+            },
+            {
+                "SBC absolute", 
+                opcode => 0xed, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute(system, self.pc),
+                |_addr, data| self.inst_sbc(data)
+            },
+            {
+                "SBC absolute x", 
+                opcode => 0xfd, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute_x(system, self.pc),
+                |_addr, data| self.inst_sbc(data)
+            },
+            {
+                "SBC absolute y", 
+                opcode => 0xf9, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute_y(system, self.pc),
+                |_addr, data| self.inst_sbc(data)
+            },
+            {
+                "SBC indirect x", 
+                opcode => 0xe1, pc_incr => 1, cycle => 6, 
+                || self.addressing_indirect_x(system, self.pc),
+                |_addr, data| self.inst_sbc(data)
+            },
+            {
+                "SBC indirect y", 
+                opcode => 0xf1, pc_incr => 1, cycle => 5, 
+                || self.addressing_indirect_y(system, self.pc),
+                |_addr, data| self.inst_sbc(data)
+            },
+            /**************** SEC ****************/
+            {
+                "SEC implied",
+                opcode => 0x38, pc_incr => 0, cycle => 6, 
+                || 0,
+                |_addr, _data| self.inst_sec()
+            },
+            /**************** SED ****************/
+            {
+                "SED implied",
+                opcode => 0xf8, pc_incr => 0, cycle => 6, 
+                || 0,
+                |_addr, _data| self.inst_sed()
+            },
+            /**************** SEI ****************/
+            {
+                "SEI implied",
+                opcode => 0x78, pc_incr => 0, cycle => 6, 
+                || 0,
+                |_addr, _data| self.inst_sei()
+            },
+            /**************** STA ****************/
+            {
+                "STA zero page", 
+                opcode => 0x85, pc_incr => 1, cycle => 3, 
+                || self.addressing_zero_page(system, self.pc),
+                |addr, _data| self.inst_sta(system, addr)
+            },
+            {
+                "STA zero page x", 
+                opcode => 0x95, pc_incr => 1, cycle => 4, 
+                || self.addressing_zero_page_x(system, self.pc),
+                |addr, _data| self.inst_sta(system, addr)
+            },
+            {
+                "STA absolute", 
+                opcode => 0x8d, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute(system, self.pc),
+                |addr, _data| self.inst_sta(system, addr)
+            },
+            {
+                "STA absolute x", 
+                opcode => 0x9d, pc_incr => 2, cycle => 5, 
+                || self.addressing_absolute_x(system, self.pc),
+                |addr, _data| self.inst_sta(system, addr)
+            },
+            {
+                "STA absolute y", 
+                opcode => 0x99, pc_incr => 2, cycle => 5, 
+                || self.addressing_absolute_y(system, self.pc),
+                |addr, _data| self.inst_sta(system, addr)
+            },
+            {
+                "STA indirect x", 
+                opcode => 0x81, pc_incr => 1, cycle => 6, 
+                || self.addressing_indirect_x(system, self.pc),
+                |addr, _data| self.inst_sta(system, addr)
+            },
+            {
+                "STA indirect y", 
+                opcode => 0x91, pc_incr => 1, cycle => 6,
+                || self.addressing_indirect_y(system, self.pc),
+                |addr, _data| self.inst_sta(system, addr)
+            },
+            /**************** STX ****************/
+            {
+                "STX zero page", 
+                opcode => 0x86, pc_incr => 1, cycle => 3, 
+                || self.addressing_zero_page(system, self.pc),
+                |addr, _data| self.inst_stx(system, addr)
+            },
+            {
+                "STX zero page y", 
+                opcode => 0x96, pc_incr => 1, cycle => 4, 
+                || self.addressing_zero_page_y(system, self.pc),
+                |addr, _data| self.inst_stx(system, addr)
+            },
+            {
+                "STX absolute", 
+                opcode => 0x8e, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute(system, self.pc),
+                |addr, _data| self.inst_stx(system, addr)
+            },
+            /**************** STY ****************/
+            {
+                "STY zero page", 
+                opcode => 0x84, pc_incr => 1, cycle => 3, 
+                || self.addressing_zero_page(system, self.pc),
+                |addr, _data| self.inst_sty(system, addr)
+            },
+            {
+                "STY zero page x", 
+                opcode => 0x94, pc_incr => 1, cycle => 4, 
+                || self.addressing_zero_page_x(system, self.pc),
+                |addr, _data| self.inst_sty(system, addr)
+            },
+            {
+                "STY absolute", 
+                opcode => 0x8c, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute(system, self.pc),
+                |addr, _data| self.inst_sty(system, addr)
+            },
+            /**************** TAX ****************/
+            {
+                "TAX implied",
+                opcode => 0xaa, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_tax()
+            },
+            /**************** TAY ****************/
+            {
+                "TAY implied",
+                opcode => 0xa8, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_tay()
+            },
+            /**************** TSX ****************/
+            {
+                "TSX implied",
+                opcode => 0xba, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_tsx()
+            },
+            /**************** TXA ****************/
+            {
+                "TXA implied",
+                opcode => 0x8a, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_txa()
+            },
+            /**************** TXS ****************/
+            {
+                "TXS implied",
+                opcode => 0x9a, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_txs()
+            },
+            /**************** TYA ****************/
+            {
+                "TYA implied",
+                opcode => 0x98, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_tya()
             }
         )
     }
