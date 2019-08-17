@@ -195,19 +195,67 @@ impl Cpu {
             {
                 "ASL absolute x", 
                 opcode => 0x1e, pc_incr => 2, cycle => 7, 
-                || self.addressing_zero_page(system, self.pc),
+                || self.addressing_absolute_x(system, self.pc),
                 |addr, data| self.inst_asl(system, addr, data)
             },
             /**************** BCC ****************/
+            {
+                "BCC relative", 
+                opcode => 0x90, pc_incr => 1, cycle => 2, 
+                || self.addressing_relative(system, self.pc),
+                |_addr, data| self.inst_bcc(data)
+            },
             /**************** BCS ****************/
+            {
+                "BCS relative", 
+                opcode => 0xb0, pc_incr => 1, cycle => 2, 
+                || self.addressing_relative(system, self.pc),
+                |_addr, data| self.inst_bcs(data)
+            },
             /**************** BEQ ****************/
+            {
+                "BEQ relative", 
+                opcode => 0xf0, pc_incr => 1, cycle => 2, 
+                || self.addressing_relative(system, self.pc),
+                |_addr, data| self.inst_beq(data)
+            },
             /**************** BIT ****************/
             /**************** BMI ****************/
+            {
+                "BMI relative", 
+                opcode => 0x30, pc_incr => 1, cycle => 2, 
+                || self.addressing_relative(system, self.pc),
+                |_addr, data| self.inst_bmi(data)
+            },
             /**************** BNE ****************/
+            {
+                "BNE relative", 
+                opcode => 0xd0, pc_incr => 1, cycle => 2, 
+                || self.addressing_relative(system, self.pc),
+                |_addr, data| self.inst_bne(data)
+            },
             /**************** BPL ****************/
+            {
+                "BPL relative", 
+                opcode => 0x10, pc_incr => 1, cycle => 2, 
+                || self.addressing_relative(system, self.pc),
+                |_addr, data| self.inst_bpl(data)
+            },
             /**************** BRK ****************/
             /**************** BVC ****************/
+            {
+                "BVC relative", 
+                opcode => 0x50, pc_incr => 1, cycle => 2, 
+                || self.addressing_relative(system, self.pc),
+                |_addr, data| self.inst_bvc(data)
+            },
             /**************** BVS ****************/
+            {
+                "BVS relative", 
+                opcode => 0x70, pc_incr => 1, cycle => 2, 
+                || self.addressing_relative(system, self.pc),
+                |_addr, data| self.inst_bvs(data)
+            },
             /**************** CLC ****************/
             /**************** CLD ****************/
             /**************** CLI ****************/
