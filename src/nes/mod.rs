@@ -1,4 +1,4 @@
-mod system;
+pub mod system;
 pub mod interface;
 
 pub mod apu;

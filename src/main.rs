@@ -4,11 +4,10 @@ extern crate rust_nes_emulator;
 use nes::*;
 use nes::interface::*;
 
-/* for desktop simulation driver */
-// TODO: ある程度完成したらDesktopで動かす部分は別リポジトリに移動して、本リポジトリをライブラリとして参照する
-/* for desktop simulation driver */
+use std::fs::File;
+use std::io::Read;
 
-fn main() {
+fn main() -> Result<(), Box<std::error::Error>>  {
     let mut cpu = Cpu {
         a: 0, x: 0, y: 0, pc: 0, sp: 0, p: 0, 
     };
@@ -30,6 +29,18 @@ fn main() {
         },
     };
     sys.reset();
+
+    /* for desktop simulation driver */
+    // nesファイルの読み込み
+    let mut file = File::open("roms/hello.nes")?;
+    let mut buf: Vec<u8> = Vec::new();
+    let _ = file.read_to_end(&mut buf)?;
+    
+    println!("binary size:{}", buf.len());
+
+    // system memoryに展開
+    sys.from_ines_binary(|addr: usize| buf[addr]);
+
     cpu.reset();
     let _cycles = cpu.step(&mut sys);
 
@@ -37,4 +48,7 @@ fn main() {
     // sys.eram.store(|addr, data| {
     //     println!("addr:{:x}, data:{:x}", addr, data);
     // });
+    // sys.eram.restore(|addr| buf[addr] );
+
+    Ok(())
 }

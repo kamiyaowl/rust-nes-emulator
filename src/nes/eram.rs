@@ -21,12 +21,12 @@ impl EmulateControl for ExtendedRam {
     fn reset(&mut self){
         self.ram = [0; SIZE];
     }
-    fn store(&self, read_callback: fn(usize, u8)){
+    fn store(&self, read_callback: impl Fn(usize, u8)){
         for i in 0..self.ram.len() {
             read_callback(i, self.ram[i]);
         }
     }
-    fn restore(&mut self, write_callback: fn(usize) -> u8){
+    fn restore(&mut self, write_callback: impl Fn(usize) -> u8){
         for i in 0..self.ram.len() {
             let data = write_callback(i);
              self.ram[i] = data;

@@ -27,6 +27,13 @@ pub struct System {
     pub prom: ProgramRom,
 }
 
+impl System {
+    /// inesファイルから読み出してメモリ上に展開します
+    /// 組み込み環境でRAM展開されていなくても利用できるように、closure経由で読み出します
+    pub fn from_ines_binary(&mut self, read_callback: impl Fn(usize) -> u8) {
+
+    }
+}
 impl SystemBus for System {
     fn read_u8(&self, addr: u16) -> u8 {
         if addr < 0x2000 {
@@ -80,8 +87,8 @@ impl EmulateControl for System {
         self.eram.reset();
         self.prom.reset();
     }
-    fn store(&self, _read_callback: fn(usize, u8)){
+    fn store(&self, _read_callback: impl Fn(usize, u8)){
     }
-    fn restore(&mut self, _write_callback: fn(usize) -> u8){
+    fn restore(&mut self, _write_callback: impl Fn(usize) -> u8){
     }
 }

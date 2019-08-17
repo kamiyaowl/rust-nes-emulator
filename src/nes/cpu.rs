@@ -41,7 +41,7 @@ impl EmulateControl for Cpu {
         self.sp = 0x01fd;
         self.p  = 0x34;
     }
-    fn store(&self, read_callback: fn(usize, u8)) {
+    fn store(&self, read_callback: impl Fn(usize, u8)) {
         // レジスタダンプを連番で取得する(little endian)
         read_callback( 0, self.a);
         read_callback( 1, self.x);
@@ -52,7 +52,7 @@ impl EmulateControl for Cpu {
         read_callback( 6, ((self.sp >> 8) & 0xff) as u8);
         read_callback( 7, self.p);
     }
-    fn restore(&mut self, write_callback: fn(usize) -> u8) {
+    fn restore(&mut self, write_callback: impl Fn(usize) -> u8) {
         // store通りに復元してあげる
         self.a  = write_callback(0);
         self.x  = write_callback(1);

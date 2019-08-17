@@ -20,12 +20,12 @@ impl EmulateControl for ExtendedRom {
     fn reset(&mut self){
         self.rom = [0; SIZE];
     }
-    fn store(&self, read_callback: fn(usize, u8)){
+    fn store(&self, read_callback: impl Fn(usize, u8)){
         for i in 0..self.rom.len() {
             read_callback(i, self.rom[i]);
         }
     }
-    fn restore(&mut self, write_callback: fn(usize) -> u8){
+    fn restore(&mut self, write_callback: impl Fn(usize) -> u8){
         for i in 0..self.rom.len() {
             let data = write_callback(i);
              self.rom[i] = data;
