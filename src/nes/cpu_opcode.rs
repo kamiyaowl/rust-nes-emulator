@@ -641,9 +641,9 @@ impl Cpu {
                 |_addr, data| self.inst_ldy(data)
             },
             {
-                "LDY zero page y",
+                "LDY zero page x",
                 opcode => 0xb4, pc_incr => 1, cycle => 4, 
-                || self.addressing_zero_page_y(system, self.pc),
+                || self.addressing_zero_page_x(system, self.pc),
                 |_addr, data| self.inst_ldy(data)
             },
             {
@@ -653,14 +653,98 @@ impl Cpu {
                 |_addr, data| self.inst_ldy(data)
             },
             {
-                "LDY absolute y",
+                "LDY absolute x",
                 opcode => 0xbc, pc_incr => 2, cycle => 4, 
-                || self.addressing_absolute_y(system, self.pc),
+                || self.addressing_absolute_x(system, self.pc),
                 |_addr, data| self.inst_ldy(data)
             },
             /**************** LSR ****************/
+            {
+                "LSR accumulator",
+                opcode => 0x4a, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_lsr_a()
+            },
+            {
+                "LSR zero page",
+                opcode => 0x46, pc_incr => 1, cycle => 5, 
+                || self.addressing_zero_page(system, self.pc),
+                |addr, data| self.inst_lsr(system, addr, data)
+            },
+            {
+                "LSR zero page x",
+                opcode => 0x56, pc_incr => 1, cycle => 6, 
+                || self.addressing_zero_page_x(system, self.pc),
+                |addr, data| self.inst_lsr(system, addr, data)
+            },
+            {
+                "LSR absolute",
+                opcode => 0x4e, pc_incr => 2, cycle => 6, 
+                || self.addressing_absolute(system, self.pc),
+                |addr, data| self.inst_lsr(system, addr, data)
+            },
+            {
+                "LSR absolute x",
+                opcode => 0x5e, pc_incr => 2, cycle => 7, 
+                || self.addressing_absolute_x(system, self.pc),
+                |addr, data| self.inst_lsr(system, addr, data)
+            },
             /**************** NOP ****************/
+            {
+                "NOP implied",
+                opcode => 0xea, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| {}
+            },
             /**************** ORA ****************/
+            {
+                "ORA imm",
+                opcode => 0x09, pc_incr => 1, cycle => 2, 
+                || self.addressing_immediate(system, self.pc),
+                |_addr, data| self.inst_ora(data)
+            },
+            {
+                "ORA zero page", 
+                opcode => 0x05, pc_incr => 1, cycle => 3, 
+                || self.addressing_zero_page(system, self.pc),
+                |_addr, data| self.inst_ora(data)
+            },
+            {
+                "ORA zero page x", 
+                opcode => 0x15, pc_incr => 1, cycle => 4, 
+                || self.addressing_zero_page_x(system, self.pc),
+                |_addr, data| self.inst_ora(data)
+            },
+            {
+                "ORA absolute", 
+                opcode => 0x0d, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute(system, self.pc),
+                |_addr, data| self.inst_ora(data)
+            },
+            {
+                "ORA absolute x", 
+                opcode => 0x1d, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute_x(system, self.pc),
+                |_addr, data| self.inst_ora(data)
+            },
+            {
+                "ORA absolute y", 
+                opcode => 0x19, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute_y(system, self.pc),
+                |_addr, data| self.inst_ora(data)
+            },
+            {
+                "ORA indirect x", 
+                opcode => 0x01, pc_incr => 1, cycle => 6, 
+                || self.addressing_indirect_x(system, self.pc),
+                |_addr, data| self.inst_ora(data)
+            },
+            {
+                "ORA indirect y", 
+                opcode => 0x11, pc_incr => 1, cycle => 5, 
+                || self.addressing_indirect_y(system, self.pc),
+                |_addr, data| self.inst_ora(data)
+            },
             /**************** PHA ****************/
             /**************** PHP ****************/
             /**************** PLA ****************/
