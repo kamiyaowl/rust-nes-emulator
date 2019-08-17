@@ -13,7 +13,7 @@ macro_rules! inst {
     ) => {
         {
             if cfg!(debug_assertions) {
-                println!("[before][#{}] cycle:{} pc_incr:{} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
+                println!("[#{}][before] cycle:{} pc_incr:{} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
             }
             // fetchしない場合(accumulate, implicit)は、pc incrementを0に設定する
             // addressはそのまま供給する
@@ -21,13 +21,20 @@ macro_rules! inst {
                 let addr = $addressing_closure();
                 let data = $system.read_u8(addr);
                 $self.increment_pc($pc_incr);
+
+                if cfg!(debug_assertions) {
+                    println!("[#{}][addressing] addr:{:04x} data:{:02x}", $name, addr, data);
+                }
                 $inst_closure(addr, data);
             } else {
+                if cfg!(debug_assertions) {
+                    println!("[#{}][addressing] skip addressing", $name);
+                }
                 // for implicit, accumulate
                 $inst_closure(0, 0);
             }
             if cfg!(debug_assertions) {
-                println!("[after ][#{}] cycle:{} pc_incr:{} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
+                println!("[#{}][after ] cycle:{} pc_incr:{} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
             }
             $cycle
         }
@@ -409,18 +416,126 @@ impl Cpu {
                 |addr, data| self.inst_dec(system, addr, data)
             },
             {
-                "DEC absolute",
+                "DEC absolute x",
                 opcode => 0xde, pc_incr => 2, cycle => 7, 
                 || self.addressing_absolute_x(system, self.pc),
                 |addr, data| self.inst_dec(system, addr, data)
             },
             /**************** DEX ****************/
+            {
+                "DEX implied",
+                opcode => 0xca, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_dex()
+            },
             /**************** DEY ****************/
+            {
+                "DEY implied",
+                opcode => 0x88, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_dey()
+            },
             /**************** EOR ****************/
+            {
+                "EOR imm",
+                opcode => 0x49, pc_incr => 1, cycle => 2, 
+                || self.addressing_immediate(system, self.pc),
+                |_addr, data| self.inst_eor(data)
+            },
+            {
+                "EOR zero page", 
+                opcode => 0x45, pc_incr => 1, cycle => 3, 
+                || self.addressing_zero_page(system, self.pc),
+                |_addr, data| self.inst_eor(data)
+            },
+            {
+                "EOR zero page x", 
+                opcode => 0x55, pc_incr => 1, cycle => 4, 
+                || self.addressing_zero_page_x(system, self.pc),
+                |_addr, data| self.inst_eor(data)
+            },
+            {
+                "EOR absolute", 
+                opcode => 0x4d, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute(system, self.pc),
+                |_addr, data| self.inst_eor(data)
+            },
+            {
+                "EOR absolute x", 
+                opcode => 0x5d, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute_x(system, self.pc),
+                |_addr, data| self.inst_eor(data)
+            },
+            {
+                "EOR absolute y", 
+                opcode => 0x59, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute_y(system, self.pc),
+                |_addr, data| self.inst_eor(data)
+            },
+            {
+                "EOR indirect x", 
+                opcode => 0x41, pc_incr => 1, cycle => 6, 
+                || self.addressing_indirect_x(system, self.pc),
+                |_addr, data| self.inst_eor(data)
+            },
+            {
+                "EOR indirect y", 
+                opcode => 0x51, pc_incr => 1, cycle => 5, 
+                || self.addressing_indirect_y(system, self.pc),
+                |_addr, data| self.inst_eor(data)
+            },
             /**************** INC ****************/
+            {
+                "INC zero page",
+                opcode => 0xe6, pc_incr => 1, cycle => 5, 
+                || self.addressing_zero_page(system, self.pc),
+                |addr, data| self.inst_inc(system, addr, data)
+            },
+            {
+                "INC zero page x",
+                opcode => 0xf6, pc_incr => 1, cycle => 6, 
+                || self.addressing_zero_page_x(system, self.pc),
+                |addr, data| self.inst_inc(system, addr, data)
+            },
+            {
+                "INC absolute",
+                opcode => 0xee, pc_incr => 2, cycle => 6, 
+                || self.addressing_absolute(system, self.pc),
+                |addr, data| self.inst_inc(system, addr, data)
+            },
+            {
+                "INC absolute x",
+                opcode => 0xfe, pc_incr => 2, cycle => 7, 
+                || self.addressing_absolute_x(system, self.pc),
+                |addr, data| self.inst_inc(system, addr, data)
+            },
             /**************** INX ****************/
+            {
+                "INX implied",
+                opcode => 0xe8, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_inx()
+            },
             /**************** INY ****************/
+            {
+                "INY implied",
+                opcode => 0xc8, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_iny()
+            },
             /**************** JMP ****************/
+            {
+                "JMP absolute",
+                opcode => 0x4c, pc_incr => 2, cycle => 3, 
+                || self.addressing_absolute(system, self.pc),
+                |addr, _data| self.inst_jmp(addr)
+            },
+            {
+                "JMP indirect",
+                opcode => 0x6c, pc_incr => 2, cycle => 5, 
+                || self.addressing_indirect_x(system, self.pc),
+                |addr, _data| self.inst_jmp(addr)
+            },
             /**************** JSR ****************/
             /**************** LDA ****************/
             /**************** LDX ****************/
