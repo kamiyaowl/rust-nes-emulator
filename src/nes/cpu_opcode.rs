@@ -174,6 +174,30 @@ impl Cpu {
                 || 0,
                 |_addr, _data| self.inst_asl_a()
             },
+            {
+                "ASL zero page", 
+                opcode => 0x06, pc_incr => 1, cycle => 5, 
+                || self.addressing_zero_page(system, self.pc),
+                |addr, data| self.inst_asl(system, addr, data)
+            },
+            {
+                "ASL zero page x", 
+                opcode => 0x16, pc_incr => 1, cycle => 6, 
+                || self.addressing_zero_page_x(system, self.pc),
+                |addr, data| self.inst_asl(system, addr, data)
+            },
+            {
+                "ASL absolute", 
+                opcode => 0x0e, pc_incr => 2, cycle => 6, 
+                || self.addressing_absolute(system, self.pc),
+                |addr, data| self.inst_asl(system, addr, data)
+            },
+            {
+                "ASL absolute x", 
+                opcode => 0x1e, pc_incr => 2, cycle => 7, 
+                || self.addressing_zero_page(system, self.pc),
+                |addr, data| self.inst_asl(system, addr, data)
+            },
             /**************** BCC ****************/
             /**************** BCS ****************/
             /**************** BEQ ****************/
