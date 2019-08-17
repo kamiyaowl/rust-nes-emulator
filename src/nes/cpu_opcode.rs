@@ -77,13 +77,13 @@ impl Cpu {
                 |_addr, data| self.inst_adc(data)
             },
             {
-                "ADC zeropage", 
+                "ADC zero page", 
                 opcode => 0x65, pc_incr => 1, cycle => 3, 
                 || self.addressing_zero_page(system, self.pc),
                 |_addr, data| self.inst_adc(data)
             },
             {
-                "ADC zeropage x", 
+                "ADC zero page x", 
                 opcode => 0x75, pc_incr => 1, cycle => 4, 
                 || self.addressing_zero_page_x(system, self.pc),
                 |_addr, data| self.inst_adc(data)
@@ -126,13 +126,13 @@ impl Cpu {
                 |_addr, data| self.inst_and(data)
             },
             {
-                "AND zeropage", 
+                "AND zero page", 
                 opcode => 0x25, pc_incr => 1, cycle => 3, 
                 || self.addressing_zero_page(system, self.pc),
                 |_addr, data| self.inst_and(data)
             },
             {
-                "AND zeropage x", 
+                "AND zero page x", 
                 opcode => 0x35, pc_incr => 1, cycle => 4, 
                 || self.addressing_zero_page_x(system, self.pc),
                 |_addr, data| self.inst_and(data)
@@ -303,8 +303,92 @@ impl Cpu {
                 |_addr, _data| self.inst_clv()
             },
             /**************** CMP ****************/
+            {
+                "CMP imm",
+                opcode => 0xc9, pc_incr => 1, cycle => 2, 
+                || self.addressing_immediate(system, self.pc),
+                |_addr, data| self.inst_cmp(data)
+            },
+            {
+                "CMP zero page", 
+                opcode => 0xc5, pc_incr => 1, cycle => 3, 
+                || self.addressing_zero_page(system, self.pc),
+                |_addr, data| self.inst_cmp(data)
+            },
+            {
+                "CMP zero page x", 
+                opcode => 0xd5, pc_incr => 1, cycle => 4, 
+                || self.addressing_zero_page_x(system, self.pc),
+                |_addr, data| self.inst_cmp(data)
+            },
+            {
+                "CMP absolute", 
+                opcode => 0xcd, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute(system, self.pc),
+                |_addr, data| self.inst_cmp(data)
+            },
+            {
+                "CMP absolute x", 
+                opcode => 0xdd, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute_x(system, self.pc),
+                |_addr, data| self.inst_cmp(data)
+            },
+            {
+                "CMP absolute y", 
+                opcode => 0xd9, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute_y(system, self.pc),
+                |_addr, data| self.inst_cmp(data)
+            },
+            {
+                "CMP indirect x", 
+                opcode => 0xc1, pc_incr => 1, cycle => 6, 
+                || self.addressing_indirect_x(system, self.pc),
+                |_addr, data| self.inst_cmp(data)
+            },
+            {
+                "CMP indirect y", 
+                opcode => 0xd1, pc_incr => 1, cycle => 5, 
+                || self.addressing_indirect_y(system, self.pc),
+                |_addr, data| self.inst_cmp(data)
+            },
             /**************** CPX ****************/
+            {
+                "CMX imm",
+                opcode => 0xe0, pc_incr => 1, cycle => 2, 
+                || self.addressing_immediate(system, self.pc),
+                |_addr, data| self.inst_cpx(data)
+            },
+            {
+                "CMX zero page",
+                opcode => 0xe4, pc_incr => 1, cycle => 3, 
+                || self.addressing_zero_page(system, self.pc),
+                |_addr, data| self.inst_cpx(data)
+            },
+            {
+                "CMX absolute",
+                opcode => 0xec, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute(system, self.pc),
+                |_addr, data| self.inst_cpx(data)
+            },
             /**************** CPY ****************/
+            {
+                "CMX imm",
+                opcode => 0xc0, pc_incr => 1, cycle => 2, 
+                || self.addressing_immediate(system, self.pc),
+                |_addr, data| self.inst_cpy(data)
+            },
+            {
+                "CMX zero page",
+                opcode => 0xc4, pc_incr => 1, cycle => 3, 
+                || self.addressing_zero_page(system, self.pc),
+                |_addr, data| self.inst_cpy(data)
+            },
+            {
+                "CMX absolute",
+                opcode => 0xcc, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute(system, self.pc),
+                |_addr, data| self.inst_cpy(data)
+            },
             /**************** DEC ****************/
             /**************** DEX ****************/
             /**************** DEY ****************/
