@@ -12,16 +12,16 @@ jobs:
       - run:
           name: rustup component add
           command: rustup component add clippy rustfmt
-      # いまはまだformatは気にしない
+      # いまはまだformatもlintも気にしない
       # - run:
       #     name: fmt
       #     command: cargo fmt -- --check
       - run:
           name: build
           command: cargo build
-      - run:
-          name: lint
-          command: cargo clippy -- -D warnings
+      # - run:
+      #     name: lint
+      #     command: cargo clippy -- -D warnings
       - run:
           name: test
           command: cargo test
