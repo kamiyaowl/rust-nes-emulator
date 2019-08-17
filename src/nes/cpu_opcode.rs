@@ -1,5 +1,4 @@
 use super::cpu::*;
-use super::system::System;
 use super::interface::{SystemBus};
 
 /// inst! macro
@@ -69,7 +68,7 @@ macro_rules! inst {
 impl Cpu {
     /// 1命令実行します
     /// return: かかったclock cycle count`
-    pub fn step(&mut self, system: &mut System) -> u8 {
+    pub fn step(&mut self, system: &mut impl SystemBus) -> u8 {
         let opcode = system.read_u8(self.pc);
         self.increment_pc(1);
         if cfg!(debug_assertions) {
