@@ -2,6 +2,8 @@ use super::cpu::*;
 use super::system::System;
 use super::interface::{SystemBus, EmulateControl};
 
+/// inst! macro
+/// 命令のアドレッシング、フェッチ、pcのincrement、実行、クロックサイクルの返却をまとめて行います
 macro_rules! inst {
     (
         $self:expr, $system:expr,
@@ -23,7 +25,22 @@ macro_rules! inst {
             $cycle
         }
     };
+    (
+        $self:expr, $system:expr,
+        [
+            $(
+                $opcode => {
+                    $name:expr, cycle => $cycle:expr, pc_incr => $pc_incr:expr,
+                    $adressing_closure:expr,
+                    $inst_closure:expr
+                }
+            ),*
+        ]
+    ) => ()
+
 }
+
+
 
 /// Decode and Run
 impl Cpu {
