@@ -89,11 +89,17 @@ impl Cpu {
         let is_nested_interrupt = self.read_interrupt_flag();
         // RESET, NMI以外は多重割り込みを許容しない
         if is_nested_interrupt && (irq_type == Interrupt::IRQ) || (irq_type == Interrupt::BRK) {
+            if cfg!(debug_assertions) {
+                println!("[interrupt] skip nested interrupt");
+            }
             return;
         }
         // 割り込み種類別の処理
         match irq_type {
             Interrupt::NMI   => {
+                if cfg!(debug_assertions) {
+                    println!("[interrupt] NMI interrupt");
+                }
                 self.write_break_flag(false);
                 // PCのUpper, Lower, Status RegisterをStackに格納する
                 self.stack_push(system, (self.pc >> 8) as u8);
@@ -102,9 +108,15 @@ impl Cpu {
                 self.write_interrupt_flag(true);
             },
             Interrupt::RESET => {
+                if cfg!(debug_assertions) {
+                    println!("[interrupt] RESET interrupt");
+                }
                 self.write_interrupt_flag(true);
             },
             Interrupt::IRQ   => {
+                if cfg!(debug_assertions) {
+                    println!("[interrupt] IRQ interrupt");
+                }
                 self.write_break_flag(false);
                 // PCのUpper, Lower, Status RegisterをStackに格納する
                 self.stack_push(system, (self.pc >> 8) as u8);
@@ -113,6 +125,9 @@ impl Cpu {
                 self.write_interrupt_flag(true);
             },
             Interrupt::BRK   => {
+                if cfg!(debug_assertions) {
+                    println!("[interrupt] BRK interrupt");
+                }
                 self.write_break_flag(true);
                 self.pc = self.pc + 1;
                 // PCのUpper, Lower, Status RegisterをStackに格納する

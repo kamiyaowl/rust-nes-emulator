@@ -13,7 +13,7 @@ macro_rules! inst {
     ) => {
         {
             if cfg!(debug_assertions) {
-                println!("[before][#{}] cycle:{} pc_incr:{} pc{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
+                println!("[before][#{}] cycle:{} pc_incr:{} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
             }
             // fetchしない場合(accumulate, implicit)は、pc incrementを0に設定する
             // addressはそのまま供給する
@@ -27,7 +27,7 @@ macro_rules! inst {
                 $inst_closure(0, 0);
             }
             if cfg!(debug_assertions) {
-                println!("[after][#{}] cycle:{} pc_incr:{} pc{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
+                println!("[after ][#{}] cycle:{} pc_incr:{} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
             }
             $cycle
         }
@@ -220,6 +220,18 @@ impl Cpu {
                 |_addr, data| self.inst_beq(data)
             },
             /**************** BIT ****************/
+            {
+                "BIT zero page", 
+                opcode => 0x24, pc_incr => 1, cycle => 3, 
+                || self.addressing_zero_page(system, self.pc),
+                |_addr, data| self.inst_bit(data)
+            },
+            {
+                "BIT absolute", 
+                opcode => 0x2c, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute(system, self.pc),
+                |_addr, data| self.inst_bit(data)
+            },
             /**************** BMI ****************/
             {
                 "BMI relative", 
@@ -242,6 +254,12 @@ impl Cpu {
                 |_addr, data| self.inst_bpl(data)
             },
             /**************** BRK ****************/
+            {
+                "BRK implied", 
+                opcode => 0x00, pc_incr => 0, cycle => 7, 
+                || 0,
+                |_addr, _data| self.inst_brk(system)
+            },
             /**************** BVC ****************/
             {
                 "BVC relative", 
@@ -257,9 +275,33 @@ impl Cpu {
                 |_addr, data| self.inst_bvs(data)
             },
             /**************** CLC ****************/
+            {
+                "CLC implied", 
+                opcode => 0x18, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_clc()
+            },
             /**************** CLD ****************/
+            {
+                "CLD implied", 
+                opcode => 0xd8, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_cld()
+            },
             /**************** CLI ****************/
+            {
+                "CLI implied", 
+                opcode => 0x58, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_cli()
+            },
             /**************** CLV ****************/
+            {
+                "CLV implied", 
+                opcode => 0xb8, pc_incr => 0, cycle => 2, 
+                || 0,
+                |_addr, _data| self.inst_clv()
+            },
             /**************** CMP ****************/
             /**************** CPX ****************/
             /**************** CPY ****************/
@@ -302,7 +344,7 @@ impl Cpu {
 
 
             {
-                "Dummy", opcode => 0x00, pc_incr => 1, cycle => 1,
+                "Dummy", opcode => 0xff, pc_incr => 1, cycle => 1,
                 || self.addressing_immediate(system, self.pc),
                 |addr, data| println!("Hello macro! addr:{:04x} data:{:02x}", addr, data)
             }
