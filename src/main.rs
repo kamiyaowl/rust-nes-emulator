@@ -31,7 +31,7 @@ fn main() {
     };
     sys.reset();
     cpu.reset();
-    let cycles = cpu.step(&mut sys);
+    let _cycles = cpu.step(&mut sys);
 
     // test
     // sys.eram.store(|addr, data| {

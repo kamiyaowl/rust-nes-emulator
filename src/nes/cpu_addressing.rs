@@ -1,6 +1,6 @@
 use super::cpu::*;
 use super::system::System;
-use super::interface::{SystemBus, EmulateControl};
+use super::interface::{SystemBus};
 
 /// Fetch and Adressing Implementation
 /// Accumulatorとimplicitは実装の必要なし
@@ -40,21 +40,21 @@ impl Cpu {
         addr
     }
     /// d,x
-    pub fn addressing_zero_page_indexed_x(&self, system: &System, base_addr: u16)-> u16 {
+    pub fn addressing_zero_page_x(&self, system: &System, base_addr: u16)-> u16 {
         let lower_addr = base_addr;
         let lower = system.read_u8(lower_addr);
         let addr  = (lower as u16).wrapping_add(self.x as u16);
         addr
     }
     /// d,y
-    pub fn addressing_zero_page_indexed_y(&self, system: &System, base_addr: u16)-> u16 {
+    pub fn addressing_zero_page_y(&self, system: &System, base_addr: u16)-> u16 {
         let lower_addr = base_addr;
         let lower = system.read_u8(lower_addr);
         let addr  = (lower as u16).wrapping_add(self.y as u16);
         addr
     }
     /// a,x
-    pub fn addressing_absolute_indexed_x(&self, system: &System, base_addr: u16)-> u16 {
+    pub fn addressing_absolute_x(&self, system: &System, base_addr: u16)-> u16 {
         let lower_addr = base_addr;
         let upper_addr = base_addr + 1;
         let lower = system.read_u8(lower_addr);
@@ -63,7 +63,7 @@ impl Cpu {
         addr
     }
     /// a,y
-    pub fn addressing_absolute_indexed_y(&self, system: &System, base_addr: u16)-> u16 {
+    pub fn addressing_absolute_y(&self, system: &System, base_addr: u16)-> u16 {
         let lower_addr = base_addr;
         let upper_addr = base_addr + 1;
         let lower = system.read_u8(lower_addr);
@@ -82,7 +82,8 @@ impl Cpu {
         addr
     }
     /// (d,x)
-    pub fn addressing_indexed_indirect(&self, system: &System, base_addr: u16)-> u16 {
+    /// Indexed Indirect
+    pub fn addressing_indirect_x(&self, system: &System, base_addr: u16)-> u16 {
         let addr1 = base_addr;
         let data1 = system.read_u8(addr1);
         let addr2 = (data1 as u16).wrapping_add(self.x as u16);
@@ -92,7 +93,8 @@ impl Cpu {
         addr3
     }
     /// (d),y
-    pub fn addressing_indirect_indexed(&self, system: &System, base_addr: u16)-> u16 {
+    /// Indirect Indexed
+    pub fn addressing_indirect_y(&self, system: &System, base_addr: u16)-> u16 {
         let addr1_lower = base_addr;
         let addr1_upper = self.pc.wrapping_add(2);
         let data1_lower = system.read_u8(addr1_lower);

@@ -1,6 +1,6 @@
 use super::cpu::*;
 use super::system::System;
-use super::interface::{SystemBus, EmulateControl};
+use super::interface::{SystemBus};
 
 /// Instruction Implementation
 /// http://obelisk.me.uk/6502/reference.html
@@ -180,7 +180,7 @@ impl Cpu {
         result
     }
     /// decrement x register
-    pub fn inst_dex(&mut self, arg: u8) {
+    pub fn inst_dex(&mut self) {
         let result = self.x.wrapping_sub(1);
 
         let is_zero     = result == 0;
@@ -191,7 +191,7 @@ impl Cpu {
         self.x = result;
     }
     /// decrement y register
-    pub fn inst_dey(&mut self, arg: u8) {
+    pub fn inst_dey(&mut self) {
         let result = self.y.wrapping_sub(1);
 
         let is_zero     = result == 0;
@@ -224,7 +224,7 @@ impl Cpu {
         system.write_u8(dst_addr, result);
     }
     /// increment x register
-    pub fn inst_inx(&mut self, arg: u8) {
+    pub fn inst_inx(&mut self) {
         let result = self.x.wrapping_add(1);
 
         let is_zero     = result == 0;
@@ -235,7 +235,7 @@ impl Cpu {
         self.x = result;
     }
     /// increment y register
-    pub fn inst_iny(&mut self, arg: u8) {
+    pub fn inst_iny(&mut self) {
         let result = self.y.wrapping_add(1);
 
         let is_zero     = result == 0;

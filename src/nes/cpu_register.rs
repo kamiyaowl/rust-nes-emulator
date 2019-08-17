@@ -1,6 +1,4 @@
 use super::cpu::*;
-use super::system::System;
-use super::interface::{SystemBus, EmulateControl};
 
 /// Processor Status Flag Implementation
 impl Cpu {
