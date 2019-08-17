@@ -169,7 +169,7 @@ impl Cpu {
         self.write_negative_flag(is_negative);
     }
     /// decrement memory
-    pub fn inst_dec(&mut self, arg: u8) -> u8 {
+    pub fn inst_dec(&mut self, system: &mut System, dst_addr: u16, arg: u8) {
         let result = arg.wrapping_sub(1);
 
         let is_zero     = result == 0;
@@ -177,7 +177,7 @@ impl Cpu {
 
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
-        result
+        system.write_u8(dst_addr, result);
     }
     /// decrement x register
     pub fn inst_dex(&mut self) {

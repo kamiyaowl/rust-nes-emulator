@@ -390,6 +390,30 @@ impl Cpu {
                 |_addr, data| self.inst_cpy(data)
             },
             /**************** DEC ****************/
+            {
+                "DEC zero page",
+                opcode => 0xc6, pc_incr => 1, cycle => 5, 
+                || self.addressing_zero_page(system, self.pc),
+                |addr, data| self.inst_dec(system, addr, data)
+            },
+            {
+                "DEC zero page x",
+                opcode => 0xd6, pc_incr => 1, cycle => 6, 
+                || self.addressing_zero_page_x(system, self.pc),
+                |addr, data| self.inst_dec(system, addr, data)
+            },
+            {
+                "DEC absolute",
+                opcode => 0xce, pc_incr => 2, cycle => 6, 
+                || self.addressing_absolute(system, self.pc),
+                |addr, data| self.inst_dec(system, addr, data)
+            },
+            {
+                "DEC absolute",
+                opcode => 0xde, pc_incr => 2, cycle => 7, 
+                || self.addressing_absolute_x(system, self.pc),
+                |addr, data| self.inst_dec(system, addr, data)
+            },
             /**************** DEX ****************/
             /**************** DEY ****************/
             /**************** EOR ****************/
