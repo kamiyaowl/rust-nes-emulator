@@ -36,10 +36,9 @@ fn main() -> Result<(), Box<std::error::Error>>  {
     let mut buf: Vec<u8> = Vec::new();
     let _ = file.read_to_end(&mut buf)?;
 
-    println!("binary size:{}", buf.len());
-
     // system memoryに展開
-    sys.from_ines_binary(|addr: usize| buf[addr]);
+    let load_result = sys.from_ines_binary(|addr: usize| buf[addr]);
+    println!("binary size:{} result:{}", buf.len(), load_result);
 
     cpu.reset();
     let _cycles = cpu.step(&mut sys);

@@ -29,9 +29,28 @@ pub struct System {
 
 impl System {
     /// inesファイルから読み出してメモリ上に展開します
-    /// 組み込み環境でRAM展開されていなくても利用できるように、closure経由で読み出します
-    pub fn from_ines_binary(&mut self, read_callback: impl Fn(usize) -> u8) {
-
+    /// 組み込み環境でRAM展開されていなくても利用できるように、多少パフォーマンスを犠牲にしてもclosure経由で読み出します
+    pub fn from_ines_binary(&mut self, read_closure: impl Fn(usize) -> u8) -> bool {
+        // header check
+        if read_closure(0) != 0x4e { // N
+            return false;
+        }
+        if read_closure(1) != 0x45 { // E
+            return false;
+        }
+        if read_closure(2) != 0x53 { // S
+            return false;
+        }
+        if read_closure(3) != 0x1a { // character break
+            return false;
+        }
+        let prg_rom_size    = usize::from(read_closure(4)) * 0x4000; // * 16KB
+        let chr_rom_size    = usize::from(read_closure(5)) * 0x2000; // * 8KB
+        let flag6           = read_closure(6);
+        let is_mirroring_vertical        = (flag6 & 0x01) == 0x01; // hor: CIRAM A10=PPU A11, vert: CIRAM A10 = PPU A10
+        let is_exists_battery_backed_ram = (flag6 & 0x02) == 0x02; // battery-backed PRG RAM 0x6000-0x7fff exists
+        let is_exists_trainer            = (flag6 & 0x04) == 0x04; // 512byte trainer at 0x7000-0x71ff
+        true
     }
 }
 impl SystemBus for System {
