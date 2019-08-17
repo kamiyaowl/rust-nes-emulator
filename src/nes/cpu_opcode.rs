@@ -533,13 +533,131 @@ impl Cpu {
             {
                 "JMP indirect",
                 opcode => 0x6c, pc_incr => 2, cycle => 5, 
-                || self.addressing_indirect_x(system, self.pc),
+                || self.addressing_indirect(system, self.pc),
                 |addr, _data| self.inst_jmp(addr)
             },
             /**************** JSR ****************/
+            {
+                "JSR absolute",
+                opcode => 0x20, pc_incr => 2, cycle => 6, 
+                || self.addressing_absolute(system, self.pc),
+                |addr, _data| {
+                    // JSR命令が入っていたアドレスは、pcをすでに進めてしまっているので再計算
+                    let opcode_addr = self.pc - 3;
+                    self.inst_jsr(system, addr, opcode_addr)
+                }
+            },
             /**************** LDA ****************/
+            {
+                "LDA imm",
+                opcode => 0xa9, pc_incr => 1, cycle => 2, 
+                || self.addressing_immediate(system, self.pc),
+                |_addr, data| self.inst_lda(data)
+            },
+            {
+                "LDA zero page", 
+                opcode => 0xa5, pc_incr => 1, cycle => 3, 
+                || self.addressing_zero_page(system, self.pc),
+                |_addr, data| self.inst_lda(data)
+            },
+            {
+                "LDA zero page x", 
+                opcode => 0xb5, pc_incr => 1, cycle => 4, 
+                || self.addressing_zero_page_x(system, self.pc),
+                |_addr, data| self.inst_lda(data)
+            },
+            {
+                "LDA absolute", 
+                opcode => 0xad, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute(system, self.pc),
+                |_addr, data| self.inst_lda(data)
+            },
+            {
+                "LDA absolute x", 
+                opcode => 0xbd, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute_x(system, self.pc),
+                |_addr, data| self.inst_lda(data)
+            },
+            {
+                "LDA absolute y", 
+                opcode => 0xb9, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute_y(system, self.pc),
+                |_addr, data| self.inst_lda(data)
+            },
+            {
+                "LDA indirect x", 
+                opcode => 0xa1, pc_incr => 1, cycle => 6, 
+                || self.addressing_indirect_x(system, self.pc),
+                |_addr, data| self.inst_lda(data)
+            },
+            {
+                "LDA indirect y", 
+                opcode => 0xb1, pc_incr => 1, cycle => 5, 
+                || self.addressing_indirect_y(system, self.pc),
+                |_addr, data| self.inst_lda(data)
+            },
             /**************** LDX ****************/
+            {
+                "LDX imm",
+                opcode => 0xa2, pc_incr => 1, cycle => 2, 
+                || self.addressing_immediate(system, self.pc),
+                |_addr, data| self.inst_ldx(data)
+            },
+            {
+                "LDX zero page",
+                opcode => 0xa6, pc_incr => 1, cycle => 3, 
+                || self.addressing_zero_page(system, self.pc),
+                |_addr, data| self.inst_ldx(data)
+            },
+            {
+                "LDX zero page y",
+                opcode => 0xb6, pc_incr => 1, cycle => 4, 
+                || self.addressing_zero_page_y(system, self.pc),
+                |_addr, data| self.inst_ldx(data)
+            },
+            {
+                "LDX absolute",
+                opcode => 0xae, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute(system, self.pc),
+                |_addr, data| self.inst_ldx(data)
+            },
+            {
+                "LDX absolute y",
+                opcode => 0xbe, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute_y(system, self.pc),
+                |_addr, data| self.inst_ldx(data)
+            },
             /**************** LDY ****************/
+            {
+                "LDY imm",
+                opcode => 0xa0, pc_incr => 1, cycle => 2, 
+                || self.addressing_immediate(system, self.pc),
+                |_addr, data| self.inst_ldy(data)
+            },
+            {
+                "LDY zero page",
+                opcode => 0xa4, pc_incr => 1, cycle => 3, 
+                || self.addressing_zero_page(system, self.pc),
+                |_addr, data| self.inst_ldy(data)
+            },
+            {
+                "LDY zero page y",
+                opcode => 0xb4, pc_incr => 1, cycle => 4, 
+                || self.addressing_zero_page_y(system, self.pc),
+                |_addr, data| self.inst_ldy(data)
+            },
+            {
+                "LDY absolute",
+                opcode => 0xac, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute(system, self.pc),
+                |_addr, data| self.inst_ldy(data)
+            },
+            {
+                "LDY absolute y",
+                opcode => 0xbc, pc_incr => 2, cycle => 4, 
+                || self.addressing_absolute_y(system, self.pc),
+                |_addr, data| self.inst_ldy(data)
+            },
             /**************** LSR ****************/
             /**************** NOP ****************/
             /**************** ORA ****************/
