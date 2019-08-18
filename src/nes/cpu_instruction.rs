@@ -57,21 +57,21 @@ impl Cpu {
         system.write_u8(dst_addr, result);
     }
     /// branch if carry clear
-    pub fn inst_bcc(&mut self, arg: u8) {
+    pub fn inst_bcc(&mut self, dst_addr: u16) {
         if !self.read_carry_flag() {
-            self.pc = 0x0100u16 | (arg as u16);
+            self.pc = dst_addr + 1;
         }
     }
     /// branch if carry set
-    pub fn inst_bcs(&mut self, arg: u8) {
+    pub fn inst_bcs(&mut self, dst_addr: u16) {
         if self.read_carry_flag() {
-            self.pc = 0x0100u16 | (arg as u16);
+            self.pc = dst_addr + 1;
         }
     }
     /// branch if equal
-    pub fn inst_beq(&mut self, arg: u8) {
+    pub fn inst_beq(&mut self, dst_addr: u16) {
         if self.read_zero_flag() {
-            self.pc = 0x0100u16 | (arg as u16);
+            self.pc = dst_addr + 1;
         }
     }
     /// bit test
@@ -85,21 +85,21 @@ impl Cpu {
         self.write_overflow_flag(is_overflow);
     }
     /// branch if minus
-    pub fn inst_bmi(&mut self, arg: u8) {
+    pub fn inst_bmi(&mut self, dst_addr: u16) {
         if self.read_negative_flag() {
-            self.pc = 0x0100u16 | (arg as u16);
+            self.pc = dst_addr + 1;
         }
     }
     /// branch if not equal
-    pub fn inst_bne(&mut self, arg: u8) {
+    pub fn inst_bne(&mut self, dst_addr: u16) {
         if !self.read_zero_flag() {
-            self.pc = 0x0100u16 | (arg as u16);
+            self.pc = dst_addr + 1;
         }
     }
     /// branch if plus
-    pub fn inst_bpl(&mut self, arg: u8) {
+    pub fn inst_bpl(&mut self, dst_addr: u16) {
         if !self.read_negative_flag() {
-            self.pc = 0x0100u16 | (arg as u16);
+            self.pc = dst_addr + 1;
         }
     }
     /// force interrupt
@@ -108,15 +108,15 @@ impl Cpu {
         self.interrupt(system, Interrupt::BRK);
     }
     /// branch if overflow clear
-    pub fn inst_bvc(&mut self, arg: u8) {
+    pub fn inst_bvc(&mut self, dst_addr: u16) {
         if !self.read_overflow_flag() {
-            self.pc = 0x0100u16 | (arg as u16);
+            self.pc = dst_addr + 1;
         }
     }
     /// branch if overflow set
-    pub fn inst_bvs(&mut self, arg: u8) {
+    pub fn inst_bvs(&mut self, dst_addr: u16) {
         if self.read_overflow_flag() {
-            self.pc = 0x0100u16 | (arg as u16);
+            self.pc = dst_addr + 1;
         }
     }
     /// clear carry flag
@@ -248,7 +248,7 @@ impl Cpu {
     /// jump
     /// `dst_addr` - Addressing Absolute/Indirectで指定されたJump先Address
     pub fn inst_jmp(&mut self, dst_addr: u16) {
-        self.pc = dst_addr;
+        self.pc = dst_addr + 1;
     }
     /// jump to subroutine
     /// `dst_addr` - Addressing Absoluteで指定されたJump先Address
@@ -258,7 +258,7 @@ impl Cpu {
         // pushはUpper, Lower
         self.stack_push(system, (ret_addr >>   8) as u8);
         self.stack_push(system, (ret_addr & 0xff) as u8);
-        self.pc = dst_addr;
+        self.pc = dst_addr + 1;
     }
     /// load accumulator
     pub fn inst_lda(&mut self, arg: u8) {

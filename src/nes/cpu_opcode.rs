@@ -13,17 +13,17 @@ macro_rules! inst {
     ) => {
         {
             if cfg!(debug_assertions) && cfg!(not(no_std)) {
-                println!("[#{}][before] cycle:{} pc_incr:{} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
+                println!("[#{}][before] cycle:{} pc_incr:{} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}(NO*BDIZC)", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
             }
             // fetchしない場合(accumulate, implicit)は、pc incrementを0に設定する
             // addressはそのまま供給する
             if $pc_incr > 0 {
-                let addr = $addressing_closure();
-                let data = $system.read_u8(addr);
+                let addr: u16 = $addressing_closure();
+                let data: u8 = $system.read_u8(addr);
                 $self.increment_pc($pc_incr);
 
                 if cfg!(debug_assertions) && cfg!(not(no_std)) {
-                    println!("[#{}][addressing] addr:{:04x} data:{:02x} `{}`", $name, addr, data, data as char);
+                    println!("[#{}][addressing] addr:{:04x} data:{:02x} | data(char):{}", $name, addr, data, data as char);
                 }
                 $inst_closure(addr, data);
             } else {
@@ -31,10 +31,10 @@ macro_rules! inst {
                     println!("[#{}][addressing] skip addressing", $name);
                 }
                 // for implicit, accumulate
-                $inst_closure(0, 0);
+                $inst_closure(0u16, 0u8);
             }
             if cfg!(debug_assertions) && cfg!(not(no_std)) {
-                println!("[#{}][after ] cycle:{} pc_incr:{} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
+                println!("[#{}][after ] cycle:{} pc_incr:{} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}(NO*BDIZC)", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
             }
             $cycle
         }
@@ -210,21 +210,21 @@ impl Cpu {
                 "BCC relative", 
                 opcode => 0x90, pc_incr => 1, cycle => 2, 
                 || self.addressing_relative(system, self.pc),
-                |_addr, data| self.inst_bcc(data)
+                |addr, _data| self.inst_bcc(addr)
             },
             /**************** BCS ****************/
             {
                 "BCS relative", 
                 opcode => 0xb0, pc_incr => 1, cycle => 2, 
                 || self.addressing_relative(system, self.pc),
-                |_addr, data| self.inst_bcs(data)
+                |addr, _data| self.inst_bcs(addr)
             },
             /**************** BEQ ****************/
             {
                 "BEQ relative", 
                 opcode => 0xf0, pc_incr => 1, cycle => 2, 
                 || self.addressing_relative(system, self.pc),
-                |_addr, data| self.inst_beq(data)
+                |addr, _data| self.inst_beq(addr)
             },
             /**************** BIT ****************/
             {
@@ -244,21 +244,21 @@ impl Cpu {
                 "BMI relative", 
                 opcode => 0x30, pc_incr => 1, cycle => 2, 
                 || self.addressing_relative(system, self.pc),
-                |_addr, data| self.inst_bmi(data)
+                |addr, _data| self.inst_bmi(addr)
             },
             /**************** BNE ****************/
             {
                 "BNE relative", 
                 opcode => 0xd0, pc_incr => 1, cycle => 2, 
                 || self.addressing_relative(system, self.pc),
-                |_addr, data| self.inst_bne(data)
+                |addr, _data| self.inst_bne(addr)
             },
             /**************** BPL ****************/
             {
                 "BPL relative", 
                 opcode => 0x10, pc_incr => 1, cycle => 2, 
                 || self.addressing_relative(system, self.pc),
-                |_addr, data| self.inst_bpl(data)
+                |addr, _data| self.inst_bpl(addr)
             },
             /**************** BRK ****************/
             {
@@ -272,14 +272,14 @@ impl Cpu {
                 "BVC relative", 
                 opcode => 0x50, pc_incr => 1, cycle => 2, 
                 || self.addressing_relative(system, self.pc),
-                |_addr, data| self.inst_bvc(data)
+                |addr, _data| self.inst_bvc(addr)
             },
             /**************** BVS ****************/
             {
                 "BVS relative", 
                 opcode => 0x70, pc_incr => 1, cycle => 2, 
                 || self.addressing_relative(system, self.pc),
-                |_addr, data| self.inst_bvs(data)
+                |addr, _data| self.inst_bvs(addr)
             },
             /**************** CLC ****************/
             {
