@@ -12,7 +12,7 @@ macro_rules! inst {
         $inst_closure:expr
     ) => {
         {
-            if cfg!(debug_assertions) {
+            if cfg!(debug_assertions) && cfg!(std) {
                 println!("[#{}][before] cycle:{} pc_incr:{} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
             }
             // fetchしない場合(accumulate, implicit)は、pc incrementを0に設定する
@@ -22,18 +22,18 @@ macro_rules! inst {
                 let data = $system.read_u8(addr);
                 $self.increment_pc($pc_incr);
 
-                if cfg!(debug_assertions) {
+                if cfg!(debug_assertions) && cfg!(std) {
                     println!("[#{}][addressing] addr:{:04x} data:{:02x}", $name, addr, data);
                 }
                 $inst_closure(addr, data);
             } else {
-                if cfg!(debug_assertions) {
+                if cfg!(debug_assertions) && cfg!(std) {
                     println!("[#{}][addressing] skip addressing", $name);
                 }
                 // for implicit, accumulate
                 $inst_closure(0, 0);
             }
-            if cfg!(debug_assertions) {
+            if cfg!(debug_assertions) && cfg!(std) {
                 println!("[#{}][after ] cycle:{} pc_incr:{} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
             }
             $cycle
@@ -72,7 +72,7 @@ impl Cpu {
     pub fn step(&mut self, system: &mut System) -> u8 {
         let opcode = system.read_u8(self.pc);
         self.increment_pc(1);
-        if cfg!(debug_assertions) {
+        if cfg!(debug_assertions) && cfg!(std) {
             println!("[opcode fetched] opcode:{:02x} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", opcode, self.pc, self.a, self.x, self.y, self.sp, self.p);
         }
         inst!(self, system, opcode,

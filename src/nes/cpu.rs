@@ -41,7 +41,10 @@ impl EmulateControl for Cpu {
         self.sp = 0x01fd;
         self.p  = 0x34;
     }
-    fn store(&self, read_callback: impl Fn(usize, u8)) {
+    fn get_dump_size() -> usize {
+        0x8
+    }
+    fn dump(&self, read_callback: impl Fn(usize, u8)) {
         // レジスタダンプを連番で取得する(little endian)
         read_callback( 0, self.a);
         read_callback( 1, self.x);
@@ -89,7 +92,7 @@ impl Cpu {
         let is_nested_interrupt = self.read_interrupt_flag();
         // RESET, NMI以外は多重割り込みを許容しない
         if is_nested_interrupt && (irq_type == Interrupt::IRQ) || (irq_type == Interrupt::BRK) {
-            if cfg!(debug_assertions) {
+            if cfg!(debug_assertions) && cfg!(std) {
                 println!("[interrupt] skip nested interrupt");
             }
             return;
@@ -97,7 +100,7 @@ impl Cpu {
         // 割り込み種類別の処理
         match irq_type {
             Interrupt::NMI   => {
-                if cfg!(debug_assertions) {
+                if cfg!(debug_assertions) && cfg!(std) {
                     println!("[interrupt] NMI interrupt");
                 }
                 self.write_break_flag(false);
@@ -108,13 +111,13 @@ impl Cpu {
                 self.write_interrupt_flag(true);
             },
             Interrupt::RESET => {
-                if cfg!(debug_assertions) {
+                if cfg!(debug_assertions) && cfg!(std) {
                     println!("[interrupt] RESET interrupt");
                 }
                 self.write_interrupt_flag(true);
             },
             Interrupt::IRQ   => {
-                if cfg!(debug_assertions) {
+                if cfg!(debug_assertions) && cfg!(std) {
                     println!("[interrupt] IRQ interrupt");
                 }
                 self.write_break_flag(false);
@@ -125,7 +128,7 @@ impl Cpu {
                 self.write_interrupt_flag(true);
             },
             Interrupt::BRK   => {
-                if cfg!(debug_assertions) {
+                if cfg!(debug_assertions) && cfg!(std) {
                     println!("[interrupt] BRK interrupt");
                 }
                 self.write_break_flag(true);
