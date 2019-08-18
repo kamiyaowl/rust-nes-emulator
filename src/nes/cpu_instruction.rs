@@ -248,7 +248,7 @@ impl Cpu {
     /// jump
     /// `dst_addr` - Addressing Absolute/Indirectで指定されたJump先Address
     pub fn inst_jmp(&mut self, dst_addr: u16) {
-        self.pc = dst_addr + 1;
+        self.pc = dst_addr; // JMPはどうやら1個前に戻すらしい
     }
     /// jump to subroutine
     /// `dst_addr` - Addressing Absoluteで指定されたJump先Address
