@@ -94,16 +94,16 @@ impl Cassette {
 
 impl SystemBus for Cassette {
     fn read_u8(&self, addr: u16) -> u8 {
-        debug_assert!(addr >= 0x4020);
-        let index = usize::from(addr - 0x4020);
+        debug_assert!(addr >= 0x8000);
+        let index = usize::from(addr - 0x8000);
         match self.mapper {
             Mapper::Nrom => self.prg_rom[index],
             _ => unimplemented!(),
         }
     }
     fn write_u8(&mut self, addr: u16, data: u8) {
-        debug_assert!(addr >= 0x4020);
-        let index = usize::from(addr - 0x4020);
+        debug_assert!(addr >= 0x8000);
+        let index = usize::from(addr - 0x8000);
         match self.mapper {
             Mapper::Nrom => self.prg_rom[index] = data,
             _ => unimplemented!(),

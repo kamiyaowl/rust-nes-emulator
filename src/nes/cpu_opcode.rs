@@ -23,7 +23,7 @@ macro_rules! inst {
                 $self.increment_pc($pc_incr);
 
                 if cfg!(debug_assertions) && cfg!(not(no_std)) {
-                    println!("[#{}][addressing] addr:{:04x} data:{:02x}", $name, addr, data);
+                    println!("[#{}][addressing] addr:{:04x} data:{:02x} `{}`", $name, addr, data, data as char);
                 }
                 $inst_closure(addr, data);
             } else {

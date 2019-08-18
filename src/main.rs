@@ -39,7 +39,10 @@ fn main() -> Result<(), Box<std::error::Error>>  {
     cpu.reset();
 
     cpu.interrupt(&mut sys, Interrupt::RESET);
-    let _cycles = cpu.step(&mut sys);
+    for i in 0..100 {
+        println!("================ {} ================", i);
+        let _cycles = cpu.step(&mut sys);
+    }
 
     Ok(())
 }
