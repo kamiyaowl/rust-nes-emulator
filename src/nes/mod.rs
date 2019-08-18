@@ -14,5 +14,6 @@ pub mod pad;
 
 pub use system::System;
 pub use cpu::Cpu;
+pub use cpu::Interrupt;
 pub use cassette::Cassette;
 pub use cassette::Mapper;

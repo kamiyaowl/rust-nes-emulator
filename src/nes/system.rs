@@ -23,14 +23,13 @@ pub struct System {
     //  0x4000 - 0x401f: APU I/O, PAD
     pub io_reg: [u8; APU_AND_IO_REG_SIZE],
 
-    /// カセットへのR/W要求は呼び出し元でEmulation, 実機を切り替えるようにする
+    /// カセットへのR/W要求は呼び出し先でEmulation, 実機を切り替えるようにする
     /// 引数に渡されるaddrは、CPU命令そのままのアドレスを渡す
     ///  0x4020 - 0x5fff: Extended ROM
     ///  0x6000 - 0x7FFF: Extended RAM
     ///  0x8000 - 0xbfff: PRG-ROM switchable
     ///  0xc000 - 0xffff: PRG-ROM fixed to the last bank or switchable
-    pub cassette_read:  fn(u16) -> u8,
-    pub cassette_write: fn(u16, u8),
+    pub cassette: Cassette,
 }
 
 impl SystemBus for System {
@@ -45,7 +44,7 @@ impl SystemBus for System {
             let index = usize::from(addr - 0x4000);
             self.io_reg[index] 
         } else {
-            (self.cassette_read)(addr)
+            self.cassette.read_u8(addr)
         }
     }
     fn write_u8(&mut self, addr: u16, data: u8) {
@@ -59,7 +58,7 @@ impl SystemBus for System {
             let index = usize::from(addr - 0x4000);
             self.io_reg[index] = data;
         } else {
-            (self.cassette_write)(addr, data);
+            self.cassette.write_u8(addr, data);
         }
     }
 }

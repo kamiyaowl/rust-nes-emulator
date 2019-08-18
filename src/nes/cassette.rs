@@ -1,13 +1,16 @@
 use super::interface::{SystemBus, EmulateControl};
 
+#[derive(Copy, Clone)]
 pub struct Cassette {
     pub mapper: Mapper,
     // TODO: enum Mapperに持たせたほうが...
     pub prg_rom: [u8; 0x8000], // 32KB
     pub chr_rom: [u8; 0x2000], // 8K
 }
+
 /// Cassete and mapper implement
 /// https://wiki.nesdev.com/w/index.php/List_of_mappers
+#[derive(Copy, Clone)]
 pub enum Mapper {
     Unknown,
     /// Mapper0: no mapper
@@ -66,7 +69,7 @@ impl Cassette {
         debug_assert!(chr_rom_bytes <= 0x2000);
 
         // Seq Readしか許さない場合、trainer領域を読み飛ばす
-        if cfg!(debug_assertions) && cfg!(std) {
+        if cfg!(debug_assertions) && cfg!(not(no_std)) {
             println!("[cassette][from ines bin] header_bytes:{:04x}", header_bytes);
             println!("[cassette][from ines bin] trainer_bytes:{:04x}", trainer_bytes);
             println!("[cassette][from ines bin] prg_rom_bytes:{:04x}", prg_rom_bytes);
@@ -105,5 +108,21 @@ impl SystemBus for Cassette {
             Mapper::Nrom => self.prg_rom[index] = data,
             _ => unimplemented!(),
         }
+    }
+}
+
+impl EmulateControl for Cassette {
+    fn reset(&mut self){
+        self.prg_rom = [0; 0x8000];
+        self.chr_rom = [0; 0x2000];
+    }
+    fn get_dump_size() -> usize {
+        unimplemented!();
+    }
+    fn dump(&self, _read_callback: impl Fn(usize, u8)) {
+        unimplemented!();
+    }
+    fn restore(&mut self, _write_callback: impl Fn(usize) -> u8) {
+        unimplemented!();
     }
 }
