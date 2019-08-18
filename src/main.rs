@@ -32,7 +32,7 @@ fn main() -> Result<(), Box<std::error::Error>>  {
 
     /* for desktop simulation driver */
     // nesファイルの読み込み
-    let mut file = File::open("roms/hello.nes")?;
+    let mut file = File::open("roms/other/hello.nes")?;
     let mut buf: Vec<u8> = Vec::new();
     let _ = file.read_to_end(&mut buf)?;
 
