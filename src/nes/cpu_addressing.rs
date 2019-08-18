@@ -78,7 +78,7 @@ impl Cpu {
         let addr_signed  = ((offset as i8) as i32) + (self.pc as i32);
         debug_assert!(addr_signed >= 0);
         debug_assert!(addr_signed < 0x10000);
-        let addr = addr_signed as u16;
+        let addr = addr_signed as u16 + 1; // 戻り先は指定+1にあるっぽい
         addr
     }
     /// (d,x)
