@@ -7,7 +7,7 @@ use nes::interface::*;
 use std::fs::File;
 use std::io::Read;
 
-fn run_image(path: String, cycles: usize, validate: impl Fn(&Cpu, &System)) -> Result<(), Box<dyn std::error::Error>> {
+fn run_image(path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &System)) -> Result<(), Box<dyn std::error::Error>> {
     let mut cassette_emu = Cassette {
         mapper: Mapper::Unknown,
         prg_rom: [0; 0x8000],
@@ -38,9 +38,10 @@ fn run_image(path: String, cycles: usize, validate: impl Fn(&Cpu, &System)) -> R
     cpu.reset();
 
     cpu.interrupt(&mut sys, Interrupt::RESET);
-    for i in 0..cycles {
-        println!("================ {} ================", i);
-        let _cycles = cpu.step(&mut sys);
+    let mut cpu_cycle: usize = 0;
+    for i in 0..cpu_steps {
+        println!("================ cpu_step:{}, cpu_cycle:{} ================", i, cpu_cycle);
+        cpu_cycle = cpu_cycle + usize::from(cpu.step(&mut sys));
     }
     validate(&cpu, &sys);
 
@@ -61,4 +62,5 @@ fn run_hello() -> Result<(), Box<dyn std::error::Error>>  {
 }
 
 fn main() {
+    let _result = run_image("roms/other/hello.nes".to_string(), 175, |_cpu, _sys| {});
 }
