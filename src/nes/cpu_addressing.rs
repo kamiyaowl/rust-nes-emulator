@@ -4,7 +4,7 @@ use super::interface::{SystemBus};
 
 /// Fetch and Adressing Implementation
 /// Accumulatorとimplicitは実装の必要なし
-/// 戻り地 (引いたアドレス, additional clock cycle)
+/// 戻り地 (引いたアドレス, 条件分岐等で余計にかかるclock cycle)
 impl Cpu {
     /// #v 即値をそのまま帰す
     pub fn addressing_immediate(&self, _system: &System, base_addr: u16) -> (u16, u8) {

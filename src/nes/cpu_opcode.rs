@@ -17,7 +17,7 @@ macro_rules! inst {
             }
             // fetchしない場合(accumulate, implicit)は、pc incrementを0に設定する
             // addressはそのまま供給する
-            let (addr, additional_cycle, data) = if $pc_incr > 0 {
+            let (addr, additional_cycle1, data) = if $pc_incr > 0 {
                     let (a, c) = $addressing_closure();
                     let d      = $system.read_u8(a);
                     // addressingした分進めとく
@@ -36,11 +36,12 @@ macro_rules! inst {
                     (0u16, 0u8, 0u8)
                 };
             // 命令実行
-            $inst_closure(addr, data);
+            let additional_cycle2 = $inst_closure(addr, data);
             if cfg!(debug_assertions) && cfg!(not(no_std)) {
                 println!("[#{}][after ] cycle:{} pc_incr:{} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}(NO*BDIZC)", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
             }
-            ($cycle + additional_cycle)
+            // かかるclock cycleを返却
+            ($cycle + additional_cycle1 + additional_cycle2)
         }
     };
     (
@@ -698,7 +699,7 @@ impl Cpu {
                 "NOP implied",
                 opcode => 0xea, pc_incr => 0, cycle => 2, 
                 || (0, 0),
-                |_addr, _data| {}
+                |_addr, _data| self.inst_nop()
             },
             /**************** ORA ****************/
             {
