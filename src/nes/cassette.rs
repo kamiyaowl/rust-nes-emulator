@@ -41,25 +41,26 @@ impl Cassette {
         if read_closure(3) != 0x1a { // character break
             return false;
         }
-        let prg_rom_size_kb  = usize::from(read_closure(4)); // * 16KBしてあげる
-        let chr_rom_size_kb  = usize::from(read_closure(5)); // * 8KBしてあげる
-        let flags6           = read_closure(6);
-        let _flags7           = read_closure(7);
-        let _flags8           = read_closure(8);
-        let _flags9           = read_closure(9);
-        let _flags10          = read_closure(10);
+        let prg_rom_size = usize::from(read_closure(4)); // * 16KBしてあげる
+        let chr_rom_size = usize::from(read_closure(5)); // * 8KBしてあげる
+        let flags6       = read_closure(6);
+        let _flags7      = read_closure(7);
+        let _flags8      = read_closure(8);
+        let _flags9      = read_closure(9);
+        let _flags10     = read_closure(10);
         // 11~15 unused_padding
+        debug_assert!(prg_rom_size > 0);
 
         // flags parsing
-        let _is_mirroring_vertical         = (flags6 & 0x01) == 0x01;
-        let _is_exists_battery_backed_ram  = (flags6 & 0x02) == 0x02;
+        let _is_mirroring_vertical        = (flags6 & 0x01) == 0x01;
+        let _is_exists_battery_backed_ram = (flags6 & 0x02) == 0x02;
         let is_exists_trainer             = (flags6 & 0x04) == 0x04; // 512byte trainer at 0x7000-0x71ff
 
         // 領域計算
         let header_bytes  = 16;
         let trainer_bytes = if is_exists_trainer { 512 } else { 0 };
-        let prg_rom_bytes = prg_rom_size_kb * 0x4000;
-        let chr_rom_bytes = chr_rom_size_kb * 0x2000;
+        let prg_rom_bytes = prg_rom_size    * 0x4000;
+        let chr_rom_bytes = chr_rom_size    * 0x2000;
         let prg_rom_baseaddr = header_bytes + trainer_bytes;
         let chr_rom_baseaddr = header_bytes + trainer_bytes + prg_rom_bytes;
 
@@ -81,6 +82,10 @@ impl Cassette {
         for index in 0..prg_rom_bytes {
             let ines_binary_addr = prg_rom_baseaddr + index;
             self.prg_rom[index] = read_closure(ines_binary_addr);
+            // NROM 16KBの場合、後半0xc0000~0xffffはミラーしてあげないとだめ
+            if prg_rom_size == 1 {
+                self.prg_rom[index + 0x4000] = read_closure(ines_binary_addr);
+            }
         }
         for index in 0..chr_rom_bytes {
             let ines_binary_addr = chr_rom_baseaddr + index;
