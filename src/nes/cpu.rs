@@ -42,7 +42,7 @@ impl EmulateControl for Cpu {
         self.p  = 0x34;
     }
     fn get_dump_size() -> usize {
-        0x8
+        0x10
     }
     fn dump(&self, read_callback: impl Fn(usize, u8)) {
         // レジスタダンプを連番で取得する(little endian)
@@ -54,6 +54,7 @@ impl EmulateControl for Cpu {
         read_callback( 5, (self.sp & 0xff) as u8);
         read_callback( 6, ((self.sp >> 8) & 0xff) as u8);
         read_callback( 7, self.p);
+        // 0x8~0xf padding
     }
     fn restore(&mut self, write_callback: impl Fn(usize) -> u8) {
         // store通りに復元してあげる
@@ -85,7 +86,7 @@ impl Cpu {
         // increment
         self.sp = self.sp + 1;
         // data fetch
-        system.read_u8(self.sp)
+        system.read_u8(self.sp, false)
     }
     /// 割り込みを処理します
     pub fn interrupt(&mut self, system: &mut System, irq_type: Interrupt) {
@@ -154,8 +155,8 @@ impl Cpu {
                 Interrupt::BRK   => BRK_READ_UPPER,
             };
         
-        let lower = system.read_u8(lower_addr);
-        let upper = system.read_u8(upper_addr);
+        let lower = system.read_u8(lower_addr, false);
+        let upper = system.read_u8(upper_addr, false);
         self.pc = (lower as u16) | ((upper as u16) << 8);
     }
 

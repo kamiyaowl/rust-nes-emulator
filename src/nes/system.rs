@@ -33,18 +33,20 @@ pub struct System {
 }
 
 impl SystemBus for System {
-    fn read_u8(&self, addr: u16) -> u8 {
+    fn read_u8(&self, addr: u16, is_nondestructive: bool) -> u8 {
         if addr < 0x2000 {
             let index = usize::from(addr) % self.wram.len(); // mirror support
             self.wram[index] 
         } else if addr < 0x4000 {
             let index = usize::from(addr - 0x2000) % self.ppu_reg.len(); // mirror support
+            // TODO: is_nondestructiveで処理分岐
             self.ppu_reg[index] 
         } else if addr < 0x4020 {
+            // TODO: is_nondestructiveで処理分岐
             let index = usize::from(addr - 0x4000);
             self.io_reg[index] 
         } else {
-            self.cassette.read_u8(addr)
+            self.cassette.read_u8(addr, is_nondestructive)
         }
     }
     fn write_u8(&mut self, addr: u16, data: u8) {
@@ -73,16 +75,12 @@ impl EmulateControl for System {
     fn get_dump_size() -> usize {
         0x4020
     }
-    fn dump(&self, read_callback: impl Fn(usize, u8)) {
-        // 冗長だけどカセット以外の全領域を書き出す
-        for addr in 0..0x4020u16 {
-            read_callback(usize::from(addr), self.read_u8(addr));
-        }
+    fn dump(&self, _read_callback: impl Fn(usize, u8)) {
+        // TODO: #14 破壊読み出しのあるレジスタも強引に値を持ってくる
+        unimplemented!();
     }
-    fn restore(&mut self, write_callback: impl Fn(usize) -> u8) {
-        // storeの内容をそのまま戻す
-        for addr in 0..0x4020u16 {
-            self.write_u8(addr, write_callback(usize::from(addr)));
-        }
+    fn restore(&mut self, _write_callback: impl Fn(usize) -> u8) {
+        // TODO: #14
+        unimplemented!();
     }
 }

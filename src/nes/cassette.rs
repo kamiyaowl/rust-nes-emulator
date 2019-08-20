@@ -98,7 +98,7 @@ impl Cassette {
 }
 
 impl SystemBus for Cassette {
-    fn read_u8(&self, addr: u16) -> u8 {
+    fn read_u8(&self, addr: u16, _is_nondestructive: bool) -> u8 {
         debug_assert!(addr >= 0x8000);
         let index = usize::from(addr - 0x8000);
         match self.mapper {
