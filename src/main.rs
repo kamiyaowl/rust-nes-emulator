@@ -7,16 +7,15 @@ use nes::interface::*;
 use std::fs::File;
 use std::io::Read;
 
-fn main() -> Result<(), Box<std::error::Error>>  {
+fn run_image(path: String, cycles: usize, validate: impl Fn(&Cpu, &System)) -> Result<(), Box<dyn std::error::Error>> {
     let mut cassette_emu = Cassette {
         mapper: Mapper::Unknown,
         prg_rom: [0; 0x8000],
         chr_rom: [0; 0x2000],
     };
 
-    /* for desktop simulation driver */
     // nesファイルの読み込み
-    let mut file = File::open("roms/other/hello.nes")?;
+    let mut file = File::open(path)?;
     let mut buf: Vec<u8> = Vec::new();
     let _ = file.read_to_end(&mut buf)?;
     // casseteに展開
@@ -39,10 +38,27 @@ fn main() -> Result<(), Box<std::error::Error>>  {
     cpu.reset();
 
     cpu.interrupt(&mut sys, Interrupt::RESET);
-    for i in 0..200 {
+    for i in 0..cycles {
         println!("================ {} ================", i);
         let _cycles = cpu.step(&mut sys);
     }
+    validate(&cpu, &sys);
 
     Ok(())
+}
+
+#[test]
+fn run_hello() -> Result<(), Box<dyn std::error::Error>>  {
+    run_image("roms/other/hello.nes".to_string(), 175, |cpu, _sys| {
+        // 170cyc以降は0x804bのJMPで無限ループしているはず
+        assert_eq!(0x804e, cpu.pc);
+        assert_eq!(0x01ff, cpu.sp);
+        assert_eq!(0x1e,   cpu.a);
+        assert_eq!(0x0d,   cpu.x);
+        assert_eq!(0x00,   cpu.y);
+        assert_eq!(0x34,   cpu.p);
+    })
+}
+
+fn main() {
 }
