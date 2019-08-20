@@ -50,7 +50,7 @@ fn run_image(path: String, cycles: usize, validate: impl Fn(&Cpu, &System)) -> R
 #[test]
 fn run_hello() -> Result<(), Box<dyn std::error::Error>>  {
     run_image("roms/other/hello.nes".to_string(), 175, |cpu, _sys| {
-        // 170cyc以降は0x804bのJMPで無限ループしているはず
+        // 170cyc以降はJMPで無限ループしているはず
         assert_eq!(0x804e, cpu.pc);
         assert_eq!(0x01ff, cpu.sp);
         assert_eq!(0x1e,   cpu.a);
