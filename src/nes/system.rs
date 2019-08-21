@@ -30,6 +30,34 @@ pub struct System {
     ///  0x8000 - 0xbfff: PRG-ROM switchable
     ///  0xc000 - 0xffff: PRG-ROM fixed to the last bank or switchable
     pub cassette: Cassette,
+
+    /// $2005 2回書き目はyを書く, $2006 2回目がlower。
+    /// $2005, $2006は状態を共有する
+    /// $2002を読み出すと、どっちを書くかはリセットされる
+    pub ppu_is_second_write: bool, // 初期値falseで
+    pub ppu_scroll_y_reg: u8,
+    pub ppu_addr_lower_reg: u8,
+
+    /// $4014 OAM DMA
+    /// reg自体には転送元pageになる(io_reg[0x4014] << 8)
+    /// が、DMAのTriggerになる変数を持たないと辛いので
+    pub is_trigger_oam_dam: bool, // default: false
+}
+
+impl Default for System {
+    fn default() -> Self {
+        Self {
+            vram:    [0; VRAM_SIZE],
+            wram:    [0; WRAM_SIZE],
+            ppu_reg: [0; PPU_REG_SIZE],
+            io_reg:  [0; APU_AND_IO_REG_SIZE],
+            cassette: Default::default(),
+            ppu_is_second_write: false,
+            ppu_scroll_y_reg: 0,
+            ppu_addr_lower_reg: 0,
+            is_trigger_oam_dam: false,
+        }
+    }
 }
 
 impl SystemBus for System {

@@ -8,11 +8,9 @@ use std::fs::File;
 use std::io::Read;
 
 fn run_image(path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &System)) -> Result<(), Box<dyn std::error::Error>> {
-    let mut cassette_emu = Cassette {
-        mapper: Mapper::Unknown,
-        prg_rom: [0; 0x8000],
-        chr_rom: [0; 0x2000],
-    };
+    let mut cpu: Cpu = Default::default();
+    let mut sys: System = Default::default();
+    let mut cassette_emu: Cassette = Default::default();
 
     // nesファイルの読み込み
     let mut file = File::open(path)?;
@@ -24,16 +22,7 @@ fn run_image(path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &System)) -
     }
 
     // はじめる
-    let mut cpu = Cpu {
-        a: 0, x: 0, y: 0, pc: 0, sp: 0, p: 0, 
-    };
-    let mut sys = System {
-        vram:    [0; system::VRAM_SIZE],
-        wram:    [0; system::WRAM_SIZE],
-        ppu_reg: [0; system::PPU_REG_SIZE],
-        io_reg:  [0; system::APU_AND_IO_REG_SIZE],
-        cassette: cassette_emu,
-    };
+    sys.cassette = cassette_emu; // 現在はCopy trait
     sys.reset();
     cpu.reset();
 
@@ -51,7 +40,7 @@ fn run_image(path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &System)) -
 #[test]
 fn run_hello() -> Result<(), Box<dyn std::error::Error>>  {
     run_image("roms/other/hello.nes".to_string(), 175, |cpu, _sys| {
-        // 170cyc以降はJMPで無限ループしているはず
+        // 170step以降はJMPで無限ループしているはず
         assert_eq!(0x804e, cpu.pc);
         assert_eq!(0x01ff, cpu.sp);
         assert_eq!(0x1e,   cpu.a);

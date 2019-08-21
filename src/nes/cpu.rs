@@ -32,6 +32,14 @@ pub struct Cpu {
     pub p  : u8,
 }
 
+impl Default for Cpu {
+    fn default() -> Self {
+        Self {
+            a: 0, x: 0, y: 0, pc: 0, sp: 0, p: 0, 
+        }
+    }
+}
+
 impl EmulateControl for Cpu {
     fn reset(&mut self){
         self.a  = 0;

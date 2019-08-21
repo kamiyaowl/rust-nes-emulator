@@ -97,6 +97,16 @@ impl Cassette {
     }
 }
 
+impl Default for Cassette {
+    fn default() -> Self {
+        Self {
+            mapper: Mapper::Unknown,
+            prg_rom: [0; 0x8000],
+            chr_rom: [0; 0x2000],
+        }
+    }
+}
+
 impl SystemBus for Cassette {
     fn read_u8(&self, addr: u16, _is_nondestructive: bool) -> u8 {
         debug_assert!(addr >= 0x8000);
