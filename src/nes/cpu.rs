@@ -84,13 +84,13 @@ impl Cpu {
     /// Stack Push操作を行います
     pub fn stack_push(&mut self, system: &mut System, data: u8) {
         // data store
-        system.write_u8(self.sp, data);
+        system.write_u8(self.sp, data, false);
         // decrement
         self.sp = self.sp - 1;
     }
 
     /// Stack Pop操作を行います
-    pub fn stack_pop(&mut self, system: &System) -> u8 {
+    pub fn stack_pop(&mut self, system: &mut System) -> u8 {
         // increment
         self.sp = self.sp + 1;
         // data fetch

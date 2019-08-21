@@ -58,7 +58,7 @@ impl Cpu {
         self.write_carry_flag(is_carry);
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
-        system.write_u8(dst_addr, result);
+        system.write_u8(dst_addr, result, false);
         0
     }
     /// branch if carry clear
@@ -215,7 +215,7 @@ impl Cpu {
 
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
-        system.write_u8(dst_addr, result);
+        system.write_u8(dst_addr, result, false);
         0
     }
     /// decrement x register
@@ -263,7 +263,7 @@ impl Cpu {
 
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
-        system.write_u8(dst_addr, result);
+        system.write_u8(dst_addr, result, false);
         0
     }
     /// increment x register
@@ -362,7 +362,7 @@ impl Cpu {
         self.write_carry_flag(is_carry);
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
-        system.write_u8(dst_addr, arg);
+        system.write_u8(dst_addr, arg, false);
         0
     }
     // no operation
@@ -433,7 +433,7 @@ impl Cpu {
         self.write_carry_flag(is_carry);
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
-        system.write_u8(dst_addr, result);
+        system.write_u8(dst_addr, result, false);
         0
     }
     /// rorate right(Accumulator)
@@ -461,7 +461,7 @@ impl Cpu {
         self.write_carry_flag(is_carry);
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
-        system.write_u8(dst_addr, result);
+        system.write_u8(dst_addr, result, false);
         0
     }
     /// return from interuppt
@@ -514,17 +514,17 @@ impl Cpu {
     }
     /// store accumulator
     pub fn inst_sta(&self, system: &mut System, dst_addr: u16) -> u8 {
-        system.write_u8(dst_addr, self.a);
+        system.write_u8(dst_addr, self.a, false);
         0
     }
     /// store x register
     pub fn inst_stx(&self, system: &mut System, dst_addr: u16) -> u8 {
-        system.write_u8(dst_addr, self.x);
+        system.write_u8(dst_addr, self.x, false);
         0
     }
     /// store y register
     pub fn inst_sty(&self, system: &mut System, dst_addr: u16) -> u8 {
-        system.write_u8(dst_addr, self.y);
+        system.write_u8(dst_addr, self.y, false);
         0
     }
     /// transfer accumulator to x

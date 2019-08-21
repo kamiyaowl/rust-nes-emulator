@@ -87,29 +87,70 @@ impl System {
         self.ppu_reg[3]
     }
     /*************************** 0x2004: OAMDATA ***************************/
-    pub fn read_ppu_oam_data(&self) -> u8 {
-        self.ppu_reg[4]
+    /// OAM_DATAの書き換えがあったかを示すフラグもついてくるよ(自動で揮発します)
+    pub fn read_ppu_oam_data(&mut self) -> (bool, u8) {
+        if self.written_oam_data {
+            self.written_oam_data = false;
+            (true, self.ppu_reg[4])
+        } else {
+            (false, self.ppu_reg[4])
+        }
     }
     /*************************** 0x2005: PPUSCROLL ***************************/
-    pub fn read_ppu_scroll(&self) -> (u8, u8) {
-        (self.ppu_reg[5], self.ppu_scroll_y_reg)
+    /// (x,y更新があったか示すフラグ, x, y)
+    pub fn read_ppu_scroll(&mut self) -> (bool, u8, u8) {
+        if self.written_ppu_scroll {
+            self.written_ppu_scroll = false;
+            (true, self.ppu_reg[5], self.ppu_scroll_y_reg)
+        } else {
+            (false, self.ppu_reg[5], self.ppu_scroll_y_reg)
+        }
     }
     /*************************** 0x2006: PPUADDR ***************************/
-    pub fn read_ppu_addr(&self) -> u16 {
-        (u16::from(self.ppu_reg[6]) << 8) | u16::from(self.ppu_addr_lower_reg)
+    pub fn read_ppu_addr(&mut self) -> (bool, u16) {
+        let addr = (u16::from(self.ppu_reg[6]) << 8) | u16::from(self.ppu_addr_lower_reg);
+        if self.written_ppu_addr {
+            self.written_ppu_addr = false;
+            (true, addr)
+        } else {
+            (false, addr)
+        }
     }
     /*************************** 0x2007: PPUDATA ***************************/
-    pub fn read_ppu_data(&self) -> u8 {
-        self.ppu_reg[7]
+    /// is_read, is_write, dataが返ります
+    /// read/writeが同時にtrueにはならない。
+    /// read : PPU_DATAにPPU_ADDRが示す値を非破壊で入れてあげ、アドレスインクリメント(自ずとpost-fetchになる)
+    /// write: PPU_DATAの値をPPU_ADDR(PPU空間)に代入、アドレスインクリメント
+    pub fn read_ppu_data(&mut self) -> (bool, bool, u8) {
+        debug_assert!(!(self.written_ppu_data && self.read_ppu_data));
+        if self.read_ppu_data {
+            self.read_ppu_data = false;
+            (true, false, self.ppu_reg[7])
+        } else  if self.written_ppu_data {
+            self.written_ppu_data = false;
+            (false, true, self.ppu_reg[7])
+        } else {
+            (false, false, self.ppu_reg[7])
+        }
+    }
+
+    /// PPU_DATAに読み書きをしたときのPPU_ADDR自動加算を行います
+    pub fn increment_ppu_addr(&mut self) {
+        let current_addr = (u16::from(self.ppu_reg[6]) << 8) | u16::from(self.ppu_addr_lower_reg);
+        // PPU_CTRLのPPU Addr Incrementに従う
+        let add_val = u16::from(self.read_ppu_addr_increment());
+        let dst_addr = current_addr.wrapping_add(add_val);
+        // 分解して入れておく
+        self.ppu_addr_lower_reg = (dst_addr & 0xff) as u8;
+        self.ppu_reg[6]         = (dst_addr >> 8  ) as u8;
     }
     /*************************** 0x4014: OAM_DMA ***************************/
     /// DMA開始が必要かどうかと、転送元アドレスを返す
     /// 面倒なので読み取ったらtriggerは揮発させる
-    pub fn read_oam_dma_trigger(&mut self) -> (bool, u16) {
+    pub fn read_oam_dma(&mut self) -> (bool, u16) {
         let start_addr = u16::from(self.io_reg[0x14]) << 8;
-        if self.is_trigger_oam_dam {
-            self.is_trigger_oam_dam = false;
-
+        if self.written_oam_dma {
+            self.written_oam_dma = false;
             (true, start_addr)
         } else {
             (false, start_addr)
