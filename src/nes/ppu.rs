@@ -173,7 +173,10 @@ impl Ppu {
         match LineStatus::from(self.current_line) {
             LineStatus::Visible => {
                 // 1行描く
-                fb[usize::from(self.current_line)][usize::from(self.current_line)] = Color(10,100,255); // TEST
+                for i in 0..VISIBLE_SCREEN_WIDTH {
+                    // TEST
+                    fb[usize::from(self.current_line)][i] = Color(i as u8, self.current_line as u8, (i as u8).wrapping_add(self.current_line as u8));
+                }
             },
             LineStatus::PostRender => {
                 // 何もしない
