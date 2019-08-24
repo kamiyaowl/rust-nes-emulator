@@ -12,8 +12,8 @@ macro_rules! inst {
         $inst_func:expr
     ) => {
         {
-            if cfg!(debug_cpu) && cfg!(debug_assertions) && cfg!(not(no_std)) {
-                println!("[#{}][before] cycle:{} pc_incr:{} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}(NO*BDIZC)", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
+            if cfg!(all(debug_cpu, not(no_std))) {
+                println!("[cpu][#{}][before] cycle:{} pc_incr:{} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}(NO*BDIZC)", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
             }
             // fetchしない場合(accumulate, implicit)は、pc incrementを0に設定する
             // addressはそのまま供給する
@@ -23,22 +23,22 @@ macro_rules! inst {
                     // addressingした分進めとく
                     $self.increment_pc($pc_incr);
                     // debug print
-                    if  cfg!(debug_cpu) && cfg!(debug_assertions) && cfg!(not(no_std)) {
-                        println!("[#{}][addressing] addr:{:04x} data:{:02x} | data(char):{}", $name, a, d, d as char);
+                    if  cfg!(all(debug_cpu, not(no_std))) {
+                        println!("[cpu][#{}][addressing] addr:{:04x} data:{:02x} | data(char):{}", $name, a, d, d as char);
                     }
                     (a, c, d)
                 } else {
                     // debug print
                     if  cfg!(debug_cpu)  && cfg!(debug_assertions) && cfg!(not(no_std)) {
-                        println!("[#{}][addressing] skip addressing", $name);
+                        println!("[cpu][#{}][addressing] skip addressing", $name);
                     }
                     // implied, accumulator
                     (0u16, 0u8, 0u8)
                 };
             // 命令実行
             let additional_cycle2 = $inst_func(addr, data);
-            if cfg!(debug_cpu) && cfg!(debug_assertions) && cfg!(not(no_std)) {
-                println!("[#{}][after ] cycle:{} pc_incr:{} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}(NO*BDIZC)", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
+            if cfg!(all(debug_cpu, not(no_std))) {
+                println!("[cpu][#{}][after ] cycle:{} pc_incr:{} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}(NO*BDIZC)", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
             }
             // かかるclock cycleを返却
             ($cycle + additional_cycle1 + additional_cycle2)
@@ -77,8 +77,8 @@ impl Cpu {
     pub fn step(&mut self, system: &mut System) -> u8 {
         let opcode = system.read_u8(self.pc, false);
         self.increment_pc(1);
-        if cfg!(debug_cpu) &&  cfg!(debug_assertions) && cfg!(not(no_std)) {
-            println!("[opcode fetched] opcode:{:02x} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", opcode, self.pc, self.a, self.x, self.y, self.sp, self.p);
+        if cfg!(all(debug_cpu, not(no_std))) {
+            println!("[cpu][opcode fetched] opcode:{:02x} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", opcode, self.pc, self.a, self.x, self.y, self.sp, self.p);
         }
         inst!(self, system, opcode,
             /**************** ADC ****************/

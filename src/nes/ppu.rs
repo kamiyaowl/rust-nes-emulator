@@ -166,7 +166,10 @@ impl Ppu {
     /// `system` - レジスタ読み書きする
     /// `video_system` - レジスタ読み書きする
     /// `videoout_func` - pixelごとのデータが決まるごとに呼ぶ(NESは出力ダブルバッファとかない)
-    pub fn step(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, videoout_func: impl Fn(Position, Color)) {
+    pub fn step(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, videoout_func: impl FnMut(Position, Color)) {
+        if cfg!(debug_ppu) && cfg!(debug_assertions) && cfg!(not(no_std)) {
+            println!("[ppu][step] line:{}", self.current_line);
+        }
         match LineStatus::from(self.current_line) {
             LineStatus::Visible => {
                 // 1行描く
@@ -179,7 +182,7 @@ impl Ppu {
                 if is_first {
                     system.write_ppu_is_vblank(true);
                     if system.read_ppu_nmi_enable() {
-                        cpu.interrupt(system, Interrupt::NMI)
+                        cpu.interrupt(system, Interrupt::NMI);
                     }
                 }
             },

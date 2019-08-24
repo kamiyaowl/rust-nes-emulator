@@ -62,14 +62,27 @@ fn run_cpu_ppu(path: String, validate: impl Fn(&Cpu, &System, &[[Color; VISIBLE_
 
     let cycle_for_draw_once = usize::from(RENDER_SCREEN_HEIGHT + 1);
     for i in 0..cycle_for_draw_once {
-        println!("================ ppu_step:{} ================", i);
-        ppu.step(&mut cpu, &mut cpu_sys, &mut video_sys, move |pos, color|{
-            // fb[pos.1 as usize][pos.0 as usize] = color;
+        ppu.step(&mut cpu, &mut cpu_sys, &mut video_sys, |pos, color|{
+            fb[pos.1 as usize][pos.0 as usize] = color;
         });
         let mut cpu_cycle = 0;
         while cpu_cycle < CPU_CYCLE_PER_LINE {
             cpu_cycle = cpu_cycle + usize::from(cpu.step(&mut cpu_sys));
         }
+    }
+    // test draw
+    println!("=========================== frame buffer print ===========================");
+    for j in 0..VISIBLE_SCREEN_HEIGHT {
+        print!("{:02x}:", j);
+        for i in 0..VISIBLE_SCREEN_WIDTH {
+            let c = fb[j][i];
+            if c.0 == 0 && c.1 == 0 && c.2 == 0 {
+                print!(".");
+            } else {
+                print!("#");
+            }
+        }
+        println!("");
     }
     validate(&cpu, &cpu_sys, &fb);
 
