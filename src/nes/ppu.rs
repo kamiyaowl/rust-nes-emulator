@@ -10,7 +10,7 @@ pub const VISIBLE_SCREEN_WIDTH  : usize = 256;
 pub const VISIBLE_SCREEN_HEIGHT : usize = 240;
 
 pub const RENDER_SCREEN_WIDTH   : u16 = 256;
-pub const RENDER_SCREEN_HEIGHT  : u16 = 261;
+pub const RENDER_SCREEN_HEIGHT  : u16 = 262; // 0 ~ 261
 
 #[derive(Copy, Clone)]
 pub struct Position(pub u8, pub u8);
