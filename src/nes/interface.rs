@@ -5,6 +5,13 @@ pub trait SystemBus {
     fn write_u8(&mut self, addr: u16, data: u8, is_nondestructive: bool);
 }
 
+/// Video Bus経由でR/Wする機能を提供します
+/// addrは0x0000 ~ 0x3fffの範囲内
+pub trait VideoBus {
+    fn read_video_u8(&mut self, addr: u16) -> u8;
+    fn write_video_u8(&mut self, addr: u16, data: u8);
+}
+
 /// 外部から内容の変更やクリアが可能
 pub trait EmulateControl {
     /// 内部変数を強制的にリセットします。リセットベクタに飛ぶ挙動ではありません。

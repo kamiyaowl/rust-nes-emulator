@@ -1,4 +1,4 @@
-use super::interface::{SystemBus, EmulateControl};
+use super::interface::*;
 use super::cpu::Cpu;
 use super::system::System;
 
@@ -87,6 +87,7 @@ struct Sprite {
     x: u8,
 }
 pub struct Ppu {
+    // 0x0000 - 0x1fff : 
 }
 
 impl Default for Ppu {

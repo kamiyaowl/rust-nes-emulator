@@ -1,5 +1,5 @@
 use super::system::System;
-use super::interface::{SystemBus, EmulateControl};
+use super::interface::*;
 
 const NMI_READ_LOWER:   u16 = 0xfffa;
 const NMI_READ_UPPER:   u16 = 0xfffb;

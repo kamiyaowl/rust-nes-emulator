@@ -1,21 +1,66 @@
-use super::interface::{SystemBus, EmulateControl};
+use super::interface::*;
 
-#[derive(Copy, Clone)]
-pub struct Cassette {
-    pub mapper: Mapper,
-    // TODO: enum Mapperに持たせたほうが...
-    pub prg_rom: [u8; 0x8000], // 32KB
-    pub chr_rom: [u8; 0x2000], // 8K
-}
+pub const PRG_ROM_MAX_SIZE             : usize = 0x8000;
+pub const CHR_ROM_MAX_SIZE             : usize = 0x2000;
+pub const BATTERY_PACKED_RAM_MAX_SIZE  : usize = 0x2000;
 
-/// Cassete and mapper implement
-/// https://wiki.nesdev.com/w/index.php/List_of_mappers
+pub const PRG_ROM_SYSTEM_BASE_ADDR     : u16 = 0x8000;
+pub const BATTERY_PACKED_RAM_BASE_ADDR : u16 = 0x6000;
+
+pub const INES_TRAINER_DATA_SIZE       : usize = 0x0200;
+
 #[derive(Copy, Clone)]
 pub enum Mapper {
     Unknown,
     /// Mapper0: no mapper
     Nrom,
 }
+
+#[derive(Copy, Clone)]
+pub enum NameTableMirror {
+    Unknown,
+    Horizontal,
+    Vertical,
+    SingleScreen,
+    FourScreen,
+}
+/// Cassete and mapper implement
+/// https://wiki.nesdev.com/w/index.php/List_of_mappers
+#[derive(Copy, Clone)]
+pub struct Cassette {
+    // Mapperの種類
+    pub mapper: Mapper,
+    /// Video領域での0x2000 ~ 0x2effのミラーリング設定
+    pub nametable_mirror: NameTableMirror,
+    /// 0x6000 ~ 0x7fffのカセット内RAMを有効化する
+    pub is_exists_battery_backed_ram: bool,
+
+    // data size
+    pub prg_rom_bytes: usize,
+    pub chr_rom_bytes: usize,
+    // datas
+    pub prg_rom: [u8; PRG_ROM_MAX_SIZE], // 32KB
+    pub chr_rom: [u8; CHR_ROM_MAX_SIZE], // 8K
+    pub battery_packed_ram: [u8; BATTERY_PACKED_RAM_MAX_SIZE],
+}
+
+impl Default for Cassette {
+    fn default() -> Self {
+        Self {
+            mapper: Mapper::Unknown,
+            nametable_mirror: NameTableMirror::Unknown,
+            is_exists_battery_backed_ram: false,
+
+            prg_rom_bytes: 0,
+            chr_rom_bytes: 0,
+
+            prg_rom: [0; PRG_ROM_MAX_SIZE],
+            chr_rom: [0; CHR_ROM_MAX_SIZE],
+            battery_packed_ram: [0; BATTERY_PACKED_RAM_MAX_SIZE],
+        }
+    }
+}
+
 
 impl Cassette {
     /// inesファイルから読み出してメモリ上に展開します
@@ -52,84 +97,126 @@ impl Cassette {
         debug_assert!(prg_rom_size > 0);
 
         // flags parsing
-        let _is_mirroring_vertical        = (flags6 & 0x01) == 0x01;
-        let _is_exists_battery_backed_ram = (flags6 & 0x02) == 0x02;
-        let is_exists_trainer             = (flags6 & 0x04) == 0x04; // 512byte trainer at 0x7000-0x71ff
+        let is_mirroring_vertical        = (flags6 & 0x01) == 0x01;
+        if is_mirroring_vertical {
+            self.nametable_mirror = NameTableMirror::Vertical;
+        } else {
+            self.nametable_mirror = NameTableMirror::Horizontal;
+        }
+        self.is_exists_battery_backed_ram = (flags6 & 0x02) == 0x02; // 0x6000 - 0x7fffのRAMを使わせる
+        let is_exists_trainer             = (flags6 & 0x04) == 0x04; // 512byte trainer at 0x7000-0x71ff in ines file
 
         // 領域計算
-        let header_bytes  = 16;
-        let trainer_bytes = if is_exists_trainer { 512 } else { 0 };
-        let prg_rom_bytes = prg_rom_size    * 0x4000;
-        let chr_rom_bytes = chr_rom_size    * 0x2000;
+        let header_bytes     = 16;
+        let trainer_bytes    = if is_exists_trainer { 512 } else { 0 };
+        let prg_rom_bytes    = prg_rom_size    * 0x4000; // 単位変換する
+        let chr_rom_bytes    = chr_rom_size    * 0x2000; // 単位変換する
+        let trainer_baseaddr = header_bytes;
         let prg_rom_baseaddr = header_bytes + trainer_bytes;
         let chr_rom_baseaddr = header_bytes + trainer_bytes + prg_rom_bytes;
 
         // 現在はMapper0しか対応しない
         self.mapper = Mapper::Nrom;
-        debug_assert!(prg_rom_bytes <= 0x8000);
-        debug_assert!(chr_rom_bytes <= 0x2000);
+        debug_assert!(prg_rom_bytes <= PRG_ROM_MAX_SIZE);
+        debug_assert!(chr_rom_bytes <= CHR_ROM_MAX_SIZE);
 
-        // Seq Readしか許さない場合、trainer領域を読み飛ばす
         if cfg!(debug_assertions) && cfg!(not(no_std)) {
             println!("[cassette][from ines bin] header_bytes:{:04x}", header_bytes);
             println!("[cassette][from ines bin] trainer_bytes:{:04x}", trainer_bytes);
             println!("[cassette][from ines bin] prg_rom_bytes:{:04x}", prg_rom_bytes);
             println!("[cassette][from ines bin] chr_rom_bytes:{:04x}", chr_rom_bytes);
+            println!("[cassette][from ines bin] trainer_baseaddr:{:04x}", trainer_baseaddr);
             println!("[cassette][from ines bin] prg_rom_baseaddr:{:04x}", prg_rom_baseaddr);
             println!("[cassette][from ines bin] chr_rom_baseaddr:{:04x}", chr_rom_baseaddr);
         }
-        // CPUで地道にコピーする
+
+        // Battery Packed RAMの初期値
+        if is_exists_trainer {
+            // 0x7000 - 0x71ffに展開する
+            for index in 0..INES_TRAINER_DATA_SIZE {
+                let ines_binary_addr = trainer_baseaddr + index;
+                self.prg_rom[index] = read_closure(ines_binary_addr);
+            }
+        }
+
+        // PRG-ROM
         for index in 0..prg_rom_bytes {
             let ines_binary_addr = prg_rom_baseaddr + index;
             self.prg_rom[index] = read_closure(ines_binary_addr);
-            // NROM 16KBの場合、後半0xc0000~0xffffはミラーしてあげないとだめ
-            if prg_rom_size == 1 {
-                self.prg_rom[index + 0x4000] = read_closure(ines_binary_addr);
-            }
         }
+        // CHR-ROM
         for index in 0..chr_rom_bytes {
             let ines_binary_addr = chr_rom_baseaddr + index;
             self.chr_rom[index] = read_closure(ines_binary_addr);
         }
+
+        // rom sizeをセットしとく
+        self.prg_rom_bytes = prg_rom_bytes;
+        self.chr_rom_bytes = chr_rom_bytes;
 
         // やったね
         true
     }
 }
 
-impl Default for Cassette {
-    fn default() -> Self {
-        Self {
-            mapper: Mapper::Unknown,
-            prg_rom: [0; 0x8000],
-            chr_rom: [0; 0x2000],
-        }
-    }
-}
-
 impl SystemBus for Cassette {
     fn read_u8(&mut self, addr: u16, _is_nondestructive: bool) -> u8 {
-        debug_assert!(addr >= 0x8000);
-        let index = usize::from(addr - 0x8000);
-        match self.mapper {
-            Mapper::Nrom => self.prg_rom[index],
-            _ => unimplemented!(),
+        if addr < PRG_ROM_SYSTEM_BASE_ADDR {
+            debug_assert!(addr >= BATTERY_PACKED_RAM_BASE_ADDR);
+
+            let index = usize::from(addr - BATTERY_PACKED_RAM_BASE_ADDR);
+            self.battery_packed_ram[index]
+        } else {
+          debug_assert!(addr >= PRG_ROM_SYSTEM_BASE_ADDR);
+
+            let index = usize::from(addr - PRG_ROM_SYSTEM_BASE_ADDR);
+            match self.mapper {
+                Mapper::Nrom => self.prg_rom[index],
+                _ => unimplemented!(),
+            }
         }
     }
     fn write_u8(&mut self, addr: u16, data: u8, _is_nondestructive: bool) {
-        debug_assert!(addr >= 0x8000);
-        let index = usize::from(addr - 0x8000);
-        match self.mapper {
-            Mapper::Nrom => self.prg_rom[index] = data,
-            _ => unimplemented!(),
+        if addr < PRG_ROM_SYSTEM_BASE_ADDR {
+            debug_assert!(addr >= BATTERY_PACKED_RAM_BASE_ADDR);
+
+            let index = usize::from(addr - BATTERY_PACKED_RAM_BASE_ADDR);
+            self.battery_packed_ram[index] = data
+        } else {
+          debug_assert!(addr >= PRG_ROM_SYSTEM_BASE_ADDR);
+
+            let index = usize::from(addr - PRG_ROM_SYSTEM_BASE_ADDR);
+            match self.mapper {
+                Mapper::Nrom => self.prg_rom[index] = data,
+                _ => unimplemented!(),
+            }
         }
+    }
+}
+impl VideoBus for Cassette {
+    fn read_video_u8(&mut self, addr: u16) -> u8 {
+        let index = usize::from(addr);
+        debug_assert!(index < CHR_ROM_MAX_SIZE);
+        self.chr_rom[index]
+    }
+    /// CHR_RAM対応も込めて書き換え可能にしておく
+    fn write_video_u8(&mut self, addr: u16, data: u8) {
+        let index = usize::from(addr);
+        debug_assert!(index < CHR_ROM_MAX_SIZE);
+        self.chr_rom[index] = data;
     }
 }
 
 impl EmulateControl for Cassette {
     fn reset(&mut self){
-        self.prg_rom = [0; 0x8000];
-        self.chr_rom = [0; 0x2000];
+        self.mapper =  Mapper::Unknown;
+        self.nametable_mirror =  NameTableMirror::Unknown;
+        self.is_exists_battery_backed_ram =  false;
+        self.prg_rom_bytes =  0;
+        self.chr_rom_bytes =  0;
+        self.prg_rom =  [0; PRG_ROM_MAX_SIZE];
+        self.chr_rom =  [0; CHR_ROM_MAX_SIZE];
+        self.battery_packed_ram =  [0; BATTERY_PACKED_RAM_MAX_SIZE];
     }
     fn get_dump_size() -> usize {
         unimplemented!();

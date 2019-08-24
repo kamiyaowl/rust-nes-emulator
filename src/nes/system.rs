@@ -1,12 +1,17 @@
-use super::interface::{SystemBus, EmulateControl};
+use super::interface::*;
 use super::cassette::Cassette;
 
-pub const WRAM_SIZE: usize           = 0x0800;
-pub const PPU_REG_SIZE: usize        = 0x0008;
-pub const APU_AND_IO_REG_SIZE: usize = 0x0018;
-pub const EROM_SIZE: usize           = 0x1FE0;
-pub const ERAM_SIZE: usize           = 0x2000;
-pub const PROM_SIZE: usize           = 0x8000; // 32KB
+pub const WRAM_SIZE           : usize = 0x0800;
+pub const PPU_REG_SIZE        : usize = 0x0008;
+pub const APU_AND_IO_REG_SIZE : usize = 0x0018;
+pub const EROM_SIZE           : usize = 0x1FE0;
+pub const ERAM_SIZE           : usize = 0x2000;
+pub const PROM_SIZE           : usize = 0x8000; // 32KB
+
+pub const WRAM_BASE_ADDR       : u16 = 0x0000;
+pub const PPU_REG_BASE_ADDR    : u16 = 0x2000;
+pub const APU_IO_REG_BASE_ADDR : u16 = 0x4000;
+pub const CASSETTE_BASE_ADDR   : u16 = 0x4020;
 
 /// Memory Access Dispatcher
 pub struct System {
@@ -66,13 +71,13 @@ impl Default for System {
 
 impl SystemBus for System {
     fn read_u8(&mut self, addr: u16, is_nondestructive: bool) -> u8 {
-        if addr < 0x2000 {
+        if addr < PPU_REG_BASE_ADDR {
             // mirror support
             let index = usize::from(addr) % self.wram.len();
             self.wram[index] 
-        } else if addr < 0x4000 {
+        } else if addr < APU_IO_REG_BASE_ADDR {
             // mirror support
-            let index = usize::from(addr - 0x2000) % self.ppu_reg.len(); 
+            let index = usize::from(addr - PPU_REG_BASE_ADDR) % self.ppu_reg.len(); 
             match index {
                 // PPU_STATUS 2度書きレジスタの状態をリセット, VBLANKフラグをクリア
                 0x02 => {
@@ -94,9 +99,8 @@ impl SystemBus for System {
                     self.ppu_reg[index] 
                 },
             }
-        } else if addr < 0x4020 {
-            // TODO: is_nondestructiveで処理分岐
-            let index = usize::from(addr - 0x4000);
+        } else if addr < CASSETTE_BASE_ADDR {
+            let index = usize::from(addr - APU_IO_REG_BASE_ADDR);
             if !is_nondestructive {
                 // TODO: PAD周りとかあれば
             }
@@ -106,13 +110,13 @@ impl SystemBus for System {
         }
     }
     fn write_u8(&mut self, addr: u16, data: u8, is_nondestructive: bool) {
-        if addr < 0x2000 {
+        if addr < PPU_REG_BASE_ADDR {
             // mirror support
             let index = usize::from(addr) % self.wram.len();
             self.wram[index] = data;
-        } else if addr < 0x4000 {
+        } else if addr < APU_IO_REG_BASE_ADDR {
             // mirror support
-            let index = usize::from(addr - 0x2000) % self.ppu_reg.len();
+            let index = usize::from(addr - PPU_REG_BASE_ADDR) % self.ppu_reg.len();
             match index {
                 // $2004 OAM_DATAに書いたら書き込みフラグを立てる(使わないだろうけど)
                 0x04 => {
@@ -166,8 +170,8 @@ impl SystemBus for System {
                     self.ppu_reg[index] = data;
                 },
             };
-        } else if addr < 0x4020 {
-            let index = usize::from(addr - 0x4000);
+        } else if addr < CASSETTE_BASE_ADDR {
+            let index = usize::from(addr - APU_IO_REG_BASE_ADDR);
             self.io_reg[index] = data;
         } else {
             self.cassette.write_u8(addr, data, is_nondestructive);
