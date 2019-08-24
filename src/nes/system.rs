@@ -69,6 +69,36 @@ impl Default for System {
     }
 }
 
+impl EmulateControl for System {
+    fn reset(&mut self) {
+        self.wram    = [0; WRAM_SIZE];
+        self.ppu_reg = [0; PPU_REG_SIZE];
+        self.io_reg  = [0; APU_AND_IO_REG_SIZE];
+
+        self.written_oam_data    = false;
+        self.written_ppu_scroll  = false;
+        self.written_ppu_addr    = false;
+        self.written_ppu_data    = false;
+        self.written_oam_dma     = false;
+        self.read_ppu_data       = false;
+
+        self.ppu_is_second_write = false;
+        self.ppu_scroll_y_reg    = 0;
+        self.ppu_addr_lower_reg  = 0;
+    }
+    fn get_dump_size() -> usize {
+        0x4020
+    }
+    fn dump(&self, _read_callback: impl Fn(usize, u8)) {
+        // TODO: #14 破壊読み出しのあるレジスタも強引に値を持ってくる
+        unimplemented!();
+    }
+    fn restore(&mut self, _write_callback: impl Fn(usize) -> u8) {
+        // TODO: #14
+        unimplemented!();
+    }
+}
+
 impl SystemBus for System {
     fn read_u8(&mut self, addr: u16, is_nondestructive: bool) -> u8 {
         if addr < PPU_REG_BASE_ADDR {
@@ -176,35 +206,5 @@ impl SystemBus for System {
         } else {
             self.cassette.write_u8(addr, data, is_nondestructive);
         }
-    }
-}
-
-impl EmulateControl for System {
-    fn reset(&mut self) {
-        self.wram    = [0; WRAM_SIZE];
-        self.ppu_reg = [0; PPU_REG_SIZE];
-        self.io_reg  = [0; APU_AND_IO_REG_SIZE];
-
-        self.written_oam_data    = false;
-        self.written_ppu_scroll  = false;
-        self.written_ppu_addr    = false;
-        self.written_ppu_data    = false;
-        self.written_oam_dma     = false;
-        self.read_ppu_data       = false;
-
-        self.ppu_is_second_write = false;
-        self.ppu_scroll_y_reg    = 0;
-        self.ppu_addr_lower_reg  = 0;
-    }
-    fn get_dump_size() -> usize {
-        0x4020
-    }
-    fn dump(&self, _read_callback: impl Fn(usize, u8)) {
-        // TODO: #14 破壊読み出しのあるレジスタも強引に値を持ってくる
-        unimplemented!();
-    }
-    fn restore(&mut self, _write_callback: impl Fn(usize) -> u8) {
-        // TODO: #14
-        unimplemented!();
     }
 }

@@ -58,13 +58,13 @@ impl Cpu {
             self.p = self.p & (!0x01u8);
         }
     }
-    pub fn read_negative_flag(&self)  -> bool { (self.p & 0x80u8) != 0x00u8 }
-    pub fn read_overflow_flag(&self)  -> bool { (self.p & 0x40u8) != 0x00u8 }
-    pub fn read_reserved_flag(&self)  -> bool { (self.p & 0x20u8) != 0x00u8 }
-    pub fn read_break_flag(&self)     -> bool { (self.p & 0x10u8) != 0x00u8 }
-    pub fn read_decimal_flag(&self)   -> bool { (self.p & 0x08u8) != 0x00u8 }
-    pub fn read_interrupt_flag(&self) -> bool { (self.p & 0x04u8) != 0x00u8 }
-    pub fn read_zero_flag(&self)      -> bool { (self.p & 0x02u8) != 0x00u8 }
-    pub fn read_carry_flag(&self)     -> bool { (self.p & 0x01u8) != 0x00u8 }
+    pub fn read_negative_flag(&self)  -> bool { (self.p & 0x80u8) == 0x80u8 }
+    pub fn read_overflow_flag(&self)  -> bool { (self.p & 0x40u8) == 0x40u8 }
+    pub fn read_reserved_flag(&self)  -> bool { (self.p & 0x20u8) == 0x20u8 }
+    pub fn read_break_flag(&self)     -> bool { (self.p & 0x10u8) == 0x10u8 }
+    pub fn read_decimal_flag(&self)   -> bool { (self.p & 0x08u8) == 0x08u8 }
+    pub fn read_interrupt_flag(&self) -> bool { (self.p & 0x04u8) == 0x04u8 }
+    pub fn read_zero_flag(&self)      -> bool { (self.p & 0x02u8) == 0x02u8 }
+    pub fn read_carry_flag(&self)     -> bool { (self.p & 0x01u8) == 0x01u8 }
 
 }

@@ -1,12 +1,23 @@
 use super::interface::*;
-use super::cpu::Cpu;
-use super::system::System;
+use super::cpu::*;
+use super::system::*;
+use super::video_system::*;
+
+/// 1lineあたりかかるCPUサイクル
+pub const CPU_CYCLE_PER_LINE: usize = 341;
+
+pub const VISIBLE_SCREEN_WIDTH  : usize = 256;
+pub const VISIBLE_SCREEN_HEIGHT : usize = 240;
+
+pub const RENDER_SCREEN_WIDTH   : u16 = 256;
+pub const RENDER_SCREEN_HEIGHT  : u16 = 261;
 
 #[derive(Copy, Clone)]
-pub struct Position(u8, u8);
+pub struct Position(pub u8, pub u8);
 
 #[derive(Copy, Clone)]
-pub struct Color(u8, u8, u8);
+/// R,G,B
+pub struct Color(pub u8, pub u8, pub u8);
 impl Color {
     /// 2C02の色情報をRGBに変換します
     /// ..VV_HHHH 形式
@@ -75,6 +86,7 @@ impl SpriteAttr {
     }
 }
 
+#[derive(Copy, Clone)]
 struct Sprite {
     ///  y座標
     /// 実際は+1した場所に表示する
@@ -86,21 +98,97 @@ struct Sprite {
     /// x座標
     x: u8,
 }
+
+#[derive(Copy, Clone)]
+enum LineStatus {
+    Visible, // 0~239
+    PostRender, // 240
+    VerticalBlanking(bool), // 241~260
+    PreRender, // 261
+}
+
+impl LineStatus {
+    fn from(line: u16) -> LineStatus {
+        if line < 240 {
+            LineStatus::Visible
+        } else if line == 240 {
+            LineStatus::PostRender
+        } else if line < 261 {
+            LineStatus::VerticalBlanking(line == 241)
+        } else if line == 261 {
+            LineStatus::PreRender
+        } else {
+            panic!("invalid line status");
+        }
+    }
+}
+
+
 pub struct Ppu {
-    // 0x0000 - 0x1fff : 
+    /// 次処理するy_index
+    pub current_line: u16,
 }
 
 impl Default for Ppu {
     fn default() -> Self {
         Self {
-
+            current_line: 261,
         }
     }
 }
 
-impl Ppu {
-    pub fn step(cpu_cycles: usize, videoout_closure: impl Fn(Position, Color)) {
+impl EmulateControl for Ppu {
+    fn reset(&mut self) {
+        self.current_line = 261;
+    }
+    fn get_dump_size() -> usize {
         unimplemented!();
+    }
+    fn dump(&self, _read_callback: impl Fn(usize, u8)) {
+        unimplemented!();
+    }
+    fn restore(&mut self, _write_callback: impl Fn(usize) -> u8) {
+        // TODO: #14
+        unimplemented!();
+    }
+}
+
+
+impl Ppu {
+    /// 0~239はvisible scanline
+    /// 描画処理が必要
+    fn update_current_line(&mut self) {
+        self.current_line = (self.current_line + 1) % RENDER_SCREEN_HEIGHT;
+    }
+    
+    /// PPUの処理を進めます(341 cpu cycleかかります)
+    /// `cpu` - Interruptの要求が必要
+    /// `system` - レジスタ読み書きする
+    /// `video_system` - レジスタ読み書きする
+    /// `videoout_func` - pixelごとのデータが決まるごとに呼ぶ(NESは出力ダブルバッファとかない)
+    pub fn step(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, videoout_func: impl Fn(Position, Color)) {
+        match LineStatus::from(self.current_line) {
+            LineStatus::Visible => {
+                // 1行描く
+            },
+            LineStatus::PostRender => {
+                // 何もしない
+            },
+            LineStatus::VerticalBlanking(is_first) => {
+                // Line:241ならVBLANKフラグを立てる, NMI割り込み許可あればやる
+                if is_first {
+                    system.write_ppu_is_vblank(true);
+                    if system.read_ppu_nmi_enable() {
+                        cpu.interrupt(system, Interrupt::NMI)
+                    }
+                }
+            },
+            LineStatus::PreRender => {
+                // VBLANKフラグを下ろす
+                system.write_ppu_is_vblank(false);
+            },
+        };
+        self.update_current_line();
     }
 
 }

@@ -65,7 +65,7 @@ impl Default for Cassette {
 impl Cassette {
     /// inesファイルから読み出してメモリ上に展開します
     /// 組み込み環境でRAM展開されていなくても利用できるように、多少パフォーマンスを犠牲にしてもclosure経由で読み出します
-    pub fn from_ines_binary(&mut self, read_closure: impl Fn(usize) -> u8) -> bool {
+    pub fn from_ines_binary(&mut self, read_func: impl Fn(usize) -> u8) -> bool {
         // header : 16byte
         // trainer: 0 or 512byte
         // prg rom: prg_rom_size * 16KB(0x4000)
@@ -74,25 +74,25 @@ impl Cassette {
         // playchoise prom: 16byte
 
         // header check
-        if read_closure(0) != 0x4e { // N
+        if read_func(0) != 0x4e { // N
             return false;
         }
-        if read_closure(1) != 0x45 { // E
+        if read_func(1) != 0x45 { // E
             return false;
         }
-        if read_closure(2) != 0x53 { // S
+        if read_func(2) != 0x53 { // S
             return false;
         }
-        if read_closure(3) != 0x1a { // character break
+        if read_func(3) != 0x1a { // character break
             return false;
         }
-        let prg_rom_size = usize::from(read_closure(4)); // * 16KBしてあげる
-        let chr_rom_size = usize::from(read_closure(5)); // * 8KBしてあげる
-        let flags6       = read_closure(6);
-        let _flags7      = read_closure(7);
-        let _flags8      = read_closure(8);
-        let _flags9      = read_closure(9);
-        let _flags10     = read_closure(10);
+        let prg_rom_size = usize::from(read_func(4)); // * 16KBしてあげる
+        let chr_rom_size = usize::from(read_func(5)); // * 8KBしてあげる
+        let flags6       = read_func(6);
+        let _flags7      = read_func(7);
+        let _flags8      = read_func(8);
+        let _flags9      = read_func(9);
+        let _flags10     = read_func(10);
         // 11~15 unused_padding
         debug_assert!(prg_rom_size > 0);
 
@@ -135,19 +135,19 @@ impl Cassette {
             // 0x7000 - 0x71ffに展開する
             for index in 0..INES_TRAINER_DATA_SIZE {
                 let ines_binary_addr = trainer_baseaddr + index;
-                self.prg_rom[index] = read_closure(ines_binary_addr);
+                self.prg_rom[index] = read_func(ines_binary_addr);
             }
         }
 
         // PRG-ROM
         for index in 0..prg_rom_bytes {
             let ines_binary_addr = prg_rom_baseaddr + index;
-            self.prg_rom[index] = read_closure(ines_binary_addr);
+            self.prg_rom[index] = read_func(ines_binary_addr);
         }
         // CHR-ROM
         for index in 0..chr_rom_bytes {
             let ines_binary_addr = chr_rom_baseaddr + index;
-            self.chr_rom[index] = read_closure(ines_binary_addr);
+            self.chr_rom[index] = read_func(ines_binary_addr);
         }
 
         // rom sizeをセットしとく
@@ -171,7 +171,7 @@ impl SystemBus for Cassette {
 
             let index = usize::from(addr - PRG_ROM_SYSTEM_BASE_ADDR);
             // ROMが16KB場合のミラーリング
-            if (index < self.prg_rom_bytes) {
+            if index < self.prg_rom_bytes {
                 self.prg_rom[index]
             } else {
                 self.prg_rom[index - self.prg_rom_bytes]
@@ -189,7 +189,7 @@ impl SystemBus for Cassette {
 
             let index = usize::from(addr - PRG_ROM_SYSTEM_BASE_ADDR);
             // ROMが16KB場合のミラーリング
-            if (index < self.prg_rom_bytes) {
+            if index < self.prg_rom_bytes {
                 self.prg_rom[index] = data;
             } else {
                 self.prg_rom[index - self.prg_rom_bytes] = data;

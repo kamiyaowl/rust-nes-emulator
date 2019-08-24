@@ -18,4 +18,5 @@ pub mod video_system;
 pub use system::*;
 pub use cpu::*;
 pub use cassette::*;
+pub use ppu::*;
 pub use video_system::*;

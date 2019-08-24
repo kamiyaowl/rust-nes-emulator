@@ -7,39 +7,77 @@ use nes::interface::*;
 use std::fs::File;
 use std::io::Read;
 
-fn run_image(path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &System)) -> Result<(), Box<dyn std::error::Error>> {
-    let mut cpu: Cpu = Default::default();
-    let mut sys: System = Default::default();
-    let mut cassette_emu: Cassette = Default::default();
-
+fn load_cassette(cassette: &mut Cassette, path: String) -> Result<(), Box<dyn std::error::Error>> {
     // nesファイルの読み込み
     let mut file = File::open(path)?;
     let mut buf: Vec<u8> = Vec::new();
     let _ = file.read_to_end(&mut buf)?;
     // casseteに展開
-    if !cassette_emu.from_ines_binary(|addr: usize| buf[addr]) {
+    if !cassette.from_ines_binary(|addr: usize| buf[addr]) {
         panic!("ines binary read error");
     }
-
-    // はじめる
-    sys.cassette = cassette_emu; // 現在はCopy trait
-    sys.reset();
-    cpu.reset();
-
-    cpu.interrupt(&mut sys, Interrupt::RESET);
-    let mut cpu_cycle: usize = 0;
-    for i in 0..cpu_steps {
-        println!("================ cpu_step:{}, cpu_cycle:{} ================", i, cpu_cycle);
-        cpu_cycle = cpu_cycle + usize::from(cpu.step(&mut sys));
-    }
-    validate(&cpu, &sys);
 
     Ok(())
 }
 
+fn run_cpu_only(path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &System)) -> Result<(), Box<dyn std::error::Error>> {
+    let mut cpu: Cpu = Default::default();
+    let mut cpu_sys: System = Default::default();
+    let mut cassette: Cassette = Default::default();
+
+    load_cassette(&mut cassette, path)?;
+    cpu_sys.cassette = cassette; // 現在はCopy trait
+
+    cpu.reset();
+    cpu_sys.reset();
+    cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
+
+    let mut cpu_cycle: usize = 0;
+    for i in 0..cpu_steps {
+        println!("================ cpu_step:{}, cpu_cycle:{} ================", i, cpu_cycle);
+        cpu_cycle = cpu_cycle + usize::from(cpu.step(&mut cpu_sys));
+    }
+    validate(&cpu, &cpu_sys);
+
+    Ok(())
+}
+
+fn run_cpu_ppu(path: String, validate: impl Fn(&Cpu, &System, &[[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT])) -> Result<(), Box<dyn std::error::Error>> {
+    let mut cpu: Cpu = Default::default();
+    let mut cpu_sys: System = Default::default();
+    let mut ppu: Ppu = Default::default();
+    let mut video_sys: VideoSystem = Default::default();
+    let mut cassette: Cassette = Default::default();
+
+    load_cassette(&mut cassette, path)?;
+    cpu_sys.cassette = cassette; // 現在はCopy trait
+
+    cpu.reset();
+    cpu_sys.reset();
+    ppu.reset();
+    video_sys.reset();
+    cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
+
+    let mut fb = [[Color(0,0,0); VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
+
+    let cycle_for_draw_once = usize::from(RENDER_SCREEN_HEIGHT + 1);
+    for i in 0..cycle_for_draw_once {
+        println!("================ ppu_step:{} ================", i);
+        ppu.step(&mut cpu, &mut cpu_sys, &mut video_sys, move |pos, color|{
+            // fb[pos.1 as usize][pos.0 as usize] = color;
+        });
+        let mut cpu_cycle = 0;
+        while cpu_cycle < CPU_CYCLE_PER_LINE {
+            cpu_cycle = cpu_cycle + usize::from(cpu.step(&mut cpu_sys));
+        }
+    }
+    validate(&cpu, &cpu_sys, &fb);
+
+    Ok(())
+}
 #[test]
-fn run_hello() -> Result<(), Box<dyn std::error::Error>>  {
-    run_image("roms/other/hello.nes".to_string(), 175, |cpu, _sys| {
+fn run_hello_cpu() -> Result<(), Box<dyn std::error::Error>>  {
+    run_cpu_only("roms/other/hello.nes".to_string(), 175, |cpu, _sys| {
         // 170step以降はJMPで無限ループしているはず
         assert_eq!(0x804e, cpu.pc);
         assert_eq!(0x01ff, cpu.sp);
@@ -50,6 +88,13 @@ fn run_hello() -> Result<(), Box<dyn std::error::Error>>  {
     })
 }
 
+#[test]
+fn run_hello_ppu() -> Result<(), Box<dyn std::error::Error>>  {
+    run_cpu_ppu("roms/other/hello.nes".to_string(), |cpu, _sys, fb| {
+    })
+}
+
 fn main() {
-    let _result = run_image("roms/other/hello.nes".to_string(), 175, |_cpu, _sys| {});
+    run_cpu_ppu("roms/other/hello.nes".to_string(), |cpu, _sys, fb| {
+    });
 }

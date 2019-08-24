@@ -37,13 +37,30 @@ impl Default for VideoSystem {
     }
 }
 
+impl EmulateControl for VideoSystem {
+    fn reset(&mut self) {
+        self.nametables = [[0; NAME_TABLE_SIZE]; NUM_OF_NAME_TABLE];
+        self.palette = [0; PALETTE_SIZE];
+    }
+    fn get_dump_size() -> usize {
+        unimplemented!();
+    }
+    fn dump(&self, _read_callback: impl Fn(usize, u8)) {
+        unimplemented!();
+    }
+    fn restore(&mut self, _write_callback: impl Fn(usize) -> u8) {
+        // TODO: #14
+        unimplemented!();
+    }
+}
+
 impl VideoSystem {
     /// NameTable Mirrorのアドレス変換をします
     /// 戻り値: (table_index[0,1,2,3のどれか], offset[中身のindex])
     /// 
     /// [A, B]: A-0x2000, B-0x2400
     /// [C, D]: C-0x2800, D-0x2c00
-    pub fn convert_name_table_addr(&self, mirror_mode: NameTableMirror, addr: u16) -> (usize, usize) {
+    fn convert_name_table_addr(&self, mirror_mode: NameTableMirror, addr: u16) -> (usize, usize) {
         debug_assert!(addr >= NAME_TABLE_BASE_ADDR);
         debug_assert!(addr < NAME_TABLE_MIRROR_BASE_ADDR);
 
@@ -63,7 +80,7 @@ impl VideoSystem {
             NameTableMirror::Vertical => {
                 // [A, B]
                 // [A, B]
-                let tmp_addr = (if addr >= 0x2800 { addr - 0x800 } else { addr });// とりあえず上の領域で考える
+                let tmp_addr = if addr >= 0x2800 { addr - 0x800 } else { addr };// とりあえず上の領域で考える
                 if tmp_addr < 0x2400 {
                     0
                 } else {

@@ -8,23 +8,23 @@ impl System {
     /// VBLANK発生時にNMI割り込みを出す
     /// oneshotではなく0x2002のVLANKフラグがある限り
     pub fn read_ppu_nmi_enable(&self) -> bool {
-        (self.ppu_reg[0] & 0x80u8) != 0x80u8
+        (self.ppu_reg[0] & 0x80u8) == 0x80u8
     }
     pub fn read_ppu_is_master(&self) -> bool {
-        (self.ppu_reg[0] & 0x40u8) != 0x40u8
+        (self.ppu_reg[0] & 0x40u8) == 0x40u8
     }
     pub fn read_ppu_sprite_height(&self) -> u8 {
-        if (self.ppu_reg[0] & 0x20u8) != 0x20u8 { 16 } else { 8 }
+        if (self.ppu_reg[0] & 0x20u8) == 0x20u8 { 16 } else { 8 }
     }
     pub fn read_ppu_bg_pattern_table_addr(&self) -> u16 {
-        if (self.ppu_reg[0] & 0x10u8) != 0x10u8 { 0x1000u16 } else { 0x0000u16 }
+        if (self.ppu_reg[0] & 0x10u8) == 0x10u8 { 0x1000u16 } else { 0x0000u16 }
     }
     pub fn read_ppu_sprite_pattern_table_addr(&self) -> u16 {
-        if (self.ppu_reg[0] & 0x08u8) != 0x08u8 { 0x1000u16 } else { 0x0000u16 }
+        if (self.ppu_reg[0] & 0x08u8) == 0x08u8 { 0x1000u16 } else { 0x0000u16 }
     }
     /// PPUのアドレスインクリメント数 0:+1, horizontal, 1:+32 vertical
     pub fn read_ppu_addr_increment(&self) -> u8 {
-        if (self.ppu_reg[0] & 0x04u8) != 0x04u8 { 32u8 } else { 1u8 }
+        if (self.ppu_reg[0] & 0x04u8) == 0x04u8 { 32u8 } else { 1u8 }
     }
     pub fn read_ppu_name_table_addr(&self) -> u16 {
         match self.ppu_reg[0] & 0x03u8 {
@@ -38,28 +38,28 @@ impl System {
     /*************************** 0x2001: PPUMASK ***************************/
     /// sprite描画有効判定
     pub fn read_ppu_is_write_sprite(&self) -> bool {
-        (self.ppu_reg[1] & 0x10u8) != 0x10u8
+        (self.ppu_reg[1] & 0x10u8) == 0x10u8
     }
     /// bg描画有効判定
     pub fn read_ppu_is_write_bg(&self) -> bool {
-        (self.ppu_reg[1] & 0x08u8) != 0x08u8
+        (self.ppu_reg[1] & 0x08u8) == 0x08u8
     }
     /// 左端8pxでスプライトクリッピング
     pub fn read_ppu_is_clip_sprite_at_leftend(&self) -> bool {
-        (self.ppu_reg[1] & 0x04u8) != 0x04u8
+        (self.ppu_reg[1] & 0x04u8) == 0x04u8
     }
     /// 左端8pxでbgクリッピング
     pub fn read_ppu_is_clip_bg_at_leftend(&self) -> bool {
-        (self.ppu_reg[1] & 0x02u8) != 0x02u8
+        (self.ppu_reg[1] & 0x02u8) == 0x02u8
     }
     pub fn read_is_monochrome(&self) -> bool {
-        (self.ppu_reg[1] & 0x01u8) != 0x01u8
+        (self.ppu_reg[1] & 0x01u8) == 0x01u8
     }
     /*************************** 0x2002: PPU_STATUS ***************************/
     /// VBlankフラグをみて、NMI割り込みしようね
     /// CPUからPPU_STATUSを読みだした際の自動クリアなので、この関数を呼んでもクリアされない
     pub fn read_ppu_is_vblank(&self) -> bool {
-        (self.ppu_reg[2] & 0x80u8) != 0x80u8
+        (self.ppu_reg[2] & 0x80u8) == 0x80u8
     }
     /// VBlankフラグを立てる、NMI割り込みもしようね
     pub fn write_ppu_is_vblank(&mut self, is_set: bool) {
@@ -71,7 +71,7 @@ impl System {
     }
     /// Sprite0描画中かどうか
     pub fn read_ppu_is_hit_sprite0(&self) -> bool {
-        (self.ppu_reg[2] & 0x40u8) != 0x40u8
+        (self.ppu_reg[2] & 0x40u8) == 0x40u8
     }
     pub fn write_ppu_is_hit_sprite0(&mut self, is_set: bool) {
         if is_set {
@@ -82,7 +82,7 @@ impl System {
     }
     /// scanline上のSprite数が8個より大きいか
     pub fn read_ppu_is_sprite_overflow(&self) -> bool {
-        (self.ppu_reg[2] & 0x20u8) != 0x20u8
+        (self.ppu_reg[2] & 0x20u8) == 0x20u8
     }
     pub fn write_ppu_is_sprite_overflow(&mut self, is_set: bool) {
         if is_set {
