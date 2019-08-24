@@ -170,9 +170,11 @@ impl SystemBus for Cassette {
           debug_assert!(addr >= PRG_ROM_SYSTEM_BASE_ADDR);
 
             let index = usize::from(addr - PRG_ROM_SYSTEM_BASE_ADDR);
-            match self.mapper {
-                Mapper::Nrom => self.prg_rom[index],
-                _ => unimplemented!(),
+            // ROMが16KB場合のミラーリング
+            if (index < self.prg_rom_bytes) {
+                self.prg_rom[index]
+            } else {
+                self.prg_rom[index - self.prg_rom_bytes]
             }
         }
     }
@@ -183,12 +185,14 @@ impl SystemBus for Cassette {
             let index = usize::from(addr - BATTERY_PACKED_RAM_BASE_ADDR);
             self.battery_packed_ram[index] = data
         } else {
-          debug_assert!(addr >= PRG_ROM_SYSTEM_BASE_ADDR);
+             debug_assert!(addr >= PRG_ROM_SYSTEM_BASE_ADDR);
 
             let index = usize::from(addr - PRG_ROM_SYSTEM_BASE_ADDR);
-            match self.mapper {
-                Mapper::Nrom => self.prg_rom[index] = data,
-                _ => unimplemented!(),
+            // ROMが16KB場合のミラーリング
+            if (index < self.prg_rom_bytes) {
+                self.prg_rom[index] = data;
+            } else {
+                self.prg_rom[index - self.prg_rom_bytes] = data;
             }
         }
     }
