@@ -57,6 +57,7 @@ impl System {
     }
     /*************************** 0x2002: PPU_STATUS ***************************/
     /// VBlankフラグをみて、NMI割り込みしようね
+    /// CPUからPPU_STATUSを読みだした際の自動クリアなので、この関数を呼んでもクリアされない
     pub fn read_ppu_is_vblank(&self) -> bool {
         (self.ppu_reg[2] & 0x80u8) != 0x80u8
     }
@@ -68,6 +69,7 @@ impl System {
             self.ppu_reg[2] = self.ppu_reg[2] & (!0x80u8);
         }
     }
+    /// Sprite0描画中かどうか
     pub fn read_ppu_is_hit_sprite0(&self) -> bool {
         (self.ppu_reg[2] & 0x40u8) != 0x40u8
     }
@@ -76,6 +78,17 @@ impl System {
             self.ppu_reg[2] = self.ppu_reg[2] | 0x40u8;
         } else {
             self.ppu_reg[2] = self.ppu_reg[2] & (!0x40u8);
+        }
+    }
+    /// scanline上のSprite数が8個より大きいか
+    pub fn read_ppu_is_sprite_overflow(&self) -> bool {
+        (self.ppu_reg[2] & 0x20u8) != 0x20u8
+    }
+    pub fn write_ppu_is_sprite_overflow(&mut self, is_set: bool) {
+        if is_set {
+            self.ppu_reg[2] = self.ppu_reg[2] | 0x20u8;
+        } else {
+            self.ppu_reg[2] = self.ppu_reg[2] & (!0x20u8);
         }
     }
     /// line 261到達時のリセット用

@@ -88,9 +88,11 @@ impl SystemBus for System {
                         self.read_ppu_data = true;
                     }
                     self.ppu_reg[index] 
-                }
+                },
                 // default
-                _ => self.ppu_reg[index] 
+                _ => {
+                    self.ppu_reg[index] 
+                },
             }
         } else if addr < 0x4020 {
             // TODO: is_nondestructiveで処理分岐
@@ -158,11 +160,11 @@ impl SystemBus for System {
                         // PPUに書いてもらおう
                         self.written_ppu_data = true;
                     }
-                }
+                },
                 // default
                 _ => {
                     self.ppu_reg[index] = data;
-                }
+                },
             };
         } else if addr < 0x4020 {
             let index = usize::from(addr - 0x4000);
