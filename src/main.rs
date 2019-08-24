@@ -62,9 +62,8 @@ fn run_cpu_ppu(path: String, validate: impl Fn(&Cpu, &System, &[[Color; VISIBLE_
 
     let cycle_for_draw_once = usize::from(RENDER_SCREEN_HEIGHT + 1);
     for i in 0..cycle_for_draw_once {
-        ppu.step(&mut cpu, &mut cpu_sys, &mut video_sys, |pos, color|{
-            fb[pos.1 as usize][pos.0 as usize] = color;
-        });
+        ppu.step(&mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
+        
         let mut cpu_cycle = 0;
         while cpu_cycle < CPU_CYCLE_PER_LINE {
             cpu_cycle = cpu_cycle + usize::from(cpu.step(&mut cpu_sys));
@@ -103,7 +102,16 @@ fn run_hello_cpu() -> Result<(), Box<dyn std::error::Error>>  {
 
 #[test]
 fn run_hello_ppu() -> Result<(), Box<dyn std::error::Error>>  {
-    run_cpu_ppu("roms/other/hello.nes".to_string(), |cpu, _sys, fb| {
+    run_cpu_ppu("roms/other/hello.nes".to_string(), |cpu, _sys, _fb| {
+        // 170step以降はJMPで無限ループしているはず
+        assert_eq!(0x804e, cpu.pc);
+        assert_eq!(0x01ff, cpu.sp);
+        assert_eq!(0x1e,   cpu.a);
+        assert_eq!(0x0d,   cpu.x);
+        assert_eq!(0x00,   cpu.y);
+        assert_eq!(0x34,   cpu.p);
+        // TODO: #3 FBの結果を精査する
+        unimplemented!();
     })
 }
 
