@@ -9,3 +9,5 @@ default = []
 
 [dependencies]
 bmp = "*"
+image = "0.22.1"
+piston_window = "0.98.0"

@@ -343,7 +343,7 @@ impl Ppu {
 
     /// 341cyc溜まったときの処理
     fn update_line(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, cassette: &mut Cassette, fb: &mut [[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
-        if cfg!(debug_assertions) && cfg!(not(no_std)) {
+        if cfg!(debug_ppu) && cfg!(debug_assertions) && cfg!(not(no_std)) {
             println!("[ppu][step] line:{}", self.current_line);
         }
         // OAM DMA

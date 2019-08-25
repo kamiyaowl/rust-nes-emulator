@@ -12,6 +12,12 @@ use std::io::Read;
 extern crate bmp;
 use bmp::{Image, Pixel};
 
+// for gui
+extern crate piston_window;
+use piston_window::*;
+extern crate image as im;
+use std::time::Instant;
+
 /// NESファイルを読み込んでカセットにロードさせます
 fn load_cassette(cassette: &mut Cassette, path: String) -> Result<(), Box<dyn std::error::Error>> {
     println!("read ines from {}", path);
@@ -137,6 +143,7 @@ fn run_cpu_ppu(rom_path: String, save_path: String, validate: impl Fn(&Cpu, &Sys
 
     Ok(())
 }
+
 #[test]
 fn run_hello_cpu() -> Result<(), Box<dyn std::error::Error>>  {
     run_cpu_only("roms/other/hello.nes".to_string(), 175, |cpu, _sys| {
@@ -165,16 +172,97 @@ fn run_hello_ppu() -> Result<(), Box<dyn std::error::Error>> {
     })
 }
 
+fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
+    // guiの準備
+    let mut window: PistonWindow =
+        WindowSettings::new("rust-nes-emulator", [256, 240])
+        .exit_on_esc(true)
+        .resizable(false)
+        .build()
+        .unwrap();
+
+
+    // emulatorの準備
+    let mut cpu: Cpu = Default::default();
+    let mut cpu_sys: System = Default::default();
+    let mut ppu: Ppu = Default::default();
+    let mut video_sys: VideoSystem = Default::default();
+    let mut cassette: Cassette = Default::default();
+
+    load_cassette(&mut cassette, rom_path)?;
+    cpu_sys.cassette = cassette; // 現在はCopy trait
+
+    cpu.reset();
+    cpu_sys.reset();
+    ppu.reset();
+    video_sys.reset();
+    cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
+
+    let mut fb = [[Color(0,0,0); VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
+
+    // FPS平均計算用
+    const elapsed_n: usize = 128;
+    let mut elapsed_ptr = 0;
+    let mut elapsed_secs = [0.0; elapsed_n];
+
+    while let Some(event) = window.next() {
+        // 1frame分実行する
+        let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT+1);
+
+        let mut total_cycle: usize = 0;
+        let start = Instant::now();
+        while total_cycle < cycle_for_draw_once {
+            let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
+            ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut cassette, &mut fb);
+            total_cycle = total_cycle + cpu_cycle;
+        }
+        let end = start.elapsed(); // 実行時間計測
+        elapsed_secs[elapsed_ptr] = (end.as_millis() as f32) / 1000.0;
+        elapsed_ptr = (elapsed_ptr + 1) % elapsed_n;
+
+        // TODO: Key入力でレジスタを叩く
+        if let Some(Button::Keyboard(key)) = event.press_args() {
+            match key {
+                Key::A => { println!("left") },
+                Key::S => { println!("down") },
+                Key::W => { println!("up") },
+                Key::D => { println!("right") },
+                Key::J => { println!("A") },
+                Key::K => { println!("B") },
+                Key::U => { println!("select") },
+                Key::I => { println!("start") },
+                Key::P => { 
+                    save_framebuffer(&fb, "run_gui_ss.bmp".to_string());
+                 },
+                _ => {},
+            }
+        };
+
+        // 書く
+        window.draw_2d(&event, |c, g, _| {
+            clear([0.0, 0.0, 0.0, 1.0], g);
+            for j in 0..VISIBLE_SCREEN_HEIGHT {
+                for i in 0..VISIBLE_SCREEN_WIDTH {
+                    let x = i as u32;
+                    let y = j as u32;
+                    let color = fb[j][i];
+                    rectangle([(color.0 as f32) / 255.0, (color.1 as f32) / 255.0, (color.2 as f32) / 255.0, 1.0],
+                                [x as f64, y as f64, (x + 1) as f64, (y + 1) as f64],
+                                c.transform, g);
+                }
+            }
+        });
+    }
+
+    // おわりにパフォーマンスとか出してみる
+    let sum = elapsed_secs.iter().fold(0.0, |sum, a| sum + a);
+    let average = sum / (elapsed_n as f32);
+    let fps = 1.0 / average;
+    println!("[performance] elapsed_average={}, fps_average={}", average, fps);
+
+    Ok(())
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    run_cpu_ppu("roms/other/hello.nes".to_string(), "framebuffer_run_hello_ppu.bmp".to_string(), |cpu, _sys, fb| {
-        // 170step以降はJMPで無限ループしているはず
-        assert_eq!(0x804e, cpu.pc);
-        assert_eq!(0x01ff, cpu.sp);
-        assert_eq!(0x1e,   cpu.a);
-        assert_eq!(0x0d,   cpu.x);
-        assert_eq!(0x00,   cpu.y);
-        assert_eq!(0x34,   cpu.p);
-        // FBの結果を精査する
-        let _ = validate_framebuffer(fb, "screenshot/hello.bmp".to_string());
-    })
+    run_gui("roms/other/hello.nes".to_string())
 }
