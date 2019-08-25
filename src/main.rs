@@ -59,6 +59,26 @@ fn save_framebuffer(fb: &[[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT],
     let _ = img.save(path);
 }
 
+/// FrameBufferの中身を保存されたbmpファイルと比較します
+fn validate_framebuffer(fb: &[[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT], path: String) -> Result<(), Box<dyn std::error::Error>>  {
+    let img = bmp::open(path)?;
+
+    for j in 0..VISIBLE_SCREEN_HEIGHT {
+        for i in 0..VISIBLE_SCREEN_WIDTH {
+            let x = i as u32;
+            let y = j as u32;
+            let c = fb[j][i];
+            let expect = img.get_pixel(x, y);
+
+            assert_eq!(expect.r, c.0);
+            assert_eq!(expect.g, c.1);
+            assert_eq!(expect.b, c.2);
+        }
+    }
+
+    Ok(())
+}
+
 fn run_cpu_only(path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &System)) -> Result<(), Box<dyn std::error::Error>> {
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
@@ -132,11 +152,7 @@ fn run_hello_cpu() -> Result<(), Box<dyn std::error::Error>>  {
 
 #[test]
 fn run_hello_ppu() -> Result<(), Box<dyn std::error::Error>> {
-    main()
-}
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    run_cpu_ppu("roms/other/hello.nes".to_string(), "framebuffer_run_hello_ppu.bmp".to_string(), |cpu, _sys, _fb| {
+    run_cpu_ppu("roms/other/hello.nes".to_string(), "framebuffer_run_hello_ppu.bmp".to_string(), |cpu, _sys, fb| {
         // 170step以降はJMPで無限ループしているはず
         assert_eq!(0x804e, cpu.pc);
         assert_eq!(0x01ff, cpu.sp);
@@ -144,7 +160,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         assert_eq!(0x0d,   cpu.x);
         assert_eq!(0x00,   cpu.y);
         assert_eq!(0x34,   cpu.p);
-        // TODO: #3 FBの結果を精査する
-        unimplemented!();
+        // FBの結果を精査する
+        let _ = validate_framebuffer(fb, "screenshot/hello.bmp".to_string());
     })
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    run_hello_ppu()
 }
