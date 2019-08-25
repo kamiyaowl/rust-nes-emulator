@@ -27,3 +27,4 @@ jobs:
           command: cargo test
       - store_artifacts:
           path: framebuffer_run_hello_ppu.bmp
+          destination: framebuffer_run_hello_ppu.bmp

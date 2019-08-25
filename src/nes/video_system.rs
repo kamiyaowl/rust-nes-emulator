@@ -65,7 +65,7 @@ impl VideoSystem {
         debug_assert!(addr < NAME_TABLE_MIRROR_BASE_ADDR);
 
         // offsetはすぐわかるはず
-        let offset = usize::from(addr) % NAME_TABLE_SIZE;
+        let offset = usize::from(addr - NAME_TABLE_BASE_ADDR) % NAME_TABLE_SIZE;
         // でかいとこはは頑張らないとわからんな
         let table_index = match mirror_mode {
             NameTableMirror::Horizontal => {
@@ -118,7 +118,14 @@ impl VideoSystem {
         } else {
             // Palette with mirroring
             let index = usize::from(addr - PALETTE_TABLE_BASE_ADDR) % PALETTE_SIZE;
-            self.palette[index]
+            // Marioの空が黒くなるらしい
+            match index {
+                0x10 => self.palette[0x00],
+                0x14 => self.palette[0x04],
+                0x18 => self.palette[0x08],
+                0x1c => self.palette[0x0c],
+                _    => self.palette[index],
+            }
         }
     }
     pub fn write_u8(&mut self, cassette: &mut Cassette, addr: u16, data: u8) {
@@ -136,7 +143,14 @@ impl VideoSystem {
         } else {
             // Palette with mirroring
             let index = usize::from(addr - PALETTE_TABLE_BASE_ADDR) % PALETTE_SIZE;
-            self.palette[index] = data;
+            // Marioの空が黒くなるらしい
+            match index {
+                0x10 => self.palette[0x00] = data,
+                0x14 => self.palette[0x04] = data,
+                0x18 => self.palette[0x08] = data,
+                0x1c => self.palette[0x0c] = data,
+                _    => self.palette[index] = data,
+            };
         }
     }
 }
