@@ -101,7 +101,7 @@ fn run_cpu_ppu(rom_path: String, save_path: String, validate: impl Fn(&Cpu, &Sys
 
     let cycle_for_draw_once = usize::from(RENDER_SCREEN_HEIGHT + 1);
     for _i in 0..cycle_for_draw_once {
-        ppu.step(&mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
+        ppu.step(&mut cpu, &mut cpu_sys, &mut video_sys, &mut cassette, &mut fb);
         
         let mut cpu_cycle = 0;
         while cpu_cycle < CPU_CYCLE_PER_LINE {

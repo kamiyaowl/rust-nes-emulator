@@ -101,14 +101,24 @@ impl System {
     }
     /*************************** 0x2004: OAMDATA ***************************/
     /// OAM_DATAの書き換えがあったかを示すフラグもついてくるよ(自動で揮発します)
-    pub fn read_ppu_oam_data(&mut self) -> (bool, u8) {
+    /// is_read, is_write, data
+    pub fn read_oam_data(&mut self) -> (bool, bool, u8) {
+        // Write優先でフラグ管理して返してあげる
         if self.written_oam_data {
             self.written_oam_data = false;
-            (true, self.ppu_reg[4])
+            (false, true, self.ppu_reg[4])
+        } else if self.read_oam_data {
+            self.read_oam_data = false;
+            (true, false, self.ppu_reg[4])
         } else {
-            (false, self.ppu_reg[4])
+            (false, false, self.ppu_reg[4])
         }
     }
+
+    pub fn write_oam_data(&mut self, data: u8) {
+        self.ppu_reg[4] = data;
+    }
+
     /*************************** 0x2005: PPUSCROLL ***************************/
     /// (x,y更新があったか示すフラグ, x, y)
     pub fn read_ppu_scroll(&mut self) -> (bool, u8, u8) {
@@ -135,16 +145,21 @@ impl System {
     /// read : PPU_DATAにPPU_ADDRが示す値を非破壊で入れてあげ、アドレスインクリメント(自ずとpost-fetchになる)
     /// write: PPU_DATAの値をPPU_ADDR(PPU空間)に代入、アドレスインクリメント
     pub fn read_ppu_data(&mut self) -> (bool, bool, u8) {
-        debug_assert!(!(self.written_ppu_data && self.read_ppu_data));
-        if self.read_ppu_data {
-            self.read_ppu_data = false;
-            (true, false, self.ppu_reg[7])
-        } else  if self.written_ppu_data {
+        // Write優先でフラグ管理して返してあげる
+        if self.written_ppu_data {
             self.written_ppu_data = false;
             (false, true, self.ppu_reg[7])
+        } else if self.read_ppu_data {
+            self.read_ppu_data = false;
+            (true, false, self.ppu_reg[7])
         } else {
             (false, false, self.ppu_reg[7])
         }
+    }
+
+    /// 書き換えるけどオートインクリメントなどはしません
+    pub fn write_ppu_data(&mut self, data: u8) {
+        self.ppu_reg[7] = data;
     }
 
     /// PPU_DATAに読み書きをしたときのPPU_ADDR自動加算を行います
@@ -169,7 +184,4 @@ impl System {
             (false, start_addr)
         }
     }
-
-
 }
-

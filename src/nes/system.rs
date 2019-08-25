@@ -38,6 +38,7 @@ pub struct System {
     pub written_ppu_addr   : bool, // PPU_ADDRが2回書かれた
     pub written_ppu_data   : bool, // PPU_DATAがかかれた
     pub written_oam_dma    : bool, // OAM_DMAが書かれた
+    pub read_oam_data      : bool, // OAM_DATAが読まれた
     pub read_ppu_data      : bool, // PPU_DATAが読まれた
 
     /* 2回海ができるPPU register対応 */
@@ -60,6 +61,7 @@ impl Default for System {
             written_ppu_addr    : false,
             written_ppu_data    : false,
             written_oam_dma     : false,
+            read_oam_data       : false,
             read_ppu_data       : false,
 
             ppu_is_second_write : false,
@@ -80,6 +82,7 @@ impl EmulateControl for System {
         self.written_ppu_addr    = false;
         self.written_ppu_data    = false;
         self.written_oam_dma     = false;
+        self.read_oam_data       = false;
         self.read_ppu_data       = false;
 
         self.ppu_is_second_write = false;
@@ -117,7 +120,15 @@ impl SystemBus for System {
                     }
                     self.ppu_reg[index] 
                 },
-                // PPU_DATA address incrementのためにフラグを立てる
+                // OAM_DATAの読み出しフラグ
+                0x07 => {
+                    if !is_nondestructive {
+                        self.read_oam_data = true;
+                    }
+                    self.ppu_reg[index] 
+                },
+                // PPU_DATA update/address incrementのためにフラグを立てる
+                // バッファが入るので1step遅れで結果が入る
                 0x07 => {
                     if !is_nondestructive {
                         self.read_ppu_data = true;
