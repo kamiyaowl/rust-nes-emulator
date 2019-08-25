@@ -99,14 +99,15 @@ fn run_cpu_ppu(rom_path: String, save_path: String, validate: impl Fn(&Cpu, &Sys
 
     let mut fb = [[Color(0,0,0); VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
 
-    let cycle_for_draw_once = usize::from(RENDER_SCREEN_HEIGHT + 1);
-    for _i in 0..cycle_for_draw_once {
-        ppu.step(&mut cpu, &mut cpu_sys, &mut video_sys, &mut cassette, &mut fb);
-        
-        let mut cpu_cycle = 0;
-        while cpu_cycle < CPU_CYCLE_PER_LINE {
-            cpu_cycle = cpu_cycle + usize::from(cpu.step(&mut cpu_sys));
-        }
+    // cpuを基準にppuを動かしてあげる
+    let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT + 1);
+    let mut total_cycle: usize = 0;
+    while total_cycle < cycle_for_draw_once {
+        let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
+        ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut cassette, &mut fb);
+
+        // println!("[debug] cycle_for_draw_once={}, total_cycle={}, cpu_cycle={}", cycle_for_draw_once, total_cycle, cpu_cycle);
+        total_cycle = total_cycle + cpu_cycle;
     }
 
     print_framebuffer(&fb);

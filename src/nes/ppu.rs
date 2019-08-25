@@ -131,6 +131,17 @@ impl LineStatus {
 pub struct Ppu {
     /// Object Attribute Memoryの実態
     pub oam: [u8; OAM_SIZE],
+
+    /// 積もり積もったcpu cycle, 341を超えたらクリアして1行処理しよう
+    pub cumulative_cpu_cyc: usize,
+    /// 次処理するy_index
+    pub current_line: u16,
+
+    /// scroll x
+    pub current_scroll_x: u8,
+    /// scroll y
+    pub current_scroll_y: u8,
+
     /// DMAが稼働中か示す
     /// DMAには513cycかかるが、Emulation上ppuのstep2回341cyc*2で完了するので実行中フラグで処理する
     /// 先頭でDMA開始されたとして、前半341cycで67%(170byte/256byte)処理できる(ので、次のstepで残りを処理したら次のDMA要求を受けても行ける)
@@ -139,18 +150,22 @@ pub struct Ppu {
     pub dma_cpu_src_addr: u16, 
     /// DMAのOAM側のベースアドレス。256byteしたらwrapする(あまり使われないらしい)
     pub dma_oam_dst_addr: u8,
-    /// 次処理するy_index
-    pub current_line: u16,
 }
 
 impl Default for Ppu {
     fn default() -> Self {
         Self {
             oam: [0; OAM_SIZE],
+            
+            cumulative_cpu_cyc: 0,
+            current_line: 261,
+
+            current_scroll_x: 0,
+            current_scroll_y: 0,
+
             is_dma_running: false,
             dma_cpu_src_addr: 0,
             dma_oam_dst_addr: 0,
-            current_line: 261,
         }
     }
 }
@@ -158,10 +173,16 @@ impl Default for Ppu {
 impl EmulateControl for Ppu {
     fn reset(&mut self) {
         self.oam = [0; OAM_SIZE];
+
+        self.current_line = 261;
+        self.cumulative_cpu_cyc = 0;
+
+        self.current_scroll_x = 0;
+        self.current_scroll_y = 0;
+
         self.is_dma_running = false;
         self.dma_cpu_src_addr = 0;
         self.dma_oam_dst_addr = 0;
-        self.current_line = 261;
     }
     fn get_dump_size() -> usize {
         unimplemented!();
@@ -177,11 +198,6 @@ impl EmulateControl for Ppu {
 
 
 impl Ppu {
-    /// 0~239はvisible scanline
-    /// 描画処理が必要
-    fn update_current_line(&mut self) {
-        self.current_line = (self.current_line + 1) % RENDER_SCREEN_HEIGHT;
-    }
     /// DMA転送を(2回に分けて)行います
     /// `is_pre_transfer` - 受領直後の転送ならtrue, ppu 1stepあとならfalse
     fn run_dma(&mut self, system: &mut System, is_pre_transfer: bool) {
@@ -212,54 +228,12 @@ impl Ppu {
         // ステータス更新
         self.is_dma_running  = is_pre_transfer;
     }
-    
-    /// PPUの処理を進めます(341 cpu cycleかかります)
-    /// `cpu` - Interruptの要求が必要
-    /// `system` - レジスタ読み書きする
-    /// `video_system` - レジスタ読み書きする
-    /// `cassette` - video_systemのアクセス領域に含まれてる
-    /// `videoout_func` - pixelごとのデータが決まるごとに呼ぶ(NESは出力ダブルバッファとかない)
-    pub fn step(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, cassette: &mut Cassette, fb: &mut [[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
+
+    /// 341cyc溜まったときの実際のline描画処理本体
+    fn update_line(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, cassette: &mut Cassette, fb: &mut [[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
         if cfg!(debug_assertions) && cfg!(not(no_std)) {
             println!("[ppu][step] line:{}", self.current_line);
         }
-        // PPU_SCROLL, PPU_ADDR, PPU_DATA読み書きに答えてあげる
-        let (_, scroll_x, scroll_y) = system.read_ppu_scroll();
-        let (_ , ppu_addr)          = system.read_ppu_addr();
-        let (is_read_ppu_req, is_write_ppu_req, ppu_data) = system.read_ppu_data();
-        if is_write_ppu_req {
-            video_system.write_u8(cassette, ppu_addr, ppu_data);
-            system.increment_ppu_addr();
-            if cfg!(debug_assertions) && cfg!(not(no_std)) {
-                println!("[ppu] cpu write_req addr:{:04x}, data:{:02x}", ppu_addr, ppu_data);
-            }
-        }
-        if is_read_ppu_req {
-            let data = video_system.read_u8(cassette, ppu_addr);
-            system.write_ppu_data(data);
-            system.increment_ppu_addr();
-            if cfg!(debug_assertions) && cfg!(not(no_std)) {
-                println!("[ppu] cpu read_req addr:{:04x}, data:{:02x}", ppu_addr, data);
-            }
-        }
-
-        // OAM R/W (おおよそはDMAでやられるから使わないらしい)
-        let oam_addr = system.read_ppu_oam_addr();
-        let (is_read_oam_req, is_write_oam_req, oam_data) = system.read_oam_data();
-        if is_write_oam_req {
-            self.oam[usize::from(oam_addr)] = oam_data;
-            if cfg!(debug_assertions) && cfg!(not(no_std)) {
-                println!("[ppu][oam] cpu write_req addr:{:04x}, data:{:02x}", oam_addr, oam_data);
-            }
-        }
-        if is_read_oam_req {
-            let data = self.oam[usize::from(oam_addr)];
-            system.write_oam_data(data);
-            if cfg!(debug_assertions) && cfg!(not(no_std)) {
-                println!("[ppu][oam] cpu read_req addr:{:04x}, data:{:02x}", oam_addr, data);
-            }
-        }
-
         // OAM DMA
         if self.is_dma_running {
             // 前回のOAM DMAのこりをやる
@@ -269,7 +243,7 @@ impl Ppu {
         if is_dma_req {
             // 新しいDMAのディスクリプタをセットして実行
             self.dma_cpu_src_addr = dma_cpu_src_addr;
-            self.dma_oam_dst_addr = oam_addr;
+            self.dma_oam_dst_addr = system.read_ppu_oam_addr();
             self.run_dma(system, true);
         }
 
@@ -302,7 +276,68 @@ impl Ppu {
             },
         };
         // 行カウンタを更新して終わり
-        self.update_current_line();
+        self.current_line = (self.current_line + 1) % RENDER_SCREEN_HEIGHT;
+    }
+    
+    /// PPUの処理を進めます(1line進めるまでには341 cpu cycleかかります)
+    /// `cpu_cyc` - cpuが何clock処理したか入れる(cpu 1stepごとに呼ぶこと)
+    /// `cpu` - Interruptの要求が必要
+    /// `system` - レジスタ読み書きする
+    /// `video_system` - レジスタ読み書きする
+    /// `cassette` - video_systemのアクセス領域に含まれてる
+    /// `videoout_func` - pixelごとのデータが決まるごとに呼ぶ(NESは出力ダブルバッファとかない)
+    pub fn step(&mut self, cpu_cyc: usize, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, cassette: &mut Cassette, fb: &mut [[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
+        
+        // PPU_SCROLL書き込み
+        let (_, scroll_x, scroll_y) = system.read_ppu_scroll();
+        self.current_scroll_x = scroll_x;
+        self.current_scroll_y = scroll_y;
+
+        // PPU_ADDR, PPU_DATA読み書きに答えてあげる
+        let (_ , ppu_addr)          = system.read_ppu_addr();
+        let (is_read_ppu_req, is_write_ppu_req, ppu_data) = system.read_ppu_data();
+
+        if is_write_ppu_req {
+            println!("[ppu][from cpu] is_read_ppu_req={}, is_write_ppu_req={}", is_read_ppu_req, is_write_ppu_req);
+            video_system.write_u8(cassette, ppu_addr, ppu_data);
+            system.increment_ppu_addr();
+            if cfg!(debug_assertions) && cfg!(not(no_std)) {
+                println!("[ppu][from cpu] write_req addr:{:04x}, data:{:02x}", ppu_addr, ppu_data);
+            }
+        }
+        if is_read_ppu_req {
+            println!("[ppu][from cpu] is_read_ppu_req={}, is_write_ppu_req={}", is_read_ppu_req, is_write_ppu_req);
+            let data = video_system.read_u8(cassette, ppu_addr);
+            system.write_ppu_data(data);
+            system.increment_ppu_addr();
+            if cfg!(debug_assertions) && cfg!(not(no_std)) {
+                println!("[ppu][from cpu] read_req  addr:{:04x}, data:{:02x}", ppu_addr, data);
+            }
+        }
+
+        // OAM R/W (おおよそはDMAでやられるから使わないらしい)
+        let oam_addr = system.read_ppu_oam_addr();
+        let (is_read_oam_req, is_write_oam_req, oam_data) = system.read_oam_data();
+        if is_write_oam_req {
+            self.oam[usize::from(oam_addr)] = oam_data;
+            if cfg!(debug_assertions) && cfg!(not(no_std)) {
+                println!("[ppu][oam][from cpu] write_req addr:{:04x}, data:{:02x}", oam_addr, oam_data);
+            }
+        }
+        if is_read_oam_req {
+            let data = self.oam[usize::from(oam_addr)];
+            system.write_oam_data(data);
+            if cfg!(debug_assertions) && cfg!(not(no_std)) {
+                println!("[ppu][oam][from cpu] read_req  addr:{:04x}, data:{:02x}", oam_addr, data);
+            }
+        }
+
+        // clock cycle判定して行更新
+        let total_cyc = self.cumulative_cpu_cyc + cpu_cyc;
+        self.cumulative_cpu_cyc = total_cyc % CPU_CYCLE_PER_LINE;
+        if total_cyc >= CPU_CYCLE_PER_LINE { // 以上じゃないとおかしいね
+            self.update_line(cpu, system, video_system, cassette, fb);
+        }
     }
 
 }

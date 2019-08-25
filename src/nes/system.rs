@@ -121,7 +121,7 @@ impl SystemBus for System {
                     self.ppu_reg[index] 
                 },
                 // OAM_DATAの読み出しフラグ
-                0x07 => {
+                0x04 => {
                     if !is_nondestructive {
                         self.read_oam_data = true;
                     }
