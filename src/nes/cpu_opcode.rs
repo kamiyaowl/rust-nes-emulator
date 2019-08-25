@@ -9,7 +9,7 @@ use super::interface::{SystemBus};
 /// `name` - 命令の名前、デバッグ時に表示できる
 /// `non_descructive` - メモリを非破壊呼び出しする場合はtrue。用途は以下
 ///                   - 1.BIT命令(これは非破壊でなければならない)
-///                   - 現在の命令はアドレッシング先を無条件でフェッチしている。Store命令などAdressingするがデータは使わない場合はtrue
+///                   - 2.現在の命令はアドレッシング先を無条件でフェッチしている。Store命令などAdressingするがデータは使わない場合はtrue
 /// `pc_incr` - 進めるプログラムカウンタ数
 /// `cycle` - 実行にかかるcpu clock cycle
 /// `addressing_func` - アドレッシングを行うクロージャ。引数はなし

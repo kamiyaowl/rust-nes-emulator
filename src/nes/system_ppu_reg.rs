@@ -10,11 +10,13 @@ impl System {
     pub fn read_ppu_nmi_enable(&self) -> bool {
         (self.ppu_reg[0] & 0x80u8) == 0x80u8
     }
+    /// 多分エミュだと使わない
     pub fn read_ppu_is_master(&self) -> bool {
         (self.ppu_reg[0] & 0x40u8) == 0x40u8
     }
-    pub fn read_ppu_sprite_height(&self) -> u8 {
-        if (self.ppu_reg[0] & 0x20u8) == 0x20u8 { 16 } else { 8 }
+    /// 8*16 spriteならtrue,8*8ならfalse
+    pub fn read_ppu_sprite_is_large(&self) -> bool {
+        (self.ppu_reg[0] & 0x20u8) == 0x20u8
     }
     pub fn read_ppu_bg_pattern_table_addr(&self) -> u16 {
         if (self.ppu_reg[0] & 0x10u8) == 0x10u8 { 0x1000u16 } else { 0x0000u16 }
@@ -26,7 +28,7 @@ impl System {
     pub fn read_ppu_addr_increment(&self) -> u8 {
         if (self.ppu_reg[0] & 0x04u8) == 0x04u8 { 32u8 } else { 1u8 }
     }
-    pub fn read_ppu_name_table_addr(&self) -> u16 {
+    pub fn read_ppu_name_table_base_addr(&self) -> u16 {
         match self.ppu_reg[0] & 0x03u8 {
             0 => 0x2000,
             1 => 0x2400,

@@ -7,9 +7,15 @@ pub const NAME_TABLE_MIRROR_BASE_ADDR : u16 = 0x3000;
 pub const PALETTE_TABLE_BASE_ADDR     : u16 = 0x3f00;
 pub const VIDEO_ADDRESS_SIZE          : u16 = 0x4000;
 
-pub const NAME_TABLE_SIZE     : usize = 0x0400;
-pub const NUM_OF_NAME_TABLE   : usize = 2;
-pub const PALETTE_SIZE        : usize = 0x0020;
+pub const NAME_TABLE_SIZE        : usize = 0x0400;
+pub const NUM_OF_NAME_TABLE      : usize = 2;
+pub const ATTRIBUTE_TABLE_SIZE   : u16   = 0x0040;
+pub const ATTRIBUTE_TABLE_OFFSET : u16   = 0x03c0; // NameTable+3c0で属性テーブル
+
+pub const PALETTE_SIZE          : usize = 0x20;
+pub const PALETTE_ENTRY_SIZE    : u16   = 0x04;
+pub const PALETTE_BG_OFFSET     : u16   = 0x00;
+pub const PALETTE_SPRITE_OFFSET : u16   = 0x10;
 
 pub struct VideoSystem {
     // 0x0000 - 0x1fff 

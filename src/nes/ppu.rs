@@ -13,8 +13,18 @@ pub const VISIBLE_SCREEN_HEIGHT : usize = 240;
 pub const RENDER_SCREEN_WIDTH   : u16 = 256;
 pub const RENDER_SCREEN_HEIGHT  : u16 = 262; // 0 ~ 261
 
-pub const OAM_SIZE                       : usize = 0x100; // dmaの転送サイズ
-pub const OAM_DMA_COPY_SIZE_PER_PPU_STEP : u8   = 0xaa; // 341cyc/513cyc*256byte=170.1byte
+pub const PIXEL_PER_TILE    : u16 = 8; // 1tile=8*8
+pub const SCREEN_TILE_WIDTH : u16 = (VISIBLE_SCREEN_WIDTH  as u16) / PIXEL_PER_TILE; // 256/8=32
+pub const SCREEN_TILE_HEIGHT: u16 = (VISIBLE_SCREEN_HEIGHT as u16) / PIXEL_PER_TILE; // 240/8=31
+
+/// PPU内部のOAMの容量 dmaの転送サイズと等しい
+pub const OAM_SIZE                       : usize = 0x100; 
+/// DMA転送を2line処理で終えようと思ったときの1回目で転送するバイト数
+/// 341cyc/513cyc*256byte=170.1byte
+pub const OAM_DMA_COPY_SIZE_PER_PPU_STEP : u8   = 0xaa; 
+
+/// pattern1個あたりのエントリサイズ
+pub const PATTERN_TABLE_ENTRY_BYTE: u16 = 16;
 
 #[derive(Copy, Clone)]
 pub struct Position(pub u8, pub u8);
@@ -27,7 +37,7 @@ impl Color {
     /// ..VV_HHHH 形式
     /// V - 明度
     /// H - 色相
-    pub fn from_2c02_fmt(src: u8) -> Color {
+    pub fn from(src: u8) -> Color {
         let index = src & 0x3f;
         let table: [Color; 0x40] = include!("ppu_palette_table.rs");
         table[index as usize]
@@ -101,6 +111,19 @@ struct Sprite {
     attr: SpriteAttr,
     /// x座標
     x: u8,
+}
+
+impl Sprite {
+    /// SpriteをOAMの情報から生成します。
+    /// `is_large` -スプライトサイズが8*16ならtrue、8*8ならfalse
+    fn from(is_large: bool, byte0: u8, byte1: u8, byte2: u8, byte3: u8) -> Sprite {
+        Sprite {
+            y: byte0,
+            tile_id: (if is_large { TileId::large(byte1) } else { TileId::normal(byte1)}),
+            attr: SpriteAttr::from(byte2),
+            x: byte3,
+        }
+    }
 }
 
 #[derive(Copy, Clone)]
@@ -228,8 +251,97 @@ impl Ppu {
         // ステータス更新
         self.is_dma_running  = is_pre_transfer;
     }
+    /// 1列書きます
+    /// 
+    /// 実装補足
+    /// `tile_base`   - スクロールオフセット加算なしの現在のタイル位置
+    /// `tile_global` - スクロールオフセット換算した、4面含めた上でのタイル位置
+    /// `tile_local`  - `tile_global`を1Namespace上のタイルでの位置に変換したもの
+    /// scrollなしなら上記はすべて一致するはず
+    /// 
+    /// 
+    fn draw(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, cassette: &mut Cassette, fb: &mut [[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
+        // tile換算でのy位置から、実pixelのズレ
+        let offset_y = self.current_line % PIXEL_PER_TILE;
 
-    /// 341cyc溜まったときの実際のline描画処理本体
+        // オフセットなしのtile換算での現在位置
+        let tile_base_y = self.current_line / PIXEL_PER_TILE;
+        // tile換算でのy絶対座標
+        let tile_global_y = (tile_base_y + u16::from(self.current_scroll_y)) % (SCREEN_TILE_HEIGHT * 2);
+        // 1 tile内での絶対座標
+        let tile_local_y = tile_global_y % SCREEN_TILE_HEIGHT;
+        // 4面ある内、下側に差し掛かっていたらfalse
+        let is_nametable_position_top = tile_global_y < SCREEN_TILE_HEIGHT;
+
+        // オフセットなしのtile換算での現在位置 (x方向はtileごとにループ)
+        for tile_base_x in 0..SCREEN_TILE_WIDTH {
+            // 4tile換算でのx絶対座標
+            let tile_global_x = (tile_base_x + u16::from(self.current_scroll_x)) % (SCREEN_TILE_WIDTH * 2);
+            // 1 tile内での絶対座標
+            let tile_local_x = tile_global_x % SCREEN_TILE_WIDTH;
+            // 4面ある内、右側にある場合false
+            let is_nametable_position_left = tile_global_x < SCREEN_TILE_WIDTH;
+
+            // 4面あるうちのどれかがわかるので、該当する面のベースアドレスを返します
+            let target_nametable_base_addr = 
+                system.read_ppu_name_table_base_addr() +                     // NameTable ベースアドレス(0x2000, 0x2400, 0x2800, 0x2c00)
+                (if is_nametable_position_left { 0x0000 } else { 0x0400 }) + // 左右面の広域offset
+                (if is_nametable_position_top  { 0x0000 } else { 0x0800 });  // 上下面の広域offset
+            // attribute tableはNametableの後32byteにいる, 2*2tileで1attrなので半分に使用
+            let attribute_addr = target_nametable_base_addr + ATTRIBUTE_TABLE_OFFSET + (tile_local_y * SCREEN_TILE_WIDTH / 2) + (tile_local_x / 2);
+            // NameTable内でのOffsetを加算すれば完成
+            let nametable_addr = target_nametable_base_addr + (tile_local_y * SCREEN_TILE_WIDTH) + tile_local_x;
+
+            if cfg!(debug_assertions) && cfg!(not(no_std)) {
+                // println!("[ppu][draw][line:{}(offset:{})] base=({}, {}), tile=({}, {}), tile_local=({}, {})", self.current_line, offset_y, tile_base_x, tile_base_y, tile_global_x, tile_global_y, tile_local_x, tile_local_y);
+                // println!("[ppu][draw][line:{}(offset:{})] target_nametable_base_addr={:04x}, attribute_addr={:04x}, nametable_addr={:04x}", self.current_line, offset_y, target_nametable_base_addr, attribute_addr, nametable_addr);
+            }
+
+            // attribute読み出し, BGパレット選択に使う
+            let raw_attribute = video_system.read_u8(cassette, attribute_addr);
+            let bg_palette_id = match (tile_local_x & 0x01, tile_local_y & 0x01) {
+                (0, 0) => (raw_attribute >> 0) & 0x03, // top left
+                (1, 0) => (raw_attribute >> 2) & 0x03, // top right
+                (0, 1) => (raw_attribute >> 4) & 0x03, // bottom left
+                (1, 1) => (raw_attribute >> 6) & 0x03, // bottom right
+                _ => panic!("invalid bg attribute"),
+            };
+            // Nametableからtile_id読み出し->pattern tableからデータ構築
+            let bg_tile_id = u16::from(video_system.read_u8(cassette, nametable_addr));
+            // pattern_table 1entryは16byte, 0行目だったら0,8番目のデータを使えば良い
+            let bg_pattern_table_base_addr  = system.read_ppu_bg_pattern_table_addr() + (bg_tile_id * 16);
+            let bg_pattern_table_addr_lower = bg_pattern_table_base_addr + offset_y;
+            let bg_pattern_table_addr_upper = bg_pattern_table_addr_lower + 8;
+            let bg_data_lower = video_system.read_u8(cassette, bg_pattern_table_addr_lower);
+            let bg_data_upper = video_system.read_u8(cassette, bg_pattern_table_addr_upper);
+
+            // TODO: #6 Spriteを検索してデータを確定する
+
+            // 描画するか
+            for i in 0..PIXEL_PER_TILE {
+                // やっと画面上の座標
+                let pixel_x = usize::from((tile_base_x * PIXEL_PER_TILE) + i);
+                let pixel_y = usize::from(self.current_line);
+
+                // bg作る
+                let bg_palette_offset = (((bg_data_upper >> (7 - i)) & 0x01) << 1) | ((bg_data_lower >> (7 - i)) & 0x01);
+                let bg_palette_addr = 
+                    (PALETTE_TABLE_BASE_ADDR + PALETTE_BG_OFFSET) +   // 0x3f00
+                    (u16::from(bg_palette_id) * PALETTE_ENTRY_SIZE) + // attributeでBG PAlette0~3選択
+                    u16::from(bg_palette_offset);                     // palette内の色選択
+                let palette_data = video_system.read_u8(cassette, bg_palette_addr);
+
+                // 書き込む
+                fb[pixel_y][pixel_x] = Color::from(palette_data);
+
+                // TODO: #6 Spriteとデータを合成する
+
+            }
+            
+        }
+    }
+
+    /// 341cyc溜まったときの処理
     fn update_line(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, cassette: &mut Cassette, fb: &mut [[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
         if cfg!(debug_assertions) && cfg!(not(no_std)) {
             println!("[ppu][step] line:{}", self.current_line);
@@ -251,10 +363,7 @@ impl Ppu {
         match LineStatus::from(self.current_line) {
             LineStatus::Visible => {
                 // 1行描く
-                for i in 0..VISIBLE_SCREEN_WIDTH {
-                    // TEST
-                    fb[usize::from(self.current_line)][i] = Color(i as u8, self.current_line as u8, (i as u8).wrapping_add(self.current_line as u8));
-                }
+                self.draw(cpu, system, video_system, cassette, fb);
             },
             LineStatus::PostRender => {
                 // 何もしない
