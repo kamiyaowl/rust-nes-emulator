@@ -298,7 +298,6 @@ impl Ppu {
         let (is_read_ppu_req, is_write_ppu_req, ppu_data) = system.read_ppu_data();
 
         if is_write_ppu_req {
-            println!("[ppu][from cpu] is_read_ppu_req={}, is_write_ppu_req={}", is_read_ppu_req, is_write_ppu_req);
             video_system.write_u8(cassette, ppu_addr, ppu_data);
             system.increment_ppu_addr();
             if cfg!(debug_assertions) && cfg!(not(no_std)) {
@@ -306,7 +305,6 @@ impl Ppu {
             }
         }
         if is_read_ppu_req {
-            println!("[ppu][from cpu] is_read_ppu_req={}, is_write_ppu_req={}", is_read_ppu_req, is_write_ppu_req);
             let data = video_system.read_u8(cassette, ppu_addr);
             system.write_ppu_data(data);
             system.increment_ppu_addr();

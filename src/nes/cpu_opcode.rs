@@ -4,6 +4,16 @@ use super::interface::{SystemBus};
 
 /// inst! macro
 /// 命令のアドレッシング、フェッチ、pcのincrement、実行、クロックサイクルの返却をまとめて行います
+/// `self` - Cpu instance
+/// `system` - System instance
+/// `name` - 命令の名前、デバッグ時に表示できる
+/// `non_descructive` - メモリを非破壊呼び出しする場合はtrue。用途は以下
+///                   - 1.BIT命令(これは非破壊でなければならない)
+///                   - 現在の命令はアドレッシング先を無条件でフェッチしている。Store命令などAdressingするがデータは使わない場合はtrue
+/// `pc_incr` - 進めるプログラムカウンタ数
+/// `cycle` - 実行にかかるcpu clock cycle
+/// `addressing_func` - アドレッシングを行うクロージャ。引数はなし
+/// `inst_func` - 実際に命令を処理するクロージャ。addr: u16, data: u8を引数に取る
 macro_rules! inst {
     (
         $self:expr, $system:expr,
@@ -182,7 +192,7 @@ impl Cpu {
             /**************** ASL ****************/
             {
                 "ASL accumulator", 
-                opcode => 0x0a, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0x0a, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_asl_a()
             },
@@ -213,21 +223,21 @@ impl Cpu {
             /**************** BCC ****************/
             {
                 "BCC relative", 
-                opcode => 0x90, non_destructive => false, pc_incr => 1, cycle => 2, 
+                opcode => 0x90, non_destructive => true, pc_incr => 1, cycle => 2, 
                 || self.addressing_relative(system, self.pc),
                 |addr, _data| self.inst_bcc(addr)
             },
             /**************** BCS ****************/
             {
                 "BCS relative", 
-                opcode => 0xb0, non_destructive => false, pc_incr => 1, cycle => 2, 
+                opcode => 0xb0, non_destructive => true, pc_incr => 1, cycle => 2, 
                 || self.addressing_relative(system, self.pc),
                 |addr, _data| self.inst_bcs(addr)
             },
             /**************** BEQ ****************/
             {
                 "BEQ relative", 
-                opcode => 0xf0, non_destructive => false, pc_incr => 1, cycle => 2, 
+                opcode => 0xf0, non_destructive => true, pc_incr => 1, cycle => 2, 
                 || self.addressing_relative(system, self.pc),
                 |addr, _data| self.inst_beq(addr)
             },
@@ -248,70 +258,70 @@ impl Cpu {
             /**************** BMI ****************/
             {
                 "BMI relative", 
-                opcode => 0x30, non_destructive => false, pc_incr => 1, cycle => 2, 
+                opcode => 0x30, non_destructive => true, pc_incr => 1, cycle => 2, 
                 || self.addressing_relative(system, self.pc),
                 |addr, _data| self.inst_bmi(addr)
             },
             /**************** BNE ****************/
             {
                 "BNE relative", 
-                opcode => 0xd0, non_destructive => false, pc_incr => 1, cycle => 2, 
+                opcode => 0xd0, non_destructive => true, pc_incr => 1, cycle => 2, 
                 || self.addressing_relative(system, self.pc),
                 |addr, _data| self.inst_bne(addr)
             },
             /**************** BPL ****************/
             {
                 "BPL relative", 
-                opcode => 0x10, non_destructive => false, pc_incr => 1, cycle => 2, 
+                opcode => 0x10, non_destructive => true, pc_incr => 1, cycle => 2, 
                 || self.addressing_relative(system, self.pc),
                 |addr, _data| self.inst_bpl(addr)
             },
             /**************** BRK ****************/
             {
                 "BRK implied", 
-                opcode => 0x00, non_destructive => false, pc_incr => 0, cycle => 7, 
+                opcode => 0x00, non_destructive => true, pc_incr => 0, cycle => 7, 
                 || (0, 0),
                 |_addr, _data| self.inst_brk(system)
             },
             /**************** BVC ****************/
             {
                 "BVC relative", 
-                opcode => 0x50, non_destructive => false, pc_incr => 1, cycle => 2, 
+                opcode => 0x50, non_destructive => true, pc_incr => 1, cycle => 2, 
                 || self.addressing_relative(system, self.pc),
                 |addr, _data| self.inst_bvc(addr)
             },
             /**************** BVS ****************/
             {
                 "BVS relative", 
-                opcode => 0x70, non_destructive => false, pc_incr => 1, cycle => 2, 
+                opcode => 0x70, non_destructive => true, pc_incr => 1, cycle => 2, 
                 || self.addressing_relative(system, self.pc),
                 |addr, _data| self.inst_bvs(addr)
             },
             /**************** CLC ****************/
             {
                 "CLC implied", 
-                opcode => 0x18, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0x18, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_clc()
             },
             /**************** CLD ****************/
             {
                 "CLD implied", 
-                opcode => 0xd8, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0xd8, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_cld()
             },
             /**************** CLI ****************/
             {
                 "CLI implied", 
-                opcode => 0x58, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0x58, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_cli()
             },
             /**************** CLV ****************/
             {
                 "CLV implied", 
-                opcode => 0xb8, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0xb8, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_clv()
             },
@@ -430,14 +440,14 @@ impl Cpu {
             /**************** DEX ****************/
             {
                 "DEX implied",
-                opcode => 0xca, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0xca, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_dex()
             },
             /**************** DEY ****************/
             {
                 "DEY implied",
-                opcode => 0x88, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0x88, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_dey()
             },
@@ -518,34 +528,34 @@ impl Cpu {
             /**************** INX ****************/
             {
                 "INX implied",
-                opcode => 0xe8, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0xe8, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_inx()
             },
             /**************** INY ****************/
             {
                 "INY implied",
-                opcode => 0xc8, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0xc8, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_iny()
             },
             /**************** JMP ****************/
             {
                 "JMP absolute",
-                opcode => 0x4c, non_destructive => false, pc_incr => 2, cycle => 3, 
+                opcode => 0x4c, non_destructive => true, pc_incr => 2, cycle => 3, 
                 || self.addressing_absolute(system, self.pc),
                 |addr, _data| self.inst_jmp(addr)
             },
             {
                 "JMP indirect",
-                opcode => 0x6c, non_destructive => false, pc_incr => 2, cycle => 5, 
+                opcode => 0x6c, non_destructive => true, pc_incr => 2, cycle => 5, 
                 || self.addressing_indirect(system, self.pc),
                 |addr, _data| self.inst_jmp(addr)
             },
             /**************** JSR ****************/
             {
                 "JSR absolute",
-                opcode => 0x20, non_destructive => false, pc_incr => 2, cycle => 6, 
+                opcode => 0x20, non_destructive => true, pc_incr => 2, cycle => 6, 
                 || self.addressing_absolute(system, self.pc),
                 |addr, _data| {
                     // JSR命令が入っていたアドレスは、pcをすでに進めてしまっているので再計算
@@ -667,7 +677,7 @@ impl Cpu {
             /**************** LSR ****************/
             {
                 "LSR accumulator",
-                opcode => 0x4a, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0x4a, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_lsr_a()
             },
@@ -698,7 +708,7 @@ impl Cpu {
             /**************** NOP ****************/
             {
                 "NOP implied",
-                opcode => 0xea, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0xea, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_nop()
             },
@@ -754,35 +764,35 @@ impl Cpu {
             /**************** PHA ****************/
             {
                 "PHA implied",
-                opcode => 0x48, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0x48, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_pha(system)
             },
             /**************** PHP ****************/
             {
                 "PHP implied",
-                opcode => 0x08, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0x08, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_php(system)
             },
             /**************** PLA ****************/
             {
                 "PLA implied",
-                opcode => 0x68, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0x68, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_pla(system)
             },
             /**************** PLP ****************/
             {
                 "PLP implied",
-                opcode => 0x28, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0x28, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_plp(system)
             },
             /**************** ROL ****************/
             {
                 "ROL accumulator",
-                opcode => 0x2a, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0x2a, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_rol_a()
             },
@@ -813,7 +823,7 @@ impl Cpu {
             /**************** ROR ****************/
             {
                 "ROR accumulator",
-                opcode => 0x6a, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0x6a, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_ror_a()
             },
@@ -844,14 +854,14 @@ impl Cpu {
             /**************** RTI ****************/
             {
                 "RTI implied",
-                opcode => 0x40, non_destructive => false, pc_incr => 0, cycle => 6, 
+                opcode => 0x40, non_destructive => true, pc_incr => 0, cycle => 6, 
                 || (0, 0),
                 |_addr, _data| self.inst_rti(system)
             },
             /**************** RTS ****************/
             {
                 "RTS implied",
-                opcode => 0x60, non_destructive => false, pc_incr => 0, cycle => 6, 
+                opcode => 0x60, non_destructive => true, pc_incr => 0, cycle => 6, 
                 || (0, 0),
                 |_addr, _data| self.inst_rti(system)
             },
@@ -907,144 +917,144 @@ impl Cpu {
             /**************** SEC ****************/
             {
                 "SEC implied",
-                opcode => 0x38, non_destructive => false, pc_incr => 0, cycle => 6, 
+                opcode => 0x38, non_destructive => true, pc_incr => 0, cycle => 6, 
                 || (0, 0),
                 |_addr, _data| self.inst_sec()
             },
             /**************** SED ****************/
             {
                 "SED implied",
-                opcode => 0xf8, non_destructive => false, pc_incr => 0, cycle => 6, 
+                opcode => 0xf8, non_destructive => true, pc_incr => 0, cycle => 6, 
                 || (0, 0),
                 |_addr, _data| self.inst_sed()
             },
             /**************** SEI ****************/
             {
                 "SEI implied",
-                opcode => 0x78, non_destructive => false, pc_incr => 0, cycle => 6, 
+                opcode => 0x78, non_destructive => true, pc_incr => 0, cycle => 6, 
                 || (0, 0),
                 |_addr, _data| self.inst_sei()
             },
             /**************** STA ****************/
             {
                 "STA zero page", 
-                opcode => 0x85, non_destructive => false, pc_incr => 1, cycle => 3, 
+                opcode => 0x85, non_destructive => true, pc_incr => 1, cycle => 3, 
                 || self.addressing_zero_page(system, self.pc),
                 |addr, _data| self.inst_sta(system, addr)
             },
             {
                 "STA zero page x", 
-                opcode => 0x95, non_destructive => false, pc_incr => 1, cycle => 4, 
+                opcode => 0x95, non_destructive => true, pc_incr => 1, cycle => 4, 
                 || self.addressing_zero_page_x(system, self.pc),
                 |addr, _data| self.inst_sta(system, addr)
             },
             {
                 "STA absolute", 
-                opcode => 0x8d, non_destructive => false, pc_incr => 2, cycle => 4, 
+                opcode => 0x8d, non_destructive => true, pc_incr => 2, cycle => 4, 
                 || self.addressing_absolute(system, self.pc),
                 |addr, _data| self.inst_sta(system, addr)
             },
             {
                 "STA absolute x", 
-                opcode => 0x9d, non_destructive => false, pc_incr => 2, cycle => 5, 
+                opcode => 0x9d, non_destructive => true, pc_incr => 2, cycle => 5, 
                 || self.addressing_absolute_x(system, self.pc),
                 |addr, _data| self.inst_sta(system, addr)
             },
             {
                 "STA absolute y", 
-                opcode => 0x99, non_destructive => false, pc_incr => 2, cycle => 5, 
+                opcode => 0x99, non_destructive => true, pc_incr => 2, cycle => 5, 
                 || self.addressing_absolute_y(system, self.pc),
                 |addr, _data| self.inst_sta(system, addr)
             },
             {
                 "STA indirect x", 
-                opcode => 0x81, non_destructive => false, pc_incr => 1, cycle => 6, 
+                opcode => 0x81, non_destructive => true, pc_incr => 1, cycle => 6, 
                 || self.addressing_indirect_x(system, self.pc),
                 |addr, _data| self.inst_sta(system, addr)
             },
             {
                 "STA indirect y", 
-                opcode => 0x91, non_destructive => false, pc_incr => 1, cycle => 6,
+                opcode => 0x91, non_destructive => true, pc_incr => 1, cycle => 6,
                 || self.addressing_indirect_y(system, self.pc),
                 |addr, _data| self.inst_sta(system, addr)
             },
             /**************** STX ****************/
             {
                 "STX zero page", 
-                opcode => 0x86, non_destructive => false, pc_incr => 1, cycle => 3, 
+                opcode => 0x86, non_destructive => true, pc_incr => 1, cycle => 3, 
                 || self.addressing_zero_page(system, self.pc),
                 |addr, _data| self.inst_stx(system, addr)
             },
             {
                 "STX zero page y", 
-                opcode => 0x96, non_destructive => false, pc_incr => 1, cycle => 4, 
+                opcode => 0x96, non_destructive => true, pc_incr => 1, cycle => 4, 
                 || self.addressing_zero_page_y(system, self.pc),
                 |addr, _data| self.inst_stx(system, addr)
             },
             {
                 "STX absolute", 
-                opcode => 0x8e, non_destructive => false, pc_incr => 2, cycle => 4, 
+                opcode => 0x8e, non_destructive => true, pc_incr => 2, cycle => 4, 
                 || self.addressing_absolute(system, self.pc),
                 |addr, _data| self.inst_stx(system, addr)
             },
             /**************** STY ****************/
             {
                 "STY zero page", 
-                opcode => 0x84, non_destructive => false, pc_incr => 1, cycle => 3, 
+                opcode => 0x84, non_destructive => true, pc_incr => 1, cycle => 3, 
                 || self.addressing_zero_page(system, self.pc),
                 |addr, _data| self.inst_sty(system, addr)
             },
             {
                 "STY zero page x", 
-                opcode => 0x94, non_destructive => false, pc_incr => 1, cycle => 4, 
+                opcode => 0x94, non_destructive => true, pc_incr => 1, cycle => 4, 
                 || self.addressing_zero_page_x(system, self.pc),
                 |addr, _data| self.inst_sty(system, addr)
             },
             {
                 "STY absolute", 
-                opcode => 0x8c, non_destructive => false, pc_incr => 2, cycle => 4, 
+                opcode => 0x8c, non_destructive => true, pc_incr => 2, cycle => 4, 
                 || self.addressing_absolute(system, self.pc),
                 |addr, _data| self.inst_sty(system, addr)
             },
             /**************** TAX ****************/
             {
                 "TAX implied",
-                opcode => 0xaa, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0xaa, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_tax()
             },
             /**************** TAY ****************/
             {
                 "TAY implied",
-                opcode => 0xa8, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0xa8, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_tay()
             },
             /**************** TSX ****************/
             {
                 "TSX implied",
-                opcode => 0xba, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0xba, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_tsx()
             },
             /**************** TXA ****************/
             {
                 "TXA implied",
-                opcode => 0x8a, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0x8a, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_txa()
             },
             /**************** TXS ****************/
             {
                 "TXS implied",
-                opcode => 0x9a, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0x9a, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_txs()
             },
             /**************** TYA ****************/
             {
                 "TYA implied",
-                opcode => 0x98, non_destructive => false, pc_incr => 0, cycle => 2, 
+                opcode => 0x98, non_destructive => true, pc_incr => 0, cycle => 2, 
                 || (0, 0),
                 |_addr, _data| self.inst_tya()
             }
