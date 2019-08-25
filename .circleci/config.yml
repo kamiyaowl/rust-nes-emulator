@@ -27,4 +27,13 @@ jobs:
           command: cargo test
       - store_artifacts:
           path: framebuffer_run_hello_ppu.bmp
-          destination: framebuffer_run_hello_ppu.bmp
+          destination: hello_debug.bmp
+      - run:
+          name: build release
+          command: cargo build --release
+      - run:
+          name: test release
+          command: cargo test --release
+      - store_artifacts:
+          path: framebuffer_run_hello_ppu.bmp
+          destination: hello_release.bmp
