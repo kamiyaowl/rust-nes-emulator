@@ -22,7 +22,7 @@ macro_rules! inst {
         $inst_func:expr
     ) => {
         {
-            if cfg!(all(debug_cpu, not(no_std))) {
+            if cfg!(all(not(no_std))) {
                 println!("[cpu][#{}][before] cycle:{} pc_incr:{} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}(NO*BDIZC)", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
             }
             // fetchしない場合(accumulate, implicit)は、pc incrementを0に設定する
@@ -33,7 +33,7 @@ macro_rules! inst {
                     // addressingした分進めとく
                     $self.increment_pc($pc_incr);
                     // debug print
-                    if  cfg!(all(debug_cpu, not(no_std))) {
+                    if  cfg!(all(not(no_std))) {
                         println!("[cpu][#{}][addressing] addr:{:04x} data:{:02x} | data(char):{}", $name, a, d, d as char);
                     }
                     (a, c, d)
@@ -47,7 +47,7 @@ macro_rules! inst {
                 };
             // 命令実行
             let additional_cycle2 = $inst_func(addr, data);
-            if cfg!(all(debug_cpu, not(no_std))) {
+            if cfg!(all(not(no_std))) {
                 println!("[cpu][#{}][after ] cycle:{} pc_incr:{} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}(NO*BDIZC)", $name, $cycle, $pc_incr, $self.pc, $self.a, $self.x, $self.y, $self.sp, $self.p);
             }
             // かかるclock cycleを返却
@@ -87,7 +87,7 @@ impl Cpu {
     pub fn step(&mut self, system: &mut System) -> u8 {
         let opcode = system.read_u8(self.pc, false);
         self.increment_pc(1);
-        if cfg!(all(debug_cpu, not(no_std))) {
+        if cfg!(all(not(no_std))) {
             println!("[cpu][opcode fetched] opcode:{:02x} pc:{:04x} a:{:02x} x:{:02x} y:{:02x} sp:{:04x} p:{:08b}", opcode, self.pc, self.a, self.x, self.y, self.sp, self.p);
         }
         inst!(self, system, opcode,
@@ -863,7 +863,7 @@ impl Cpu {
                 "RTS implied",
                 opcode => 0x60, non_destructive => true, pc_incr => 0, cycle => 6, 
                 || (0, 0),
-                |_addr, _data| self.inst_rti(system)
+                |_addr, _data| self.inst_rts(system)
             },
             /**************** SBC ****************/
             {

@@ -105,7 +105,7 @@ fn run_cpu_only(rom_path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &Sys
     Ok(())
 }
 
-fn run_cpu_ppu(rom_path: String, save_path: String, validate: impl Fn(&Cpu, &System, &[[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT])) -> Result<(), Box<dyn std::error::Error>> {
+fn run_cpu_ppu(rom_path: String, save_path: String, frame_count: usize, validate: impl Fn(&Cpu, &System, &[[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT])) -> Result<(), Box<dyn std::error::Error>> {
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
     let mut ppu: Ppu = Default::default();
@@ -123,13 +123,16 @@ fn run_cpu_ppu(rom_path: String, save_path: String, validate: impl Fn(&Cpu, &Sys
 
     // cpuを基準にppuを動かしてあげる
     let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT + 1);
-    let mut total_cycle: usize = 0;
-    while total_cycle < cycle_for_draw_once {
-        let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
-        ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
+    for i in 0..frame_count {
+        println!("===================== frame:{} =====================", i);
+        let mut total_cycle: usize = 0;
+        while total_cycle < cycle_for_draw_once {
+            let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
+            ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
 
-        // println!("[debug] cycle_for_draw_once={}, total_cycle={}, cpu_cycle={}", cycle_for_draw_once, total_cycle, cpu_cycle);
-        total_cycle = total_cycle + cpu_cycle;
+            // println!("[debug] cycle_for_draw_once={}, total_cycle={}, cpu_cycle={}", cycle_for_draw_once, total_cycle, cpu_cycle);
+            total_cycle = total_cycle + cpu_cycle;
+        }
     }
 
     print_framebuffer(&fb);
@@ -155,7 +158,7 @@ fn run_hello_cpu() -> Result<(), Box<dyn std::error::Error>>  {
 
 #[test]
 fn run_hello_ppu() -> Result<(), Box<dyn std::error::Error>> {
-    run_cpu_ppu("roms/other/hello.nes".to_string(), "framebuffer_run_hello_ppu.bmp".to_string(), |cpu, _sys, fb| {
+    run_cpu_ppu("roms/other/hello.nes".to_string(), "framebuffer_run_hello_ppu.bmp".to_string(), 1, |cpu, _sys, fb| {
         // 170step以降はJMPで無限ループしているはず
         assert_eq!(0x804e, cpu.pc);
         assert_eq!(0x01ff, cpu.sp);
@@ -165,6 +168,15 @@ fn run_hello_ppu() -> Result<(), Box<dyn std::error::Error>> {
         assert_eq!(0x34,   cpu.p);
         // FBの結果を精査する
         let _ = validate_framebuffer(fb, "screenshot/hello.bmp".to_string());
+    })
+}
+
+#[test]
+fn run_nestest_1() -> Result<(), Box<dyn std::error::Error>> {
+    run_cpu_ppu("roms/nes-test-roms/other/nestest.nes".to_string(), "framebuffer_nestest_1.bmp".to_string(), 20, |cpu, _sys, fb| {
+        // FBの結果を精査する
+        // unimplemented!();
+        // let _ = validate_framebuffer(fb, "screenshot/nestest_1.bmp".to_string());
     })
 }
 
