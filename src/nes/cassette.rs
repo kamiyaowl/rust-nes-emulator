@@ -26,7 +26,6 @@ pub enum NameTableMirror {
 }
 /// Cassete and mapper implement
 /// https://wiki.nesdev.com/w/index.php/List_of_mappers
-#[derive(Copy, Clone)]
 pub struct Cassette {
     // Mapperの種類
     pub mapper: Mapper,

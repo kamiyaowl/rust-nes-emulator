@@ -88,10 +88,10 @@ fn validate_framebuffer(fb: &[[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIG
 fn run_cpu_only(path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &System)) -> Result<(), Box<dyn std::error::Error>> {
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
+    
     let mut cassette: Cassette = Default::default();
-
     load_cassette(&mut cassette, path)?;
-    cpu_sys.cassette = cassette; // 現在はCopy trait
+    cpu_sys.cassette = cassette;
 
     cpu.reset();
     cpu_sys.reset();
@@ -112,10 +112,10 @@ fn run_cpu_ppu(rom_path: String, save_path: String, validate: impl Fn(&Cpu, &Sys
     let mut cpu_sys: System = Default::default();
     let mut ppu: Ppu = Default::default();
     let mut video_sys: VideoSystem = Default::default();
-    let mut cassette: Cassette = Default::default();
 
+    let mut cassette: Cassette = Default::default();
     load_cassette(&mut cassette, rom_path)?;
-    cpu_sys.cassette = cassette; // 現在はCopy trait
+    cpu_sys.cassette = cassette;
 
     cpu.reset();
     cpu_sys.reset();
@@ -130,7 +130,7 @@ fn run_cpu_ppu(rom_path: String, save_path: String, validate: impl Fn(&Cpu, &Sys
     let mut total_cycle: usize = 0;
     while total_cycle < cycle_for_draw_once {
         let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
-        ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut cassette, &mut fb);
+        ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
 
         // println!("[debug] cycle_for_draw_once={}, total_cycle={}, cpu_cycle={}", cycle_for_draw_once, total_cycle, cpu_cycle);
         total_cycle = total_cycle + cpu_cycle;
@@ -187,8 +187,8 @@ fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
     let mut cpu_sys: System = Default::default();
     let mut ppu: Ppu = Default::default();
     let mut video_sys: VideoSystem = Default::default();
-    let mut cassette: Cassette = Default::default();
 
+    let mut cassette: Cassette = Default::default();
     load_cassette(&mut cassette, rom_path)?;
     cpu_sys.cassette = cassette; // 現在はCopy trait
 
@@ -201,9 +201,9 @@ fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
     let mut fb = [[Color(0,0,0); VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
 
     // FPS平均計算用
-    const elapsed_n: usize = 128;
+    const ELAPSED_N: usize = 128;
     let mut elapsed_ptr = 0;
-    let mut elapsed_secs = [0.0; elapsed_n];
+    let mut elapsed_secs = [0.0; ELAPSED_N];
 
     while let Some(event) = window.next() {
         // 1frame分実行する
@@ -213,12 +213,12 @@ fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
         let start = Instant::now();
         while total_cycle < cycle_for_draw_once {
             let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
-            ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut cassette, &mut fb);
+            ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
             total_cycle = total_cycle + cpu_cycle;
         }
         let end = start.elapsed(); // 実行時間計測
         elapsed_secs[elapsed_ptr] = (end.as_millis() as f32) / 1000.0;
-        elapsed_ptr = (elapsed_ptr + 1) % elapsed_n;
+        elapsed_ptr = (elapsed_ptr + 1) % ELAPSED_N;
 
         // TODO: Key入力でレジスタを叩く
         if let Some(Button::Keyboard(key)) = event.press_args() {
@@ -256,7 +256,7 @@ fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
 
     // おわりにパフォーマンスとか出してみる
     let sum = elapsed_secs.iter().fold(0.0, |sum, a| sum + a);
-    let average = sum / (elapsed_n as f32);
+    let average = sum / (ELAPSED_N as f32);
     let fps = 1.0 / average;
     println!("[performance] elapsed_average={}, fps_average={}", average, fps);
 

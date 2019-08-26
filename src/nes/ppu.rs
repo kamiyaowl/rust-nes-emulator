@@ -260,7 +260,7 @@ impl Ppu {
     /// scrollなしなら上記はすべて一致するはず
     /// 
     /// 
-    fn draw(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, cassette: &mut Cassette, fb: &mut [[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
+    fn draw(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
         // tile換算でのy位置から、実pixelのズレ
         let offset_y = self.current_line % PIXEL_PER_TILE;
 
@@ -298,7 +298,7 @@ impl Ppu {
             }
 
             // attribute読み出し, BGパレット選択に使う
-            let raw_attribute = video_system.read_u8(cassette, attribute_addr);
+            let raw_attribute = video_system.read_u8(&mut system.cassette, attribute_addr);
             let bg_palette_id = match (tile_local_x & 0x01, tile_local_y & 0x01) {
                 (0, 0) => (raw_attribute >> 0) & 0x03, // top left
                 (1, 0) => (raw_attribute >> 2) & 0x03, // top right
@@ -307,13 +307,13 @@ impl Ppu {
                 _ => panic!("invalid bg attribute"),
             };
             // Nametableからtile_id読み出し->pattern tableからデータ構築
-            let bg_tile_id = u16::from(video_system.read_u8(cassette, nametable_addr));
+            let bg_tile_id = u16::from(video_system.read_u8(&mut system.cassette, nametable_addr));
             // pattern_table 1entryは16byte, 0行目だったら0,8番目のデータを使えば良い
             let bg_pattern_table_base_addr  = system.read_ppu_bg_pattern_table_addr() + (bg_tile_id * 16);
             let bg_pattern_table_addr_lower = bg_pattern_table_base_addr + offset_y;
             let bg_pattern_table_addr_upper = bg_pattern_table_addr_lower + 8;
-            let bg_data_lower = video_system.read_u8(cassette, bg_pattern_table_addr_lower);
-            let bg_data_upper = video_system.read_u8(cassette, bg_pattern_table_addr_upper);
+            let bg_data_lower = video_system.read_u8(&mut system.cassette, bg_pattern_table_addr_lower);
+            let bg_data_upper = video_system.read_u8(&mut system.cassette, bg_pattern_table_addr_upper);
 
             // TODO: #6 Spriteを検索してデータを確定する
 
@@ -329,7 +329,7 @@ impl Ppu {
                     (PALETTE_TABLE_BASE_ADDR + PALETTE_BG_OFFSET) +   // 0x3f00
                     (u16::from(bg_palette_id) * PALETTE_ENTRY_SIZE) + // attributeでBG PAlette0~3選択
                     u16::from(bg_palette_offset);                     // palette内の色選択
-                let palette_data = video_system.read_u8(cassette, bg_palette_addr);
+                let palette_data = video_system.read_u8(&mut system.cassette, bg_palette_addr);
 
                 // 書き込む
                 fb[pixel_y][pixel_x] = Color::from(palette_data);
@@ -342,7 +342,7 @@ impl Ppu {
     }
 
     /// 341cyc溜まったときの処理
-    fn update_line(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, cassette: &mut Cassette, fb: &mut [[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
+    fn update_line(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
         if cfg!(debug_ppu) && cfg!(debug_assertions) && cfg!(not(no_std)) {
             println!("[ppu][step] line:{}", self.current_line);
         }
@@ -363,7 +363,7 @@ impl Ppu {
         match LineStatus::from(self.current_line) {
             LineStatus::Visible => {
                 // 1行描く
-                self.draw(cpu, system, video_system, cassette, fb);
+                self.draw(cpu, system, video_system, fb);
             },
             LineStatus::PostRender => {
                 // 何もしない
@@ -393,9 +393,8 @@ impl Ppu {
     /// `cpu` - Interruptの要求が必要
     /// `system` - レジスタ読み書きする
     /// `video_system` - レジスタ読み書きする
-    /// `cassette` - video_systemのアクセス領域に含まれてる
     /// `videoout_func` - pixelごとのデータが決まるごとに呼ぶ(NESは出力ダブルバッファとかない)
-    pub fn step(&mut self, cpu_cyc: usize, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, cassette: &mut Cassette, fb: &mut [[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
+    pub fn step(&mut self, cpu_cyc: usize, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
         
         // PPU_SCROLL書き込み
         let (_, scroll_x, scroll_y) = system.read_ppu_scroll();
@@ -407,14 +406,14 @@ impl Ppu {
         let (is_read_ppu_req, is_write_ppu_req, ppu_data) = system.read_ppu_data();
 
         if is_write_ppu_req {
-            video_system.write_u8(cassette, ppu_addr, ppu_data);
+            video_system.write_u8(&mut system.cassette, ppu_addr, ppu_data);
             system.increment_ppu_addr();
             if cfg!(debug_assertions) && cfg!(not(no_std)) {
                 println!("[ppu][from cpu] write_req addr:{:04x}, data:{:02x}", ppu_addr, ppu_data);
             }
         }
         if is_read_ppu_req {
-            let data = video_system.read_u8(cassette, ppu_addr);
+            let data = video_system.read_u8(&mut system.cassette, ppu_addr);
             system.write_ppu_data(data);
             system.increment_ppu_addr();
             if cfg!(debug_assertions) && cfg!(not(no_std)) {
@@ -443,7 +442,7 @@ impl Ppu {
         let total_cyc = self.cumulative_cpu_cyc + cpu_cyc;
         self.cumulative_cpu_cyc = total_cyc % CPU_CYCLE_PER_LINE;
         if total_cyc >= CPU_CYCLE_PER_LINE { // 以上じゃないとおかしいね
-            self.update_line(cpu, system, video_system, cassette, fb);
+            self.update_line(cpu, system, video_system, fb);
         }
     }
 
