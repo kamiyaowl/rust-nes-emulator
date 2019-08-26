@@ -1,7 +1,7 @@
 use super::interface::*;
 
 #[derive(Copy, Clone)]
-pub enum Button {
+pub enum PadButton {
     A,B,Select,Start,Up,Down,Left,Right
 }
 
@@ -50,7 +50,7 @@ impl Pad {
     /// M - microphone unimplement
     /// E - Expansion controller unimplement
     /// S - Primary controller
-    pub fn read_dout(&mut self) -> u8 {
+    pub fn read_out(&mut self) -> u8 {
         let data = self.button_shift_reg & 0x01u8;
         // strobeが無効であればデータを進める
         if !self.strobe_enable {
@@ -59,17 +59,17 @@ impl Pad {
         data
     }
     /// 押されたボタンをシフトレジスタに記録します。この関数はエミュの外側から呼ぶことを想定しています
-    pub fn push_button(&mut self, button: Button) {
+    pub fn push_button(&mut self, button: PadButton) {
         if self.strobe_enable {
             match button {
-                Button::A      => self.button_shift_reg = self.button_shift_reg | 0x01u8,
-                Button::B      => self.button_shift_reg = self.button_shift_reg | 0x02u8,
-                Button::Select => self.button_shift_reg = self.button_shift_reg | 0x04u8,
-                Button::Start  => self.button_shift_reg = self.button_shift_reg | 0x08u8,
-                Button::Up     => self.button_shift_reg = self.button_shift_reg | 0x10u8,
-                Button::Down   => self.button_shift_reg = self.button_shift_reg | 0x20u8,
-                Button::Left   => self.button_shift_reg = self.button_shift_reg | 0x40u8,
-                Button::Right  => self.button_shift_reg = self.button_shift_reg | 0x80u8,
+                PadButton::A      => self.button_shift_reg = self.button_shift_reg | 0x01u8,
+                PadButton::B      => self.button_shift_reg = self.button_shift_reg | 0x02u8,
+                PadButton::Select => self.button_shift_reg = self.button_shift_reg | 0x04u8,
+                PadButton::Start  => self.button_shift_reg = self.button_shift_reg | 0x08u8,
+                PadButton::Up     => self.button_shift_reg = self.button_shift_reg | 0x10u8,
+                PadButton::Down   => self.button_shift_reg = self.button_shift_reg | 0x20u8,
+                PadButton::Left   => self.button_shift_reg = self.button_shift_reg | 0x40u8,
+                PadButton::Right  => self.button_shift_reg = self.button_shift_reg | 0x80u8,
             }
         }
     }

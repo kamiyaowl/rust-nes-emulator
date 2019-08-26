@@ -1,9 +1,10 @@
 use super::interface::*;
-use super::cassette::Cassette;
+use super::cassette::*;
+use super::pad::*;
 
 pub const WRAM_SIZE           : usize = 0x0800;
 pub const PPU_REG_SIZE        : usize = 0x0008;
-pub const APU_AND_IO_REG_SIZE : usize = 0x0018;
+pub const APU_IO_REG_SIZE     : usize = 0x0018;
 pub const EROM_SIZE           : usize = 0x1FE0;
 pub const ERAM_SIZE           : usize = 0x2000;
 pub const PROM_SIZE           : usize = 0x8000; // 32KB
@@ -22,7 +23,7 @@ pub struct System {
     //  0x2008 - 0x3fff: PPU I/O Mirror x1023
     pub ppu_reg: [u8; PPU_REG_SIZE],
     //  0x4000 - 0x401f: APU I/O, PAD
-    pub io_reg: [u8; APU_AND_IO_REG_SIZE],
+    pub io_reg: [u8; APU_IO_REG_SIZE],
 
     /// カセットへのR/W要求は呼び出し先でEmulation, 実機を切り替えるようにする
     /// 引数に渡されるaddrは、CPU命令そのままのアドレスを渡す
@@ -31,6 +32,11 @@ pub struct System {
     ///  0x8000 - 0xbfff: PRG-ROM switchable
     ///  0xc000 - 0xffff: PRG-ROM fixed to the last bank or switchable
     pub cassette: Cassette,
+
+    /// コントローラへのアクセスは以下のモジュールにやらせる
+    /// 0x4016, 0x4017
+    pub pad1: Pad,
+    pub pad2: Pad,
 
     /* PPUのアドレス空間に対する要求トリガ */
     pub written_oam_data   : bool, // OAM_DATAがかかれた
@@ -53,8 +59,11 @@ impl Default for System {
         Self {
             wram:    [0; WRAM_SIZE],
             ppu_reg: [0; PPU_REG_SIZE],
-            io_reg:  [0; APU_AND_IO_REG_SIZE],
+            io_reg:  [0; APU_IO_REG_SIZE],
+
             cassette: Default::default(),
+            pad1: Default::default(),
+            pad2: Default::default(),
 
             written_oam_data    : false,
             written_ppu_scroll  : false,
@@ -75,7 +84,7 @@ impl EmulateControl for System {
     fn reset(&mut self) {
         self.wram    = [0; WRAM_SIZE];
         self.ppu_reg = [0; PPU_REG_SIZE];
-        self.io_reg  = [0; APU_AND_IO_REG_SIZE];
+        self.io_reg  = [0; APU_IO_REG_SIZE];
 
         self.written_oam_data    = false;
         self.written_ppu_scroll  = false;
@@ -143,9 +152,15 @@ impl SystemBus for System {
         } else if addr < CASSETTE_BASE_ADDR {
             let index = usize::from(addr - APU_IO_REG_BASE_ADDR);
             if !is_nondestructive {
-                // TODO: PAD周りとかあれば
+                match index {
+                    // TODO: APU
+                    0x16 => self.pad1.read_out(), // pad1
+                    0x17 => self.pad2.read_out(), // pad2
+                    _ => self.io_reg[index],
+                }
+            } else {
+                self.io_reg[index] 
             }
-            self.io_reg[index] 
         } else {
             self.cassette.read_u8(addr, is_nondestructive)
         }
@@ -213,6 +228,14 @@ impl SystemBus for System {
             };
         } else if addr < CASSETTE_BASE_ADDR {
             let index = usize::from(addr - APU_IO_REG_BASE_ADDR);
+            if !is_nondestructive {
+                match index {
+                    // TODO: APU
+                    0x16 => self.pad1.write_strobe((data & 0x01) == 0x01), // pad1
+                    0x17 => self.pad2.write_strobe((data & 0x01) == 0x01), // pad2
+                    _ => {},
+                }
+            }
             self.io_reg[index] = data;
         } else {
             self.cassette.write_u8(addr, data, is_nondestructive);

@@ -85,13 +85,11 @@ fn validate_framebuffer(fb: &[[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIG
     Ok(())
 }
 
-fn run_cpu_only(path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &System)) -> Result<(), Box<dyn std::error::Error>> {
+fn run_cpu_only(rom_path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &System)) -> Result<(), Box<dyn std::error::Error>> {
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
     
-    let mut cassette: Cassette = Default::default();
-    load_cassette(&mut cassette, path)?;
-    cpu_sys.cassette = cassette;
+    load_cassette(&mut cpu_sys.cassette, rom_path)?;
 
     cpu.reset();
     cpu_sys.reset();
@@ -113,9 +111,7 @@ fn run_cpu_ppu(rom_path: String, save_path: String, validate: impl Fn(&Cpu, &Sys
     let mut ppu: Ppu = Default::default();
     let mut video_sys: VideoSystem = Default::default();
 
-    let mut cassette: Cassette = Default::default();
-    load_cassette(&mut cassette, rom_path)?;
-    cpu_sys.cassette = cassette;
+    load_cassette(&mut cpu_sys.cassette, rom_path)?;
 
     cpu.reset();
     cpu_sys.reset();
@@ -181,16 +177,13 @@ fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
         .build()
         .unwrap();
 
-
     // emulatorの準備
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
     let mut ppu: Ppu = Default::default();
     let mut video_sys: VideoSystem = Default::default();
 
-    let mut cassette: Cassette = Default::default();
-    load_cassette(&mut cassette, rom_path)?;
-    cpu_sys.cassette = cassette; // 現在はCopy trait
+    load_cassette(&mut cpu_sys.cassette, rom_path)?;
 
     cpu.reset();
     cpu_sys.reset();
@@ -223,14 +216,14 @@ fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
         // TODO: Key入力でレジスタを叩く
         if let Some(Button::Keyboard(key)) = event.press_args() {
             match key {
-                Key::A => { println!("left") },
-                Key::S => { println!("down") },
-                Key::W => { println!("up") },
-                Key::D => { println!("right") },
-                Key::J => { println!("A") },
-                Key::K => { println!("B") },
-                Key::U => { println!("select") },
-                Key::I => { println!("start") },
+                Key::J => { println!("a");      cpu_sys.pad1.push_button(PadButton::A) },
+                Key::K => { println!("b");      cpu_sys.pad1.push_button(PadButton::B) },
+                Key::U => { println!("select"); cpu_sys.pad1.push_button(PadButton::Select) },
+                Key::I => { println!("start");  cpu_sys.pad1.push_button(PadButton::Start) },
+                Key::W => { println!("up");     cpu_sys.pad1.push_button(PadButton::Up) },
+                Key::S => { println!("down");   cpu_sys.pad1.push_button(PadButton::Down) },
+                Key::A => { println!("left");   cpu_sys.pad1.push_button(PadButton::Left) },
+                Key::D => { println!("right");  cpu_sys.pad1.push_button(PadButton::Right) },
                 Key::P => { 
                     save_framebuffer(&fb, "run_gui_ss.bmp".to_string());
                  },
