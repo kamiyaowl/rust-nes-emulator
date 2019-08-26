@@ -208,6 +208,10 @@ fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
             let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
             ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
             total_cycle = total_cycle + cpu_cycle;
+
+            // debug
+            // let mut s = String::new();
+            // std::io::stdin().read_line(&mut s).unwrap();
         }
         let end = start.elapsed(); // 実行時間計測
         elapsed_secs[elapsed_ptr] = (end.as_millis() as f32) / 1000.0;
@@ -257,5 +261,5 @@ fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    run_gui("roms/other/hello.nes".to_string())
+    run_gui("roms/nes-test-roms/other/nestest.nes".to_string())
 }

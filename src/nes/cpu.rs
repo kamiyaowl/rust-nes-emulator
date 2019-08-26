@@ -166,6 +166,9 @@ impl Cpu {
         let lower = system.read_u8(lower_addr, false);
         let upper = system.read_u8(upper_addr, false);
         self.pc = (lower as u16) | ((upper as u16) << 8);
+        if cfg!(debug_assertions) && cfg!(not(no_std)) {
+            println!("[interrupt] jump to {:04x}", self.pc);
+        }
     }
 
 }

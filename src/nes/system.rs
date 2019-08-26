@@ -120,14 +120,16 @@ impl SystemBus for System {
         } else if addr < APU_IO_REG_BASE_ADDR {
             // mirror support
             let index = usize::from(addr - PPU_REG_BASE_ADDR) % self.ppu_reg.len(); 
+            debug_assert!(index < 0x9);
             match index {
                 // PPU_STATUS 2度書きレジスタの状態をリセット, VBLANKフラグをクリア
                 0x02 => {
+                    let data = self.ppu_reg[index];  // 先にフェッチしないとあかんやんけ
                     if !is_nondestructive {
                         self.ppu_is_second_write = false;
                         self.write_ppu_is_vblank(false);
                     }
-                    self.ppu_reg[index] 
+                    data
                 },
                 // OAM_DATAの読み出しフラグ
                 0x04 => {

@@ -310,7 +310,7 @@ impl Cpu {
     /// load accumulator
     pub fn inst_lda(&mut self, arg: u8) -> u8 {
         let is_zero     = arg == 0;
-        let is_negative = (arg as i8) < 0;
+        let is_negative = (arg & 0x80) == 0x80;
 
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
@@ -320,7 +320,7 @@ impl Cpu {
     /// load x register
     pub fn inst_ldx(&mut self, arg: u8) -> u8 {
         let is_zero     = arg == 0;
-        let is_negative = (arg as i8) < 0;
+        let is_negative = (arg & 0x80) == 0x80;
 
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
@@ -330,7 +330,7 @@ impl Cpu {
     /// load y register
     pub fn inst_ldy(&mut self, arg: u8) -> u8 {
         let is_zero     = arg == 0;
-        let is_negative = (arg as i8) < 0;
+        let is_negative = (arg & 0x80) == 0x80;
 
         self.write_zero_flag(is_zero);
         self.write_negative_flag(is_negative);
