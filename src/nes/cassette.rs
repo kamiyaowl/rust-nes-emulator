@@ -161,6 +161,7 @@ impl Cassette {
 impl SystemBus for Cassette {
     fn read_u8(&mut self, addr: u16, _is_nondestructive: bool) -> u8 {
         if addr < PRG_ROM_SYSTEM_BASE_ADDR {
+            println!("test:{:04x}", addr);
             debug_assert!(addr >= BATTERY_PACKED_RAM_BASE_ADDR);
 
             let index = usize::from(addr - BATTERY_PACKED_RAM_BASE_ADDR);

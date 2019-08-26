@@ -172,10 +172,10 @@ fn run_hello_ppu() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn run_nestest_1() -> Result<(), Box<dyn std::error::Error>> {
-    run_cpu_ppu("roms/nes-test-roms/other/nestest.nes".to_string(), "framebuffer_nestest_1.bmp".to_string(), 20, |cpu, _sys, fb| {
+fn run_nestest_boot() -> Result<(), Box<dyn std::error::Error>> {
+    run_cpu_ppu("roms/nes-test-roms/other/nestest.nes".to_string(), "framebuffer_nestest_boot.bmp".to_string(), 3, |_cpu, _sys, _fb| {
         // FBの結果を精査する
-        // unimplemented!();
+        unimplemented!();
         // let _ = validate_framebuffer(fb, "screenshot/nestest_1.bmp".to_string());
     })
 }

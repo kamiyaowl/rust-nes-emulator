@@ -28,6 +28,9 @@ jobs:
       - store_artifacts:
           path: framebuffer_run_hello_ppu.bmp
           destination: hello_debug.bmp
+      - store_artifacts:
+          path: framebuffer_nestest_boot.bmp
+          destination: nestest_boot_debug.bmp
       - run:
           name: build release
           command: cargo build --release
