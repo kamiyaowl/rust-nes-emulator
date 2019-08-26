@@ -1,4 +1,4 @@
-
+use super::interface::*;
 
 #[derive(Copy, Clone)]
 pub enum Button {
@@ -17,6 +17,25 @@ impl Default for Pad {
             button_shift_reg: 0,
             strobe_enable: false,
         }
+    }
+}
+
+
+impl EmulateControl for Pad {
+    fn reset(&mut self) {
+        self.button_shift_reg = 0;
+        self.strobe_enable = false;
+    }
+    fn get_dump_size() -> usize {
+        0x4
+    }
+    fn dump(&self, read_callback: impl Fn(usize, u8)) {
+        // strobeは保持するけど入力は破棄する
+        read_callback(0, if self.strobe_enable { 1 } else { 0 });
+        // 0x1~0x3 padding
+    }
+    fn restore(&mut self, write_callback: impl Fn(usize) -> u8) {
+        self.strobe_enable = write_callback(0) == 0x1;
     }
 }
 
@@ -43,14 +62,14 @@ impl Pad {
     pub fn push_button(&mut self, button: Button) {
         if self.strobe_enable {
             match button {
-                Button::A      => self.button_shift_reg = self.button_shift_reg & 0x01u8,
-                Button::B      => self.button_shift_reg = self.button_shift_reg & 0x02u8,
-                Button::Select => self.button_shift_reg = self.button_shift_reg & 0x04u8,
-                Button::Start  => self.button_shift_reg = self.button_shift_reg & 0x08u8,
-                Button::Up     => self.button_shift_reg = self.button_shift_reg & 0x10u8,
-                Button::Down   => self.button_shift_reg = self.button_shift_reg & 0x20u8,
-                Button::Left   => self.button_shift_reg = self.button_shift_reg & 0x40u8,
-                Button::Right  => self.button_shift_reg = self.button_shift_reg & 0x80u8,
+                Button::A      => self.button_shift_reg = self.button_shift_reg | 0x01u8,
+                Button::B      => self.button_shift_reg = self.button_shift_reg | 0x02u8,
+                Button::Select => self.button_shift_reg = self.button_shift_reg | 0x04u8,
+                Button::Start  => self.button_shift_reg = self.button_shift_reg | 0x08u8,
+                Button::Up     => self.button_shift_reg = self.button_shift_reg | 0x10u8,
+                Button::Down   => self.button_shift_reg = self.button_shift_reg | 0x20u8,
+                Button::Left   => self.button_shift_reg = self.button_shift_reg | 0x40u8,
+                Button::Right  => self.button_shift_reg = self.button_shift_reg | 0x80u8,
             }
         }
     }
