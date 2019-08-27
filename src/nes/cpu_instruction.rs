@@ -345,12 +345,36 @@ impl Cpu {
 
     /// 命令を実行します
     /// ret: cycle数
-    pub fn run(inst_code: u8) -> u8 {
-        let Instruction(opcode, addressing) = Instruction::from(inst_code);
+    pub fn run(&mut self, system: &mut System, inst_code: u8) -> u8 {
+        let Instruction(opcode, mode) = Instruction::from(inst_code);
         match opcode {
+            ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             Opcode::ADC => {
-                0
-            }
+                let Operand(data, cyc) = self.fetch_operand(system, mode);
+                let arg = data as u8;
+
+                let (data1, is_carry1) = self.a.overflowing_add(arg as u8);
+                let (result, is_carry2) = data1.overflowing_add(if self.read_carry_flag() { 1 } else { 0 } );
+
+                let is_carry    = is_carry1 || is_carry2;
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+                let is_overflow = (!(self.a ^ arg) & (self.a ^ result) & 0x80) == 0x80;
+
+                self.write_carry_flag(is_carry);
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.write_overflow_flag(is_overflow);
+                self.a = result;
+                1 + cyc
+            },
+            // TODO: 他の命令もここに移植
+
+
+
+
+
+            ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             _ => panic!("Invalid Opcode"),
         }
     }
