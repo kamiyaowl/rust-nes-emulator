@@ -2,6 +2,120 @@ use super::cpu::*;
 use super::system::System;
 use super::interface::{SystemBus};
 
+#[derive(Copy, Clone)]
+pub enum AddressingMode {
+    Implied,
+    Accumulator,
+    Immediate, 
+    Absolute,  
+    ZeroPage,  
+    ZeroPageX, 
+    ZeroPageY, 
+    AbsoluteX, 
+    AbsoluteY, 
+    Relative, 
+    Indirect,  
+    IndirectX,
+    IndirectY,
+}
+#[derive(Copy, Clone)]
+pub enum Operand {
+    /// no operand
+    None, 
+    /// 1byte operand
+    Byte { data: u8, additional_cyc: u8 },
+    /// 2byte operand
+    Word { data: u16, additional_cyc: u8 },
+}
+
+impl Cpu {
+    /// PCから1byteフェッチします
+    /// フェッチした後、PCを一つ進めます
+    pub fn fetch_u8(&mut self, system: &mut System) -> u8 {
+        let data = system.read_u8(self.pc, false);
+        self.pc = self.pc + 1;
+        data
+    }
+    /// PCから2byteフェッチします
+    /// フェッチした後、PCを一つ進めます
+    pub fn fetch_u16(&mut self, system: &mut System) -> u16 {
+        let lower = self.fetch_u8(system);
+        let upper = self.fetch_u8(system);
+        let data = u16::from(lower) | (u16::from(upper) << 8);
+        data
+    }
+    /// operandをフェッチします。AddressingモードによってはPCも進みます
+    /// 実装するときは命令直後のオペランドを読み取るときはCpu::fetch, それ以外はSystem::read
+    pub fn fetch_operand(&mut self, system: &mut System, mode: AddressingMode) -> Operand {
+        match mode {
+            AddressingMode::Implied     => Operand::None,
+            AddressingMode::Accumulator => Operand::None,
+            AddressingMode::Immediate   => Operand::Byte { data: self.fetch_u8(system) , additional_cyc: 0 },
+            AddressingMode::Absolute    => Operand::Word { data: self.fetch_u16(system), additional_cyc: 0 },
+            AddressingMode::ZeroPage    => Operand::Byte { data: self.fetch_u8(system) , additional_cyc: 0 },
+            AddressingMode::ZeroPageX   => Operand::Byte { data: self.fetch_u8(system).wrapping_add(self.x) , additional_cyc: 0 },
+            AddressingMode::ZeroPageY   => Operand::Byte { data: self.fetch_u8(system).wrapping_add(self.y) , additional_cyc: 0 },
+            AddressingMode::AbsoluteX   => {
+                let data = self.fetch_u16(system).wrapping_add(u16::from(self.x));
+                let additional_cyc = if (data & 0xff00u16) != (data.wrapping_add(u16::from(self.x)) & 0xff00u16) { 1 } else { 0 };
+                Operand::Word { data, additional_cyc }
+            },
+            AddressingMode::AbsoluteY   => {
+                let data = self.fetch_u16(system).wrapping_add(u16::from(self.y));
+                let additional_cyc = if (data & 0xff00u16) != (data.wrapping_add(u16::from(self.y)) & 0xff00u16) { 1 } else { 0 };
+                Operand::Word { data, additional_cyc }
+            },
+            AddressingMode::Relative    => {
+                let src_addr = self.fetch_u8(system);
+                let signed_data = ((src_addr as i8) as i32) + (self.pc as i32); // 符号拡張して計算する
+                debug_assert!(signed_data >= 0);
+                debug_assert!(signed_data < 0x10000);
+
+                let data = signed_data as u16 + 1; // 戻り先は指定+1にあるっぽい
+                let additional_cyc = if (data & 0xff00u16) != (self.pc & 0xff00u16) { 1 } else { 0 };
+
+                Operand::Word { data, additional_cyc }
+            },
+            AddressingMode::Indirect    => {
+                let src_addr_lower = self.fetch_u8(system);
+                let src_addr_upper = self.fetch_u8(system);
+
+                let dst_addr_lower = u16::from(src_addr_lower) | (u16::from(src_addr_upper) << 8); // operandそのまま
+                let dst_addr_upper = u16::from(src_addr_lower.wrapping_add(1)) | (u16::from(src_addr_upper) << 8); // operandのlowerに+1したもの
+
+                let dst_data_lower = u16::from(system.read_u8(dst_addr_lower, false));
+                let dst_data_upper = u16::from(system.read_u8(dst_addr_upper, false));
+
+                let data = dst_data_lower | (dst_data_upper << 8);
+
+                Operand::Word { data, additional_cyc: 0 }
+            },
+            AddressingMode::IndirectX   => {
+                let src_addr = self.fetch_u8(system);
+                let dst_addr = src_addr.wrapping_add(self.x);
+
+                let data_lower = u16::from(system.read_u8(u16::from(dst_addr), false));
+                let data_upper = u16::from(system.read_u8(u16::from(dst_addr.wrapping_add(1)), false));
+
+                let data = data_lower | (data_upper << 8);
+                Operand::Word { data, additional_cyc: 0 }
+            },
+            AddressingMode::IndirectY   => {
+                let src_addr = self.fetch_u8(system);
+
+                let data_lower = u16::from(system.read_u8(u16::from(src_addr), false));
+                let data_upper = u16::from(system.read_u8(u16::from(src_addr.wrapping_add(1)), false));
+
+                let base_data = data_lower | (data_upper << 8);
+                let data = base_data + u16::from(self.y);
+                let additional_cyc = if (base_data & 0xff00u16) != (data & 0xff00u16) { 1 } else { 0 };
+
+                Operand::Word { data, additional_cyc }
+            },
+        }
+    }
+}
+
 /// Instruction Implementation
 /// http://obelisk.me.uk/6502/reference.html
 /// 戻り値: 条件分岐等で余計にかかるclock cycle
