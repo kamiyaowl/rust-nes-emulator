@@ -23,7 +23,8 @@ lazy_static! {
     pub static ref debugger_fileout_enable : RwLock<bool>   = RwLock::new(false);
 }
 
-/// デバッグ出力ファイルのクリアとか
+/// デバッグ情報のファイル出力を有効化します
+/// cargo testはマルチスレッドのため、同時に複数のテストでloggingをオンにすると色々バグるので使わないこと
 #[macro_export]
 macro_rules! debugger_enable_fileout {
     ($filepath: expr) => {
@@ -44,7 +45,8 @@ macro_rules! debugger_enable_fileout {
                 .open($filepath)
                 .unwrap()
             );
-            file.write_all("rust-nes-emulator log\n".as_bytes()).unwrap();
+            file.write_all($filepath.as_bytes()).unwrap();
+            file.write_all(": rust-nes-emulator log\n".as_bytes()).unwrap();
             file.flush().unwrap();
             // global変数に泣く泣くセット
             let mut debugger_out_path_ptr       = debugger_out_path.write().unwrap();
@@ -52,6 +54,18 @@ macro_rules! debugger_enable_fileout {
             *debugger_out_path_ptr = $filepath;
             *debugger_fileout_enable_ptr = true;
         }
+    };
+}
+
+#[macro_export]
+macro_rules! debugger_dissable_fileout {
+    () => {
+        if cfg!(not(no_std)) {
+            let mut debugger_out_path_ptr       = debugger_out_path.write().unwrap();
+            let mut debugger_fileout_enable_ptr = debugger_fileout_enable.write().unwrap();
+            *debugger_out_path_ptr = "emulator.log".to_string();
+            *debugger_fileout_enable_ptr = false;
+        }        
     };
 }
 

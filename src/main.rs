@@ -149,7 +149,7 @@ fn run_cpu_ppu(rom_path: String, save_path: String, frame_count: usize, validate
 
 #[test]
 fn run_hello_cpu() -> Result<(), Box<dyn std::error::Error>>  {
-    debugger_enable_fileout!("run_hello_cpu.log".to_string());
+    // debugger_enable_fileout!("run_hello_cpu.log".to_string());
     run_cpu_only("roms/other/hello.nes".to_string(), 175, |cpu, _sys| {
         // 170step以降はJMPで無限ループしているはず
         assert_eq!(0x804e, cpu.pc);
@@ -161,31 +161,30 @@ fn run_hello_cpu() -> Result<(), Box<dyn std::error::Error>>  {
     })
 }
 
-// #[test]
-// fn run_hello_ppu() -> Result<(), Box<dyn std::error::Error>> {
-//     debugger_init!();
-//     run_cpu_ppu("roms/other/hello.nes".to_string(), "framebuffer_run_hello_ppu.bmp".to_string(), 1, |cpu, _sys, fb| {
-//         // 170step以降はJMPで無限ループしているはず
-//         assert_eq!(0x804e, cpu.pc);
-//         assert_eq!(0x01ff, cpu.sp);
-//         assert_eq!(0x1e,   cpu.a);
-//         assert_eq!(0x0d,   cpu.x);
-//         assert_eq!(0x00,   cpu.y);
-//         assert_eq!(0x34,   cpu.p);
-//         // FBの結果を精査する
-//         let _ = validate_framebuffer(fb, "screenshot/hello.bmp".to_string());
-//     })
-// }
+#[test]
+fn run_hello_ppu() -> Result<(), Box<dyn std::error::Error>> {
+    // debugger_enable_fileout!("run_hello_ppu.log".to_string());
+    run_cpu_ppu("roms/other/hello.nes".to_string(), "framebuffer_run_hello_ppu.bmp".to_string(), 1, |cpu, _sys, fb| {
+        // 170step以降はJMPで無限ループしているはず
+        assert_eq!(0x804e, cpu.pc);
+        assert_eq!(0x01ff, cpu.sp);
+        assert_eq!(0x1e,   cpu.a);
+        assert_eq!(0x0d,   cpu.x);
+        assert_eq!(0x00,   cpu.y);
+        assert_eq!(0x34,   cpu.p);
+        // FBの結果を精査する
+        let _ = validate_framebuffer(fb, "screenshot/hello.bmp".to_string());
+    })
+}
 
-// #[test]
-// fn run_nestest_boot() -> Result<(), Box<dyn std::error::Error>> {
-//     debugger_init!();
-//     run_cpu_ppu("roms/nes-test-roms/other/nestest.nes".to_string(), "framebuffer_nestest_boot.bmp".to_string(), 3, |_cpu, _sys, _fb| {
-//         // FBの結果を精査する
-//         // unimplemented!();
-//         // let _ = validate_framebuffer(fb, "screenshot/nestest_1.bmp".to_string());
-//     })
-// }
+#[test]
+fn run_nestest_boot() -> Result<(), Box<dyn std::error::Error>> {
+    run_cpu_ppu("roms/nes-test-roms/other/nestest.nes".to_string(), "framebuffer_nestest_boot.bmp".to_string(), 3, |_cpu, _sys, _fb| {
+        // FBの結果を精査する
+        // unimplemented!();
+        // let _ = validate_framebuffer(fb, "screenshot/nestest_1.bmp".to_string());
+    })
+}
 
 fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
     // guiの準備

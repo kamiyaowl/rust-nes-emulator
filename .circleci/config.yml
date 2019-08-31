@@ -27,7 +27,7 @@ jobs:
       #     command: cargo clippy -- -D warnings
       - run:
           name: test
-          command: cargo test
+          command: cargo test -- --test-threads=1
       - store_artifacts:
           path: framebuffer_run_hello_ppu.bmp
           destination: hello_debug.bmp
@@ -39,7 +39,7 @@ jobs:
           command: cargo build --release
       - run:
           name: test release
-          command: cargo test --release
+          command: cargo test --release -- --test-threads=1
       - store_artifacts:
           path: framebuffer_run_hello_ppu.bmp
           destination: hello_release.bmp
