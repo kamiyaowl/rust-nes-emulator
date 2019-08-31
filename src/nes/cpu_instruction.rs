@@ -335,7 +335,7 @@ impl Cpu {
                 let data_upper = u16::from(system.read_u8(u16::from(src_addr.wrapping_add(1)), false));
 
                 let base_data = data_lower | (data_upper << 8);
-                let data = base_data + u16::from(self.y);
+                let data = base_data.wrapping_add(u16::from(self.y));
                 let additional_cyc = if (base_data & 0xff00u16) != (data & 0xff00u16) { 1 } else { 0 };
 
                 Operand(data, 4 + additional_cyc)
