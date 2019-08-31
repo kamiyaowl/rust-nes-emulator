@@ -235,7 +235,7 @@ impl Ppu {
         // 転送サイズ
         let transfer_size : u16 = if is_pre_transfer { OAM_DMA_COPY_SIZE_PER_PPU_STEP as u16 } else { (OAM_SIZE as u16) - u16::from(OAM_DMA_COPY_SIZE_PER_PPU_STEP) };
 
-        debugger_print!(PrintLevel::INFO, PrintFrom::PPU, println!("[dma][{}] start_offset:{}, transfer_size:{}, cpu_start_addr:{:04x}, oam_start_addr:{:02x}", if is_pre_transfer { "pre " } else { "post" }, start_offset, transfer_size, cpu_start_addr, oam_start_addr));
+        debugger_print!(PrintLevel::INFO, PrintFrom::PPU, format!("[dma][{}] start_offset:{}, transfer_size:{}, cpu_start_addr:{:04x}, oam_start_addr:{:02x}", if is_pre_transfer { "pre " } else { "post" }, start_offset, transfer_size, cpu_start_addr, oam_start_addr));
 
         // 転送
         for offset in 0..transfer_size {
@@ -290,8 +290,8 @@ impl Ppu {
             // NameTable内でのOffsetを加算すれば完成
             let nametable_addr = target_nametable_base_addr + (tile_local_y * SCREEN_TILE_WIDTH) + tile_local_x;
 
-            debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, println!("[line:{}(offset:{})] base=({}, {}), tile=({}, {}), tile_local=({}, {})", self.current_line, offset_y, tile_base_x, tile_base_y, tile_global_x, tile_global_y, tile_local_x, tile_local_y));
-            debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, println!("[line:{}(offset:{})] target_nametable_base_addr={:04x}, attribute_addr={:04x}, nametable_addr={:04x}", self.current_line, offset_y, target_nametable_base_addr, attribute_addr, nametable_addr));
+            debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("[line:{}(offset:{})] base=({}, {}), tile=({}, {}), tile_local=({}, {})", self.current_line, offset_y, tile_base_x, tile_base_y, tile_global_x, tile_global_y, tile_local_x, tile_local_y));
+            debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("[line:{}(offset:{})] target_nametable_base_addr={:04x}, attribute_addr={:04x}, nametable_addr={:04x}", self.current_line, offset_y, target_nametable_base_addr, attribute_addr, nametable_addr));
 
             // attribute読み出し, BGパレット選択に使う
             let raw_attribute = video_system.read_u8(&mut system.cassette, attribute_addr);
@@ -342,7 +342,7 @@ impl Ppu {
 
     /// 341cyc溜まったときの処理
     fn update_line(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
-        debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, println!("[step] line:{}", self.current_line));
+        debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("[step] line:{}", self.current_line));
         // OAM DMA
         if self.is_dma_running {
             // 前回のOAM DMAのこりをやる
@@ -405,13 +405,13 @@ impl Ppu {
         if is_write_ppu_req {
             video_system.write_u8(&mut system.cassette, ppu_addr, ppu_data);
             system.increment_ppu_addr();
-            debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, println!("[from cpu] write_req addr:{:04x}, data:{:02x}", ppu_addr, ppu_data));
+            debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("[from cpu] write_req addr:{:04x}, data:{:02x}", ppu_addr, ppu_data));
         }
         if is_read_ppu_req {
             let data = video_system.read_u8(&mut system.cassette, ppu_addr);
             system.write_ppu_data(data);
             system.increment_ppu_addr();
-            debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, println!("[from cpu] read_req  addr:{:04x}, data:{:02x}", ppu_addr, data));
+            debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("[from cpu] read_req  addr:{:04x}, data:{:02x}", ppu_addr, data));
         }
 
         // OAM R/W (おおよそはDMAでやられるから使わないらしい)
@@ -419,12 +419,12 @@ impl Ppu {
         let (is_read_oam_req, is_write_oam_req, oam_data) = system.read_oam_data();
         if is_write_oam_req {
             self.oam[usize::from(oam_addr)] = oam_data;
-            debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, println!("[oam][from cpu] write_req addr:{:04x}, data:{:02x}", oam_addr, oam_data));
+            debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("[oam][from cpu] write_req addr:{:04x}, data:{:02x}", oam_addr, oam_data));
         }
         if is_read_oam_req {
             let data = self.oam[usize::from(oam_addr)];
             system.write_oam_data(data);
-            debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, println!("[oam][from cpu] read_req  addr:{:04x}, data:{:02x}", oam_addr, data));
+            debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("[oam][from cpu] read_req  addr:{:04x}, data:{:02x}", oam_addr, data));
         }
 
         // clock cycle判定して行更新

@@ -120,13 +120,13 @@ impl Cassette {
         debug_assert!(prg_rom_bytes <= PRG_ROM_MAX_SIZE);
         debug_assert!(chr_rom_bytes <= CHR_ROM_MAX_SIZE);
 
-        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, println!("header_bytes:{:04x}", header_bytes));
-        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, println!("trainer_bytes:{:04x}", trainer_bytes));
-        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, println!("prg_rom_bytes:{:04x}", prg_rom_bytes));
-        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, println!("chr_rom_bytes:{:04x}", chr_rom_bytes));
-        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, println!("trainer_baseaddr:{:04x}", trainer_baseaddr));
-        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, println!("prg_rom_baseaddr:{:04x}", prg_rom_baseaddr));
-        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, println!("chr_rom_baseaddr:{:04x}", chr_rom_baseaddr));
+        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, format!("header_bytes:{:04x}", header_bytes));
+        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, format!("trainer_bytes:{:04x}", trainer_bytes));
+        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, format!("prg_rom_bytes:{:04x}", prg_rom_bytes));
+        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, format!("chr_rom_bytes:{:04x}", chr_rom_bytes));
+        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, format!("trainer_baseaddr:{:04x}", trainer_baseaddr));
+        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, format!("prg_rom_baseaddr:{:04x}", prg_rom_baseaddr));
+        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, format!("chr_rom_baseaddr:{:04x}", chr_rom_baseaddr));
 
         // Battery Packed RAMの初期値
         if is_exists_trainer {

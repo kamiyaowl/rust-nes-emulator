@@ -378,7 +378,7 @@ impl Cpu {
         debugger_print!(PrintLevel::DEBUG, PrintFrom::CPU, {
             let op1 = system.read_u8(inst_pc + 1, true); // for debug 非破壊
             let op2 = system.read_u8(inst_pc + 2, true); // for debug 非破壊
-            println!("{:04X} {:02X} {:02X} {:02X} {:?} {:?}\tA:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} ", inst_pc, inst_code, op1, op2, opcode, mode, self.a, self.x, self.y, self.p, (self.sp & 0xff) as u8);
+            format!("{:04X} {:02X} {:02X} {:02X} {:?} {:?}\tA:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} ", inst_pc, inst_code, op1, op2, opcode, mode, self.a, self.x, self.y, self.p, (self.sp & 0xff) as u8)
         });
 
         match opcode {
