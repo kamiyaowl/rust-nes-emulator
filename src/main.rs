@@ -149,7 +149,7 @@ fn run_cpu_ppu(rom_path: String, save_path: String, frame_count: usize, validate
 
 #[test]
 fn run_hello_cpu() -> Result<(), Box<dyn std::error::Error>>  {
-    debugger_init!();
+    debugger_enable_fileout!("run_hello_cpu.log".to_string());
     run_cpu_only("roms/other/hello.nes".to_string(), 175, |cpu, _sys| {
         // 170step以降はJMPで無限ループしているはず
         assert_eq!(0x804e, cpu.pc);
@@ -280,6 +280,5 @@ fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    debugger_init!();
     run_gui("roms/nes-test-roms/other/nestest.nes".to_string())
 }

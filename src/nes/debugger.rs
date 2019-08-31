@@ -1,4 +1,4 @@
-#![allow(unused_macros)]
+use std::sync::RwLock;
 
 #[derive(Debug)]
 pub enum PrintLevel {
@@ -18,18 +18,21 @@ pub enum PrintFrom {
     MAIN,
 }
 
-pub const DEBUGGER_OUT_PATH: &str ="emulator.log";
+lazy_static! {
+    pub static ref debugger_out_path       : RwLock<String> = RwLock::new("emulator.log".to_string());
+    pub static ref debugger_fileout_enable : RwLock<bool>   = RwLock::new(false);
+}
 
 /// デバッグ出力ファイルのクリアとか
 #[macro_export]
-macro_rules! debugger_init {
-    () => {
+macro_rules! debugger_enable_fileout {
+    ($filepath: expr) => {
         if cfg!(not(no_std)) {
             use std::io::{BufWriter, Write};
             use std::fs;
             use fs::OpenOptions;
             // とりあえず消す
-            fs::remove_file(DEBUGGER_OUT_PATH).unwrap_or_else(|why| {
+            fs::remove_file($filepath).unwrap_or_else(|why| {
                 println!("[debugger_init] log delete error.");
                 println!("{:?}", why.kind());
             });
@@ -38,11 +41,16 @@ macro_rules! debugger_init {
                 OpenOptions::new()
                 .write(true)
                 .create(true)
-                .open(DEBUGGER_OUT_PATH)
+                .open($filepath)
                 .unwrap()
             );
             file.write_all("rust-nes-emulator log\n".as_bytes()).unwrap();
             file.flush().unwrap();
+            // global変数に泣く泣くセット
+            let mut debugger_out_path_ptr       = debugger_out_path.write().unwrap();
+            let mut debugger_fileout_enable_ptr = debugger_fileout_enable.write().unwrap();
+            *debugger_out_path_ptr = $filepath;
+            *debugger_fileout_enable_ptr = true;
         }
     };
 }
@@ -83,15 +91,20 @@ macro_rules! debugger_print {
             use std::fs;
             use std::io::{BufWriter, Write};
             use fs::OpenOptions;
-            let mut file = BufWriter::new(
-                OpenOptions::new()
-                .write(true)
-                .append(true)
-                .open(DEBUGGER_OUT_PATH)
-                .unwrap()
-            );
-            file.write_all(print_str.as_bytes()).unwrap();
-            file.flush().unwrap();
+            // debug print有効化されてたらやる
+            let debugger_out_path_ptr       = debugger_out_path.read().unwrap();
+            let debugger_fileout_enable_ptr = debugger_fileout_enable.read().unwrap();
+            if *debugger_fileout_enable_ptr {
+                let mut file = BufWriter::new(
+                    OpenOptions::new()
+                    .write(true)
+                    .append(true)
+                    .open((*debugger_out_path_ptr).clone())
+                    .unwrap()
+                );
+                file.write_all(print_str.as_bytes()).unwrap();
+                file.flush().unwrap();                    
+            }
         }
     }
 }

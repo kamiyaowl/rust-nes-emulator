@@ -8,6 +8,7 @@ edition = "2018"
 default = []
 
 [dependencies]
+lazy_static = "1.4.0"
 bmp = "*"
 image = "0.22.1"
 piston_window = "0.98.0"
