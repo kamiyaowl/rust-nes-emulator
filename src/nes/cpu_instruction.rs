@@ -469,9 +469,10 @@ impl Cpu {
             Opcode::ASL => {
                 let (Operand(addr, cyc), arg) = self.fetch_args(system, mode);
 
-                let (result, is_carry) = arg.overflowing_shl(1);
+                let result = arg.wrapping_shl(1);
 
-                let is_zero     = result == 0;
+                let is_carry    = (arg    & 0x80) == 0x80; // shift前データでわかるよね
+                let is_zero     =  result == 0;
                 let is_negative = (result & 0x80) == 0x80;
 
                 self.write_carry_flag(is_carry);
