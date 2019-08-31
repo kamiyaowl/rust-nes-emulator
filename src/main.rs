@@ -33,13 +33,13 @@ fn load_cassette(cassette: &mut Cassette, path: String) -> Result<(), Box<dyn st
 }
 
 /// FrameBufferの中身をコンソール出力します。色があれば#, なければ.が出力されます
-fn print_framebuffer(fb: &[[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
+fn print_framebuffer(fb: &[[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
     println!("=========================== frame buffer print ===========================");
     for j in 0..VISIBLE_SCREEN_HEIGHT {
         print!("{:02x}:", j);
         for i in 0..VISIBLE_SCREEN_WIDTH {
             let c = fb[j][i];
-            if c.0 == 0 && c.1 == 0 && c.2 == 0 {
+            if c[0] == 0 && c[1] == 0 && c[2] == 0 {
                 print!(".");
             } else {
                 print!("#");
@@ -50,7 +50,7 @@ fn print_framebuffer(fb: &[[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]
 }
 
 /// FrameBufferの中身をbmpファイルに保存します
-fn save_framebuffer(fb: &[[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT], path: String) {
+fn save_framebuffer(fb: &[[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT], path: String) {
     let mut img = Image::new(VISIBLE_SCREEN_WIDTH as u32, VISIBLE_SCREEN_HEIGHT as u32);
 
     for j in 0..VISIBLE_SCREEN_HEIGHT {
@@ -58,7 +58,7 @@ fn save_framebuffer(fb: &[[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT],
             let x = i as u32;
             let y = j as u32;
             let c = fb[j][i];
-            img.set_pixel(x, y, Pixel::new(c.0, c.1, c.2));
+            img.set_pixel(x, y, Pixel::new(c[0], c[1], c[2]));
         }
     }
     println!("save framebuffer to {}", path);
@@ -66,7 +66,7 @@ fn save_framebuffer(fb: &[[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT],
 }
 
 /// FrameBufferの中身を保存されたbmpファイルと比較します
-fn validate_framebuffer(fb: &[[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT], path: String) -> Result<(), Box<dyn std::error::Error>>  {
+fn validate_framebuffer(fb: &[[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT], path: String) -> Result<(), Box<dyn std::error::Error>>  {
     let img = bmp::open(path)?;
 
     for j in 0..VISIBLE_SCREEN_HEIGHT {
@@ -76,9 +76,9 @@ fn validate_framebuffer(fb: &[[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIG
             let c = fb[j][i];
             let expect = img.get_pixel(x, y);
 
-            assert_eq!(expect.r, c.0);
-            assert_eq!(expect.g, c.1);
-            assert_eq!(expect.b, c.2);
+            assert_eq!(expect.r, c[0]);
+            assert_eq!(expect.g, c[1]);
+            assert_eq!(expect.b, c[2]);
         }
     }
 
@@ -96,7 +96,7 @@ fn run_cpu_only(rom_path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &Sys
     cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
 
     let mut cpu_cycle: usize = 0;
-    for i in 0..cpu_steps {
+    for _i in 0..cpu_steps {
         // println!("================ cpu_step:{}, cpu_cycle:{} ================", i, cpu_cycle);
         cpu_cycle = cpu_cycle + usize::from(cpu.step(&mut cpu_sys));
     }
@@ -105,7 +105,7 @@ fn run_cpu_only(rom_path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &Sys
     Ok(())
 }
 
-fn run_cpu_ppu(rom_path: String, save_path: String, frame_count: usize, validate: impl Fn(&Cpu, &System, &[[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT])) -> Result<(), Box<dyn std::error::Error>> {
+fn run_cpu_ppu(rom_path: String, save_path: String, frame_count: usize, validate: impl Fn(&Cpu, &System, &[[[u8; 3]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT])) -> Result<(), Box<dyn std::error::Error>> {
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
     let mut ppu: Ppu = Default::default();
@@ -119,7 +119,7 @@ fn run_cpu_ppu(rom_path: String, save_path: String, frame_count: usize, validate
     video_sys.reset();
     cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
 
-    let mut fb = [[Color(0,0,0); VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
+    let mut fb = [[[0; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
 
     // cpuを基準にppuを動かしてあげる
     let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT + 1);
@@ -171,14 +171,14 @@ fn run_hello_ppu() -> Result<(), Box<dyn std::error::Error>> {
     })
 }
 
-// #[test]
-// fn run_nestest_boot() -> Result<(), Box<dyn std::error::Error>> {
-//     run_cpu_ppu("roms/nes-test-roms/other/nestest.nes".to_string(), "framebuffer_nestest_boot.bmp".to_string(), 3, |_cpu, _sys, _fb| {
-//         // FBの結果を精査する
-//         // unimplemented!();
-//         // let _ = validate_framebuffer(fb, "screenshot/nestest_1.bmp".to_string());
-//     })
-// }
+#[test]
+fn run_nestest_boot() -> Result<(), Box<dyn std::error::Error>> {
+    run_cpu_ppu("roms/nes-test-roms/other/nestest.nes".to_string(), "framebuffer_nestest_boot.bmp".to_string(), 3, |_cpu, _sys, _fb| {
+        // FBの結果を精査する
+        // unimplemented!();
+        // let _ = validate_framebuffer(fb, "screenshot/nestest_1.bmp".to_string());
+    })
+}
 
 fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
     // guiの準備
@@ -203,7 +203,7 @@ fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
     video_sys.reset();
     cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
 
-    let mut fb = [[Color(0,0,0); VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
+    let mut fb = [[[0; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
 
     // FPS平均計算用
     const ELAPSED_N: usize = 128;
@@ -255,7 +255,7 @@ fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
                     let x = i as u32;
                     let y = j as u32;
                     let color = fb[j][i];
-                    rectangle([(color.0 as f32) / 255.0, (color.1 as f32) / 255.0, (color.2 as f32) / 255.0, 1.0],
+                    rectangle([(color[0] as f32) / 255.0, (color[1] as f32) / 255.0, (color[2] as f32) / 255.0, 1.0],
                                 [x as f64, y as f64, (x + 1) as f64, (y + 1) as f64],
                                 c.transform, g);
                 }

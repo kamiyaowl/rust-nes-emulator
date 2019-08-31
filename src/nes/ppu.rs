@@ -5,7 +5,7 @@ use super::video_system::*;
 
 /// 1lineあたりかかるCPUサイクル
 pub const CPU_CYCLE_PER_LINE: usize = 341;
-
+pub const NUM_OF_COLOR: usize = 3;
 pub const VISIBLE_SCREEN_WIDTH  : usize = 256;
 pub const VISIBLE_SCREEN_HEIGHT : usize = 240;
 
@@ -259,7 +259,7 @@ impl Ppu {
     /// scrollなしなら上記はすべて一致するはず
     /// 
     /// 
-    fn draw(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
+    fn draw(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
         // tile換算でのy位置から、実pixelのズレ
         let offset_y = self.current_line % PIXEL_PER_TILE;
 
@@ -331,7 +331,10 @@ impl Ppu {
                 let palette_data = video_system.read_u8(&mut system.cassette, bg_palette_addr);
 
                 // 書き込む
-                fb[pixel_y][pixel_x] = Color::from(palette_data);
+                let c = Color::from(palette_data);
+                fb[pixel_y][pixel_x][0] = c.0;
+                fb[pixel_y][pixel_x][1] = c.1;
+                fb[pixel_y][pixel_x][2] = c.2;
 
                 // TODO: #6 Spriteとデータを合成する
 
@@ -341,7 +344,7 @@ impl Ppu {
     }
 
     /// 341cyc溜まったときの処理
-    fn update_line(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
+    fn update_line(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
         if cfg!(debug_ppu) && cfg!(debug_assertions) && cfg!(not(no_std)) {
             println!("[ppu][step] line:{}", self.current_line);
         }
@@ -393,7 +396,7 @@ impl Ppu {
     /// `system` - レジスタ読み書きする
     /// `video_system` - レジスタ読み書きする
     /// `videoout_func` - pixelごとのデータが決まるごとに呼ぶ(NESは出力ダブルバッファとかない)
-    pub fn step(&mut self, cpu_cyc: usize, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[Color; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
+    pub fn step(&mut self, cpu_cyc: usize, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
         
         // PPU_SCROLL書き込み
         let (_, scroll_x, scroll_y) = system.read_ppu_scroll();
