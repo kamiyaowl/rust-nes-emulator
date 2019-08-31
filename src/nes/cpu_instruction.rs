@@ -316,7 +316,7 @@ impl Cpu {
 
                 let data = dst_data_lower | (dst_data_upper << 8);
 
-                Operand(data, 4)
+                Operand(data, 5)
             },
             AddressingMode::IndirectX   => {
                 let src_addr = self.fetch_u8(system);
@@ -608,29 +608,163 @@ impl Cpu {
                 2
             },
 
-            // Opcode::LDA => {},
-            // Opcode::LDX => {},
-            // Opcode::LDY => {},
-            // Opcode::STA => {},
-            // Opcode::STX => {},
-            // Opcode::STY => {},
+            /* *************** load/store op ***************  */
+            // Accumualtorはなし
+            // store系はargはいらない, Immediateなし
+            Opcode::LDA => {
+                let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
 
-            // Opcode::SEC => {},
-            // Opcode::SED => {},
-            // Opcode::SEI => {},
-            // Opcode::CLC => {},
-            // Opcode::CLD => {},
-            // Opcode::CLI => {},
-            // Opcode::CLV => {},
+                let is_zero     = arg == 0;
+                let is_negative = (arg & 0x80) == 0x80;
 
-            // Opcode::CMP => {},
-            // Opcode::CPX => {},
-            // Opcode::CPY => {},
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.a = arg;
+                1 + cyc
+            },
+            Opcode::LDX => {
+                let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
 
-            // Opcode::JMP => {},
-            // Opcode::JSR => {},
-            // Opcode::RTI => {},
-            // Opcode::RTS => {},
+                let is_zero     = arg == 0;
+                let is_negative = (arg & 0x80) == 0x80;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.x = arg;
+                1 + cyc
+            },
+            Opcode::LDY => {
+                let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
+
+                let is_zero     = arg == 0;
+                let is_negative = (arg & 0x80) == 0x80;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.y = arg;
+                1 + cyc
+            },
+            Opcode::STA => {
+                let Operand(addr, cyc) = self.fetch_operand(system, mode);
+
+                system.write_u8(addr, self.a, false);
+                1 + cyc
+            },
+            Opcode::STX => {
+                let Operand(addr, cyc) = self.fetch_operand(system, mode);
+
+                system.write_u8(addr, self.x, false);
+                1 + cyc
+            },
+            Opcode::STY => {
+                let Operand(addr, cyc) = self.fetch_operand(system, mode);
+
+                system.write_u8(addr, self.y, false);
+                1 + cyc
+            },
+
+            /* *************** set/clear flag ***************  */
+            // すべてImplied
+            Opcode::SEC => {
+                self.write_carry_flag(true);
+                2
+            },
+            Opcode::SED => {
+                self.write_decimal_flag(true);
+                2
+            },
+            Opcode::SEI => {
+                self.write_interrupt_flag(true);
+                2
+            },
+            Opcode::CLC => {
+                self.write_carry_flag(false);
+                2
+            },
+            Opcode::CLD => {
+                self.write_decimal_flag(false);
+                2
+            },
+            Opcode::CLI => {
+                self.write_interrupt_flag(false);
+                2
+            },
+            Opcode::CLV => {
+                self.write_overflow_flag(false);
+                2
+            },
+
+            /* *************** compare ***************  */
+            // Accumulatorなし
+            Opcode::CMP => {
+                let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
+                let (result, is_carry) = self.a.overflowing_sub(arg);
+
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+
+                self.write_carry_flag(is_carry);
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                1 + cyc
+            },
+            Opcode::CPX => {
+                let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
+                let (result, is_carry) = self.x.overflowing_sub(arg);
+
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+
+                self.write_carry_flag(is_carry);
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                1 + cyc
+            },
+            Opcode::CPY => {
+                let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
+                let (result, is_carry) = self.y.overflowing_sub(arg);
+
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+
+                self.write_carry_flag(is_carry);
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                1 + cyc
+            },
+
+            /* *************** jump/return ***************  */
+            // JMP: Absoltue or Indirect, JSR: Absolute, RTI,RTS: Implied
+            Opcode::JMP => {
+                let Operand(addr, cyc) = self.fetch_operand(system, mode);
+                self.pc = addr;
+                cyc
+            },
+            Opcode::JSR => {
+                let Operand(addr, cyc) = self.fetch_operand(system, mode);
+                // opcodeがあったアドレスを取得する(opcode, operand fetchで3進んでる)
+                let opcode_addr = self.pc - 3;
+
+                // pushはUpper, Lower
+                let ret_addr = opcode_addr + 2;
+                self.stack_push(system, (ret_addr >>   8) as u8);
+                self.stack_push(system, (ret_addr & 0xff) as u8);
+                self.pc = addr;
+                6
+            },
+            Opcode::RTI => {
+                self.p = self.stack_pop(system);
+                let pc_lower = self.stack_pop(system);
+                let pc_upper = self.stack_pop(system);
+                self.pc = ((pc_upper as u16) << 8) | (pc_lower as u16);
+                6
+            },
+            Opcode::RTS => {
+                let pc_lower = self.stack_pop(system);
+                let pc_upper = self.stack_pop(system);
+                self.pc = (((pc_upper as u16) << 8) | (pc_lower as u16)) + 1;
+                6
+            },
 
             // Opcode::BCC => {},
             // Opcode::BCS => {},
