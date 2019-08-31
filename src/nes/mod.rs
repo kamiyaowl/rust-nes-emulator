@@ -5,7 +5,6 @@ pub mod cassette;
 pub mod cpu;
 pub mod cpu_addressing;
 pub mod cpu_instruction;
-pub mod cpu_opcode;
 pub mod cpu_register;
 pub mod ppu;
 pub mod pad;

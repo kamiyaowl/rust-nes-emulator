@@ -408,7 +408,7 @@ impl Ppu {
             video_system.write_u8(&mut system.cassette, ppu_addr, ppu_data);
             system.increment_ppu_addr();
             if cfg!(debug_assertions) && cfg!(not(no_std)) {
-                // println!("[ppu][from cpu] write_req addr:{:04x}, data:{:02x}", ppu_addr, ppu_data);
+                println!("[ppu][from cpu] write_req addr:{:04x}, data:{:02x}", ppu_addr, ppu_data);
             }
         }
         if is_read_ppu_req {
@@ -416,7 +416,7 @@ impl Ppu {
             system.write_ppu_data(data);
             system.increment_ppu_addr();
             if cfg!(debug_assertions) && cfg!(not(no_std)) {
-                // println!("[ppu][from cpu] read_req  addr:{:04x}, data:{:02x}", ppu_addr, data);
+                println!("[ppu][from cpu] read_req  addr:{:04x}, data:{:02x}", ppu_addr, data);
             }
         }
 
