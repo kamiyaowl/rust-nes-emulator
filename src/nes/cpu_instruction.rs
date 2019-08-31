@@ -399,7 +399,7 @@ impl Cpu {
                 let is_carry    = is_carry1 || is_carry2;
                 let is_zero     = result == 0;
                 let is_negative = (result & 0x80) == 0x80;
-                let is_overflow = ((self.a ^ arg & 0x80) == 0x80) & ((self.a ^ result & 0x80) == 0x80);
+                let is_overflow = (((self.a ^ arg) & 0x80) == 0x80) && (((self.a ^ result) & 0x80) == 0x80);
 
                 self.write_carry_flag(is_carry);
                 self.write_zero_flag(is_zero);
@@ -417,7 +417,7 @@ impl Cpu {
                 let is_carry    = !(is_carry1 || is_carry2); // アンダーフローが発生したら0
                 let is_zero     = result == 0;
                 let is_negative = (result & 0x80) == 0x80;
-                let is_overflow = ((self.a ^ arg & 0x80) == 0x80) & ((self.a ^ result & 0x80) == 0x80);
+                let is_overflow = (((self.a ^ arg) & 0x80) == 0x80) && (((self.a ^ result) & 0x80) == 0x80);
 
                 self.write_carry_flag(is_carry);
                 self.write_zero_flag(is_zero);
