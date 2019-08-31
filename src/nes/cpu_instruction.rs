@@ -223,8 +223,8 @@ impl Instruction {
             0x90 => Instruction(Opcode::BCC, AddressingMode::Relative),
             0xb0 => Instruction(Opcode::BCS, AddressingMode::Relative),
             0xf0 => Instruction(Opcode::BEQ, AddressingMode::Relative),
-            0x30 => Instruction(Opcode::BMI, AddressingMode::Relative),
             0xd0 => Instruction(Opcode::BNE, AddressingMode::Relative),
+            0x30 => Instruction(Opcode::BMI, AddressingMode::Relative),
             0x10 => Instruction(Opcode::BPL, AddressingMode::Relative),
             0x50 => Instruction(Opcode::BVC, AddressingMode::Relative),
             0x70 => Instruction(Opcode::BVS, AddressingMode::Relative),
@@ -249,7 +249,7 @@ impl Instruction {
             0x24 => Instruction(Opcode::BIT, AddressingMode::ZeroPage),
             0x2c => Instruction(Opcode::BIT, AddressingMode::Absolute),
 
-            0xea => Instruction(Opcode::NOP, AddressingMode::Absolute),
+            0xea => Instruction(Opcode::NOP, AddressingMode::Implied),
 
             _ => panic!("Invalid inst_code:{:08x}", inst_code),
         }
@@ -698,6 +698,7 @@ impl Cpu {
             // Accumulatorなし
             Opcode::CMP => {
                 let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
+
                 let (result, is_carry) = self.a.overflowing_sub(arg);
 
                 let is_zero     = result == 0;
@@ -710,6 +711,7 @@ impl Cpu {
             },
             Opcode::CPX => {
                 let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
+
                 let (result, is_carry) = self.x.overflowing_sub(arg);
 
                 let is_zero     = result == 0;
@@ -722,6 +724,7 @@ impl Cpu {
             },
             Opcode::CPY => {
                 let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
+
                 let (result, is_carry) = self.y.overflowing_sub(arg);
 
                 let is_zero     = result == 0;
@@ -741,7 +744,7 @@ impl Cpu {
                 cyc
             },
             Opcode::JSR => {
-                let Operand(addr, cyc) = self.fetch_operand(system, mode);
+                let Operand(addr, _) = self.fetch_operand(system, mode);
                 // opcodeがあったアドレスを取得する(opcode, operand fetchで3進んでる)
                 let opcode_addr = self.pc - 3;
 
@@ -766,32 +769,198 @@ impl Cpu {
                 6
             },
 
-            // Opcode::BCC => {},
-            // Opcode::BCS => {},
-            // Opcode::BEQ => {},
-            // Opcode::BMI => {},
-            // Opcode::BNE => {},
-            // Opcode::BPL => {},
-            // Opcode::BVC => {},
-            // Opcode::BVS => {},
+            /* *************** branch ***************  */
+            // Relativeのみ
+            Opcode::BCC => {
+                debug_assert!(mode == AddressingMode::Relative);
+                let Operand(addr, cyc) = self.fetch_operand(system, mode);
+                if !self.read_carry_flag() {
+                    self.pc = addr;
+                    1 + cyc + 1
+                } else {
+                    1 + cyc
+                }
+            },
+            Opcode::BCS => {
+                debug_assert!(mode == AddressingMode::Relative);
+                let Operand(addr, cyc) = self.fetch_operand(system, mode);
+                if self.read_carry_flag() {
+                    self.pc = addr;
+                    1 + cyc + 1
+                } else {
+                    1 + cyc
+                }
+            },
+            Opcode::BEQ => {
+                debug_assert!(mode == AddressingMode::Relative);
+                let Operand(addr, cyc) = self.fetch_operand(system, mode);
+                if self.read_zero_flag() {
+                    self.pc = addr;
+                    1 + cyc + 1
+                } else {
+                    1 + cyc
+                }
+            },
+            Opcode::BNE => {
+                debug_assert!(mode == AddressingMode::Relative);
+                let Operand(addr, cyc) = self.fetch_operand(system, mode);
+                if !self.read_zero_flag() {
+                    self.pc = addr;
+                    1 + cyc + 1
+                } else {
+                    1 + cyc
+                }
+            },
+            Opcode::BMI => {
+                debug_assert!(mode == AddressingMode::Relative);
+                let Operand(addr, cyc) = self.fetch_operand(system, mode);
+                if self.read_negative_flag() {
+                    self.pc = addr;
+                    1 + cyc + 1
+                } else {
+                    1 + cyc
+                }
+            },
+            Opcode::BPL => {
+                debug_assert!(mode == AddressingMode::Relative);
+                let Operand(addr, cyc) = self.fetch_operand(system, mode);
+                if !self.read_negative_flag() {
+                    self.pc = addr;
+                    1 + cyc + 1
+                } else {
+                    1 + cyc
+                }
+            },
+            Opcode::BVC => {
+                debug_assert!(mode == AddressingMode::Relative);
+                let Operand(addr, cyc) = self.fetch_operand(system, mode);
+                if !self.read_overflow_flag() {
+                    self.pc = addr;
+                    1 + cyc + 1
+                } else {
+                    1 + cyc
+                }
+            },
+            Opcode::BVS => {
+                debug_assert!(mode == AddressingMode::Relative);
+                let Operand(addr, cyc) = self.fetch_operand(system, mode);
+                if self.read_overflow_flag() {
+                    self.pc = addr;
+                    1 + cyc + 1
+                } else {
+                    1 + cyc
+                }
+            },
 
-            // Opcode::PHA => {},
-            // Opcode::PHP => {},
-            // Opcode::PLA => {},
-            // Opcode::PLP => {},
+            /* *************** push/pop ***************  */
+            // Impliedのみ
+            Opcode::PHA => {
+                self.stack_push(system, self.a);
+                3
+            },
+            Opcode::PHP => {
+                self.stack_push(system, self.p);
+                3
 
-            // Opcode::TAX => {},
-            // Opcode::TAY => {},
-            // Opcode::TSX => {},
-            // Opcode::TXA => {},
-            // Opcode::TXS => {},
-            // Opcode::TYA => {},
+            },
+            Opcode::PLA => {
+                let result = self.stack_pop(system);
 
-            // Opcode::BRK => {},
-            // Opcode::BIT => {},
-            // Opcode::NOP => {},
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
 
-            ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.a = result;
+                4
+            },
+            Opcode::PLP => {
+                self.p = self.stack_pop(system);
+                4
+            },
+
+            /* *************** transfer ***************  */
+            // Impliedのみ
+            Opcode::TAX => {
+                let is_zero     = self.a == 0;
+                let is_negative = (self.a & 0x80) == 0x80;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.x = self.a;
+                2
+            },
+            Opcode::TAY => {
+                let is_zero     = self.a == 0;
+                let is_negative = (self.a & 0x80) == 0x80;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.y = self.a;
+                2
+            },
+            Opcode::TSX => {
+                let result = (self.sp & 0xff) as u8;
+
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+                
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.x = result;                
+                2
+            },
+            Opcode::TXA => {
+                let is_zero     = self.x == 0;
+                let is_negative = (self.x & 0x80) == 0x80;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.a = self.x;                
+                2
+            },
+            Opcode::TXS => {
+                // spの上位バイトは0x01固定
+                // txsはstatus書き換えなし
+                self.sp = (self.x as u16) | 0x0100u16; 
+                2
+            },
+            Opcode::TYA => {
+                let is_zero     = self.y == 0;
+                let is_negative = (self.y & 0x80) == 0x80;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.a = self.y;
+                2
+            },
+
+            /* *************** other ***************  */
+            Opcode::BRK => {
+                // Implied
+                self.write_break_flag(true);
+                self.interrupt(system, Interrupt::BRK);
+                7
+            },
+            Opcode::BIT => {
+                // ZeroPage or Absolute
+                // 非破壊読み出しが必要, fetch_args使わずに自分で読むか...
+                let Operand(addr, cyc) = self.fetch_operand(system, mode);
+                let arg = system.read_u8(addr, true); // 非破壊読み出し
+
+                let is_negative = (arg    & 0x80) == 0x80;
+                let is_overflow = (arg    & 0x40) == 0x40;
+                let is_zero     = (self.a & arg ) == 0x00;
+
+                self.write_negative_flag(is_negative);
+                self.write_zero_flag(is_zero);
+                self.write_overflow_flag(is_overflow);
+                2 + cyc
+            },
+            Opcode::NOP => {
+                //なにもしない、Implied
+                2
+            },
             _ => panic!("Invalid Opcode"),
         }
     }
