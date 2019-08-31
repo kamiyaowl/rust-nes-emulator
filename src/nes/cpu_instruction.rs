@@ -711,8 +711,9 @@ impl Cpu {
             Opcode::CMP => {
                 let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
 
-                let (result, is_carry) = self.a.overflowing_sub(arg);
+                let (result, _) = self.a.overflowing_sub(arg);
 
+                let is_carry    = self.a >= arg;
                 let is_zero     = result == 0;
                 let is_negative = (result & 0x80) == 0x80;
 
@@ -724,8 +725,9 @@ impl Cpu {
             Opcode::CPX => {
                 let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
 
-                let (result, is_carry) = self.x.overflowing_sub(arg);
+                let (result, _) = self.x.overflowing_sub(arg);
 
+                let is_carry    = self.x >= arg;
                 let is_zero     = result == 0;
                 let is_negative = (result & 0x80) == 0x80;
 
@@ -737,8 +739,9 @@ impl Cpu {
             Opcode::CPY => {
                 let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
 
-                let (result, is_carry) = self.y.overflowing_sub(arg);
+                let (result, _) = self.y.overflowing_sub(arg);
 
+                let is_carry    = self.y >= arg;
                 let is_zero     = result == 0;
                 let is_negative = (result & 0x80) == 0x80;
 
