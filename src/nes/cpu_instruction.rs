@@ -370,7 +370,7 @@ impl Cpu {
     pub fn run(&mut self, system: &mut System, inst_code: u8) -> u8 {
         let Instruction(opcode, mode) = Instruction::from(inst_code);
         match opcode {
-            // binary op
+            /* *************** binary op ***************  */
             // 結果はaレジスタに格納するので、operandのアドレスは使わない
             Opcode::ADC => {
                 let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
@@ -446,7 +446,7 @@ impl Cpu {
                 self.a = result;
                 1 + cyc
             },
-            // shift/rotate
+            /* *************** shift/rotate op ***************  */
             // aレジスタを操作する場合があるので注意
             Opcode::ASL => {
                 let (Operand(addr, cyc), arg) = self.fetch_args(system, mode);
@@ -516,7 +516,7 @@ impl Cpu {
             Opcode::ROR => {
                 let (Operand(addr, cyc), arg) = self.fetch_args(system, mode);
 
-                let result = self.a.wrapping_shr(1) | (if self.read_carry_flag() { 0x80 } else { 0x00 } );
+                let result = arg.wrapping_shr(1) | (if self.read_carry_flag() { 0x80 } else { 0x00 } );
 
                 let is_carry    = (self.a & 0x01) == 0x01;
                 let is_zero     = result == 0;
@@ -535,13 +535,78 @@ impl Cpu {
                     3 + cyc
                 }
             },
+            /* *************** inc/dec op ***************  */
+            // accumulatorは使わない, x,yレジスタを使うバージョンはImplied
+            Opcode::INC => {
+                let (Operand(addr, cyc), arg) = self.fetch_args(system, mode);
 
-            // Opcode::INC => {},
-            // Opcode::INX => {},
-            // Opcode::INY => {},
-            // Opcode::DEC => {},
-            // Opcode::DEX => {},
-            // Opcode::DEY => {},
+                let result = arg.wrapping_add(1);
+
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                system.write_u8(addr, result, false);
+                3 + cyc
+            },
+            Opcode::INX => {
+                let result = self.x.wrapping_add(1);
+
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.x = result;
+                2
+            },
+            Opcode::INY => {
+                let result = self.y.wrapping_add(1);
+
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.y = result;
+                2
+            },
+            Opcode::DEC => {
+                let (Operand(addr, cyc), arg) = self.fetch_args(system, mode);
+
+                let result = arg.wrapping_sub(1);
+
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                system.write_u8(addr, result, false);
+                3 + cyc
+            },
+            Opcode::DEX => {
+                let result = self.x.wrapping_sub(1);
+
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.x = result;                
+                2
+            },
+            Opcode::DEY => {
+                let result = self.y.wrapping_sub(1);
+
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.y = result;                
+                2
+            },
 
             // Opcode::LDA => {},
             // Opcode::LDX => {},
