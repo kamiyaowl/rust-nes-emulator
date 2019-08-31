@@ -298,7 +298,7 @@ impl Cpu {
                 debug_assert!(signed_data >= 0);
                 debug_assert!(signed_data < 0x10000);
 
-                let data = signed_data as u16 + 1; // 戻り先は指定+1にあるっぽい
+                let data = signed_data as u16;
                 let additional_cyc = if (data & 0xff00u16) != (self.pc & 0xff00u16) { 1 } else { 0 };
 
                 Operand(data, 1 + additional_cyc)

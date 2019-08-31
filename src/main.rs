@@ -153,24 +153,23 @@ fn run_hello_cpu() -> Result<(), Box<dyn std::error::Error>>  {
         assert_eq!(0x0d,   cpu.x);
         assert_eq!(0x00,   cpu.y);
         assert_eq!(0x34,   cpu.p);
-        panic!();
     })
 }
 
-// #[test]
-// fn run_hello_ppu() -> Result<(), Box<dyn std::error::Error>> {
-//     run_cpu_ppu("roms/other/hello.nes".to_string(), "framebuffer_run_hello_ppu.bmp".to_string(), 1, |cpu, _sys, fb| {
-//         // 170step以降はJMPで無限ループしているはず
-//         assert_eq!(0x804e, cpu.pc);
-//         assert_eq!(0x01ff, cpu.sp);
-//         assert_eq!(0x1e,   cpu.a);
-//         assert_eq!(0x0d,   cpu.x);
-//         assert_eq!(0x00,   cpu.y);
-//         assert_eq!(0x34,   cpu.p);
-//         // FBの結果を精査する
-//         let _ = validate_framebuffer(fb, "screenshot/hello.bmp".to_string());
-//     })
-// }
+#[test]
+fn run_hello_ppu() -> Result<(), Box<dyn std::error::Error>> {
+    run_cpu_ppu("roms/other/hello.nes".to_string(), "framebuffer_run_hello_ppu.bmp".to_string(), 1, |cpu, _sys, fb| {
+        // 170step以降はJMPで無限ループしているはず
+        assert_eq!(0x804e, cpu.pc);
+        assert_eq!(0x01ff, cpu.sp);
+        assert_eq!(0x1e,   cpu.a);
+        assert_eq!(0x0d,   cpu.x);
+        assert_eq!(0x00,   cpu.y);
+        assert_eq!(0x34,   cpu.p);
+        // FBの結果を精査する
+        let _ = validate_framebuffer(fb, "screenshot/hello.bmp".to_string());
+    })
+}
 
 // #[test]
 // fn run_nestest_boot() -> Result<(), Box<dyn std::error::Error>> {
