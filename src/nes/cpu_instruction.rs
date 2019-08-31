@@ -1,4 +1,5 @@
 use super::cpu::*;
+use super::ppu::Ppu; // TODO: 削除
 use super::system::System;
 use super::interface::{SystemBus};
 use super::debugger::*;
@@ -368,7 +369,8 @@ impl Cpu {
     /// 命令を実行します
     /// ret: cycle数
     /// http://obelisk.me.uk/6502/reference.html
-    pub fn step(&mut self, system: &mut System) -> u8 {
+    // TODO: debug printようにppu借りる
+    pub fn step(&mut self, system: &mut System, ppu: &Ppu) -> u8 { 
         // 命令がおいてあるところのaddress
         let inst_pc = self.pc;
         let inst_code = self.fetch_u8(system);
@@ -378,7 +380,11 @@ impl Cpu {
         debugger_print!(PrintLevel::DEBUG, PrintFrom::CPU, {
             let op1 = system.read_u8(inst_pc + 1, true); // for debug 非破壊
             let op2 = system.read_u8(inst_pc + 2, true); // for debug 非破壊
-            format!("{:04X} {:02X} {:02X} {:02X} {:?} {:?}\tA:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} ", inst_pc, inst_code, op1, op2, opcode, mode, self.a, self.x, self.y, self.p, (self.sp & 0xff) as u8)
+            let Operand(addr, _) = self.fetch_operand(system, mode); // pcを破壊してしまい太郎
+            self.pc = inst_pc + 1; // 復旧させとくか...
+            let arg = system.read_u8(addr, true); // 非破壊読み出し
+
+            format!("{:04X} {:02X} {:02X} {:02X} {:?} {:<9?}\t${:04X}=#{:04X}\tA:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} CYC:{} SL:{}", inst_pc, inst_code, op1, op2, opcode, mode, addr, arg, self.a, self.x, self.y, self.p, (self.sp & 0xff) as u8, ppu.cumulative_cpu_cyc * 3, ppu.current_line)
         });
 
         match opcode {
@@ -393,7 +399,7 @@ impl Cpu {
                 let is_carry    = is_carry1 || is_carry2;
                 let is_zero     = result == 0;
                 let is_negative = (result & 0x80) == 0x80;
-                let is_overflow = (!(self.a ^ arg) & (self.a ^ result) & 0x80) == 0x80;
+                let is_overflow = ((self.a ^ arg & 0x80) == 0x80) & ((self.a ^ result & 0x80) == 0x80);
 
                 self.write_carry_flag(is_carry);
                 self.write_zero_flag(is_zero);
@@ -411,7 +417,7 @@ impl Cpu {
                 let is_carry    = !(is_carry1 || is_carry2); // アンダーフローが発生したら0
                 let is_zero     = result == 0;
                 let is_negative = (result & 0x80) == 0x80;
-                let is_overflow = (!(self.a ^ arg) & (self.a ^ result) & 0x80) == 0x80;
+                let is_overflow = ((self.a ^ arg & 0x80) == 0x80) & ((self.a ^ result & 0x80) == 0x80);
 
                 self.write_carry_flag(is_carry);
                 self.write_zero_flag(is_zero);

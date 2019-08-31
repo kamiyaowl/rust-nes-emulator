@@ -91,17 +91,21 @@ fn validate_framebuffer(fb: &[[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBL
 fn run_cpu_only(rom_path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &System)) -> Result<(), Box<dyn std::error::Error>> {
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
-    
+    let mut ppu: Ppu = Default::default();
+    let mut video_sys: VideoSystem = Default::default();
+
     load_cassette(&mut cpu_sys.cassette, rom_path)?;
 
     cpu.reset();
     cpu_sys.reset();
+    ppu.reset();
+    video_sys.reset();
     cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
 
     let mut cpu_cycle: usize = 0;
     for i in 0..cpu_steps {
         debugger_print!(PrintLevel::DEBUG, PrintFrom::TEST, format!("================ cpu_step:{}, cpu_cycle:{} ================", i, cpu_cycle));
-        cpu_cycle = cpu_cycle + usize::from(cpu.step(&mut cpu_sys));
+        cpu_cycle = cpu_cycle + usize::from(cpu.step(&mut cpu_sys, &ppu));
     }
     validate(&cpu, &cpu_sys);
 
@@ -131,7 +135,7 @@ fn run_cpu_ppu(rom_path: String, save_path: String, frame_count: usize, validate
         
         let mut total_cycle: usize = 0;
         while total_cycle < cycle_for_draw_once {
-            let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
+            let cpu_cycle = usize::from(cpu.step(&mut cpu_sys, &ppu));
             ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
 
             debugger_print!(PrintLevel::DEBUG, PrintFrom::TEST, format!("cycle_for_draw_once={}, total_cycle={}, cpu_cycle={}", cycle_for_draw_once, total_cycle, cpu_cycle));
@@ -170,7 +174,7 @@ fn run_nestest(rom_path: String, save_path: String, frame_count: usize, validate
         
         let mut total_cycle: usize = 0;
         while total_cycle < cycle_for_draw_once {
-            let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
+            let cpu_cycle = usize::from(cpu.step(&mut cpu_sys, &ppu));
             ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
 
             total_cycle = total_cycle + cpu_cycle;
@@ -266,7 +270,7 @@ fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
         let mut total_cycle: usize = 0;
         let start = Instant::now();
         while total_cycle < cycle_for_draw_once {
-            let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
+            let cpu_cycle = usize::from(cpu.step(&mut cpu_sys, &ppu));
             ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
             total_cycle = total_cycle + cpu_cycle;
 

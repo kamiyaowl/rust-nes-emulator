@@ -5,7 +5,7 @@ use super::system::*;
 use super::video_system::*;
 
 /// 1lineあたりかかるCPUサイクル
-pub const CPU_CYCLE_PER_LINE: usize = 341;
+pub const CPU_CYCLE_PER_LINE: usize = (341/3); // ppu cyc -> cpu cyc
 pub const NUM_OF_COLOR: usize = 3;
 pub const VISIBLE_SCREEN_WIDTH  : usize = 256;
 pub const VISIBLE_SCREEN_HEIGHT : usize = 240;
@@ -181,7 +181,7 @@ impl Default for Ppu {
             oam: [0; OAM_SIZE],
             
             cumulative_cpu_cyc: 0,
-            current_line: 261,
+            current_line: 241,
 
             current_scroll_x: 0,
             current_scroll_y: 0,
@@ -197,7 +197,7 @@ impl EmulateControl for Ppu {
     fn reset(&mut self) {
         self.oam = [0; OAM_SIZE];
 
-        self.current_line = 261;
+        self.current_line = 241;
         self.cumulative_cpu_cyc = 0;
 
         self.current_scroll_x = 0;
@@ -290,8 +290,8 @@ impl Ppu {
             // NameTable内でのOffsetを加算すれば完成
             let nametable_addr = target_nametable_base_addr + (tile_local_y * SCREEN_TILE_WIDTH) + tile_local_x;
 
-            debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("[line:{}(offset:{})] base=({}, {}), tile=({}, {}), tile_local=({}, {})", self.current_line, offset_y, tile_base_x, tile_base_y, tile_global_x, tile_global_y, tile_local_x, tile_local_y));
-            debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("[line:{}(offset:{})] target_nametable_base_addr={:04x}, attribute_addr={:04x}, nametable_addr={:04x}", self.current_line, offset_y, target_nametable_base_addr, attribute_addr, nametable_addr));
+            debugger_print!(PrintLevel::HIDDEN, PrintFrom::PPU, format!("[line:{}(offset:{})] base=({}, {}), tile=({}, {}), tile_local=({}, {})", self.current_line, offset_y, tile_base_x, tile_base_y, tile_global_x, tile_global_y, tile_local_x, tile_local_y));
+            debugger_print!(PrintLevel::HIDDEN, PrintFrom::PPU, format!("[line:{}(offset:{})] target_nametable_base_addr={:04x}, attribute_addr={:04x}, nametable_addr={:04x}", self.current_line, offset_y, target_nametable_base_addr, attribute_addr, nametable_addr));
 
             // attribute読み出し, BGパレット選択に使う
             let raw_attribute = video_system.read_u8(&mut system.cassette, attribute_addr);
@@ -342,7 +342,7 @@ impl Ppu {
 
     /// 341cyc溜まったときの処理
     fn update_line(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
-        debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("[step] line:{}", self.current_line));
+        debugger_print!(PrintLevel::HIDDEN, PrintFrom::PPU, format!("[step] line:{}", self.current_line));
         // OAM DMA
         if self.is_dma_running {
             // 前回のOAM DMAのこりをやる
