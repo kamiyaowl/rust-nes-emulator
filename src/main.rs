@@ -1,8 +1,10 @@
-use rust_nes_emulator::nes;
+#[macro_use]
 extern crate rust_nes_emulator;
 
+use rust_nes_emulator::nes;
 use nes::*;
 use nes::interface::*;
+use nes::debugger::*;
 
 // for read ines file
 use std::fs::File;
@@ -145,6 +147,8 @@ fn run_cpu_ppu(rom_path: String, save_path: String, frame_count: usize, validate
 
 #[test]
 fn run_hello_cpu() -> Result<(), Box<dyn std::error::Error>>  {
+    config_filter!(PrintLevel::INFO, PrintFrom::TEST, println!("rust-nes-emulator start."));
+
     run_cpu_only("roms/other/hello.nes".to_string(), 175, |cpu, _sys| {
         // 170step以降はJMPで無限ループしているはず
         assert_eq!(0x804e, cpu.pc);
@@ -158,6 +162,8 @@ fn run_hello_cpu() -> Result<(), Box<dyn std::error::Error>>  {
 
 #[test]
 fn run_hello_ppu() -> Result<(), Box<dyn std::error::Error>> {
+    config_filter!(PrintLevel::INFO, PrintFrom::TEST, println!("rust-nes-emulator start."));
+
     run_cpu_ppu("roms/other/hello.nes".to_string(), "framebuffer_run_hello_ppu.bmp".to_string(), 1, |cpu, _sys, fb| {
         // 170step以降はJMPで無限ループしているはず
         assert_eq!(0x804e, cpu.pc);
@@ -173,6 +179,8 @@ fn run_hello_ppu() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn run_nestest_boot() -> Result<(), Box<dyn std::error::Error>> {
+    config_filter!(PrintLevel::INFO, PrintFrom::TEST, println!("rust-nes-emulator start."));
+
     run_cpu_ppu("roms/nes-test-roms/other/nestest.nes".to_string(), "framebuffer_nestest_boot.bmp".to_string(), 3, |_cpu, _sys, _fb| {
         // FBの結果を精査する
         // unimplemented!();
