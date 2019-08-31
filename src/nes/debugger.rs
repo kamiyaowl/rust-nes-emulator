@@ -58,7 +58,7 @@ macro_rules! debugger_enable_fileout {
 }
 
 #[macro_export]
-macro_rules! debugger_dissable_fileout {
+macro_rules! debugger_disable_fileout {
     () => {
         if cfg!(not(no_std)) {
             let mut debugger_out_path_ptr       = debugger_out_path.write().unwrap();

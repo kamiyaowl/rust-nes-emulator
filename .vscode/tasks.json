@@ -4,11 +4,32 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "type": "cargo",
-            "subcommand": "test",
+            "type": "shell",
+            "label": "cargo test -- --test-threads=1",
+            "command": "cargo",
+            "args": [
+                "test",
+                "--",
+                "--test-threads=1",
+            ],
             "problemMatcher": [
                 "$rustc"
-            ]
+            ],
+        },
+        {
+            "type": "shell",
+            "label": "cargo test -- --test-threads=1 --nocapture",
+            "command": "cargo",
+            "args": [
+                "test",
+                "--",
+                "--test-threads=1",
+                "--nocapture",
+            ],
+            "problemMatcher": [
+                "$rustc"
+            ],
         }
+
     ]
 }
