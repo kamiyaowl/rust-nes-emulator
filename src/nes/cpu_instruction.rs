@@ -393,13 +393,13 @@ impl Cpu {
             Opcode::ADC => {
                 let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
 
-                let (data1, is_carry1) = self.a.overflowing_add(arg as u8);
-                let (result, is_carry2) = data1.overflowing_add(if self.read_carry_flag() { 1 } else { 0 } );
+                let tmp = u16::from(self.a) + u16::from(arg) + (if self.read_carry_flag() { 1 } else { 0 } );
+                let result = (tmp & 0xff) as u8;
 
-                let is_carry    = is_carry1 || is_carry2;
+                let is_carry    = tmp > 0x00ffu16;
                 let is_zero     = result == 0;
                 let is_negative = (result & 0x80) == 0x80;
-                let is_overflow = (((self.a ^ arg) & 0x80) == 0x80) && (((self.a ^ result) & 0x80) == 0x80);
+                let is_overflow = ((self.a ^ result) & (arg ^ result) & 0x80) == 0x80;
 
                 self.write_carry_flag(is_carry);
                 self.write_zero_flag(is_zero);
@@ -417,7 +417,7 @@ impl Cpu {
                 let is_carry    = !(is_carry1 || is_carry2); // アンダーフローが発生したら0
                 let is_zero     = result == 0;
                 let is_negative = (result & 0x80) == 0x80;
-                let is_overflow = (((self.a ^ arg) & 0x80) == 0x80) && (((self.a ^ result) & 0x80) == 0x80);
+                let is_overflow = ((self.a ^ result) & (arg ^ result) & 0x80) == 0x80;
 
                 self.write_carry_flag(is_carry);
                 self.write_zero_flag(is_zero);
