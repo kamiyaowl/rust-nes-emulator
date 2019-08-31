@@ -2,7 +2,7 @@ use super::cpu::*;
 use super::system::System;
 use super::interface::{SystemBus};
 
-#[derive(Copy, Clone)]
+#[derive(PartialEq, Eq, Copy, Clone)]
 pub enum Opcode {
     // binary op
     ADC, SBC, AND, EOR, ORA,  
@@ -28,7 +28,7 @@ pub enum Opcode {
     BRK, BIT, NOP,
 }
 
-#[derive(Copy, Clone)]
+#[derive(PartialEq, Eq, Copy, Clone)]
 pub enum AddressingMode {
     Implied,
     Accumulator,
@@ -277,7 +277,7 @@ impl Cpu {
     pub fn fetch_operand(&mut self, system: &mut System, mode: AddressingMode) -> Operand {
         match mode {
             AddressingMode::Implied     => Operand(0, 0),
-            AddressingMode::Accumulator => Operand(0, 0),
+            AddressingMode::Accumulator => Operand(0, 1),
             AddressingMode::Immediate   => Operand(u16::from(self.fetch_u8(system)) , 1),
             AddressingMode::Absolute    => Operand(self.fetch_u16(system), 3),
             AddressingMode::ZeroPage    => Operand(u16::from(self.fetch_u8(system)) , 2),
@@ -342,16 +342,38 @@ impl Cpu {
             },
         }
     }
+    /// addressだけでなくデータまで一発で引きたい場合
+    /// ret: (Operand(引いだ即値もしくはアドレス, clock数), データ)
+    pub fn fetch_args(&mut self, system: &mut System, mode: AddressingMode) -> (Operand, u8) {
+        match mode {
+            // 使わないはず
+            AddressingMode::Implied => (self.fetch_operand(system, mode), 0),
+            // aレジスタの値を使う
+            AddressingMode::Accumulator => (self.fetch_operand(system, mode), self.a),
+            // 即値はopcodeの直後のデータ1byteをそのまま使う
+            AddressingMode::Immediate => {
+                let Operand(data, cyc) = self.fetch_operand(system, mode);
+                debug_assert!(data < 0x100u16);
+                (Operand(data, cyc), data as u8)
+            },
+            // 他は帰ってきたアドレスからデータを引きなおす。使わない場合もある
+            _ => {
+                let Operand(addr, cyc) = self.fetch_operand(system, mode);
+                let data = system.read_u8(addr, false);
+                (Operand(addr, cyc), data)
+            },
+        }
+    }
 
     /// 命令を実行します
     /// ret: cycle数
     pub fn run(&mut self, system: &mut System, inst_code: u8) -> u8 {
         let Instruction(opcode, mode) = Instruction::from(inst_code);
         match opcode {
-            ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            // binary op
+            // 結果はaレジスタに格納するので、operandのアドレスは使わない
             Opcode::ADC => {
-                let Operand(data, cyc) = self.fetch_operand(system, mode);
-                let arg = data as u8;
+                let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
 
                 let (data1, is_carry1) = self.a.overflowing_add(arg as u8);
                 let (result, is_carry2) = data1.overflowing_add(if self.read_carry_flag() { 1 } else { 0 } );
@@ -368,11 +390,207 @@ impl Cpu {
                 self.a = result;
                 1 + cyc
             },
-            // TODO: 他の命令もここに移植
+            Opcode::SBC => {
+                let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
 
+                let (data1, is_carry1) = self.a.overflowing_sub(arg);
+                let (result, is_carry2) = data1.overflowing_sub(if self.read_carry_flag() { 0 } else { 1 } );
 
+                let is_carry    = !(is_carry1 || is_carry2); // アンダーフローが発生したら0
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+                let is_overflow = (!(self.a ^ arg) & (self.a ^ result) & 0x80) == 0x80;
 
+                self.write_carry_flag(is_carry);
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.write_overflow_flag(is_overflow);
+                self.a = result;
+                1 + cyc
+            },
+            Opcode::AND => {
+                let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
 
+                let result = self.a & arg;
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.a = result;
+                1 + cyc
+            },
+            Opcode::EOR => {
+                let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
+
+                let result =self.a ^ arg;
+
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.a = result;
+                1 + cyc
+            },
+            Opcode::ORA => {
+                let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
+
+                let result = self.a | arg;
+
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.a = result;
+                1 + cyc
+            },
+            // shift/rotate
+            // aレジスタを操作する場合があるので注意
+            Opcode::ASL => {
+                let (Operand(addr, cyc), arg) = self.fetch_args(system, mode);
+
+                let (result, is_carry) = arg.overflowing_shl(1);
+
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+
+                self.write_carry_flag(is_carry);
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+
+                if mode == AddressingMode::Accumulator {
+                    self.a = result;
+                    1 + cyc
+                } else {
+                    // 計算結果を元いたアドレスに書き戻す
+                    system.write_u8(addr, result, false);
+                    3 + cyc
+                }
+            },
+            Opcode::LSR => {
+                let (Operand(addr, cyc), arg) = self.fetch_args(system, mode);
+
+                let result = arg.wrapping_shr(1);
+
+                let is_carry    = (arg    & 0x01) == 0x01;
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+
+                self.write_carry_flag(is_carry);
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+
+                if mode == AddressingMode::Accumulator {
+                    self.a = result;
+                    1 + cyc
+                } else {
+                    // 計算結果を元いたアドレスに書き戻す
+                    system.write_u8(addr, result, false);
+                    3 + cyc
+                }
+            },
+            Opcode::ROL => {
+                let (Operand(addr, cyc), arg) = self.fetch_args(system, mode);
+
+                let result = arg.wrapping_shl(1) | (if self.read_carry_flag() { 0x01 } else { 0x00 } );
+
+                let is_carry    = (arg    & 0x80) == 0x80;
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+
+                self.write_carry_flag(is_carry);
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+
+                if mode == AddressingMode::Accumulator {
+                    self.a = result;
+                    1 + cyc
+                } else {
+                    // 計算結果を元いたアドレスに書き戻す
+                    system.write_u8(addr, result, false);
+                    3 + cyc
+                }
+            },
+            Opcode::ROR => {
+                let (Operand(addr, cyc), arg) = self.fetch_args(system, mode);
+
+                let result = self.a.wrapping_shr(1) | (if self.read_carry_flag() { 0x80 } else { 0x00 } );
+
+                let is_carry    = (self.a & 0x01) == 0x01;
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+
+                self.write_carry_flag(is_carry);
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+
+                if mode == AddressingMode::Accumulator {
+                    self.a = result;
+                    1 + cyc
+                } else {
+                    // 計算結果を元いたアドレスに書き戻す
+                    system.write_u8(addr, result, false);
+                    3 + cyc
+                }
+            },
+
+            // Opcode::INC => {},
+            // Opcode::INX => {},
+            // Opcode::INY => {},
+            // Opcode::DEC => {},
+            // Opcode::DEX => {},
+            // Opcode::DEY => {},
+
+            // Opcode::LDA => {},
+            // Opcode::LDX => {},
+            // Opcode::LDY => {},
+            // Opcode::STA => {},
+            // Opcode::STX => {},
+            // Opcode::STY => {},
+
+            // Opcode::SEC => {},
+            // Opcode::SED => {},
+            // Opcode::SEI => {},
+            // Opcode::CLC => {},
+            // Opcode::CLD => {},
+            // Opcode::CLI => {},
+            // Opcode::CLV => {},
+
+            // Opcode::CMP => {},
+            // Opcode::CPX => {},
+            // Opcode::CPY => {},
+
+            // Opcode::JMP => {},
+            // Opcode::JSR => {},
+            // Opcode::RTI => {},
+            // Opcode::RTS => {},
+
+            // Opcode::BCC => {},
+            // Opcode::BCS => {},
+            // Opcode::BEQ => {},
+            // Opcode::BMI => {},
+            // Opcode::BNE => {},
+            // Opcode::BPL => {},
+            // Opcode::BVC => {},
+            // Opcode::BVS => {},
+
+            // Opcode::PHA => {},
+            // Opcode::PHP => {},
+            // Opcode::PLA => {},
+            // Opcode::PLP => {},
+
+            // Opcode::TAX => {},
+            // Opcode::TAY => {},
+            // Opcode::TSX => {},
+            // Opcode::TXA => {},
+            // Opcode::TXS => {},
+            // Opcode::TYA => {},
+
+            // Opcode::BRK => {},
+            // Opcode::BIT => {},
+            // Opcode::NOP => {},
 
             ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             _ => panic!("Invalid Opcode"),
