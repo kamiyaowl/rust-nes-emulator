@@ -1,3 +1,5 @@
+#[macro_use]
+pub mod debugger;
 pub mod interface;
 
 pub mod apu;
@@ -5,7 +7,6 @@ pub mod cassette;
 pub mod cpu;
 pub mod cpu_instruction;
 pub mod cpu_register;
-pub mod debugger;
 pub mod ppu;
 pub mod pad;
 pub mod system;

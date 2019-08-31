@@ -1,6 +1,7 @@
 use super::cpu::*;
 use super::system::System;
 use super::interface::{SystemBus};
+use super::debugger::*;
 
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 enum Opcode {
@@ -371,13 +372,14 @@ impl Cpu {
         // 命令がおいてあるところのaddress
         let inst_pc = self.pc;
         let inst_code = self.fetch_u8(system);
-        // for debug
-        let op1 = system.read_u8(self.pc, true); // 非破壊
-        let op2 = system.read_u8(self.pc + 1, true); // 非破壊
 
         let Instruction(opcode, mode) = Instruction::from(inst_code);
-        // TODO: Debugprintモジュールを使う
-        println!("{:04X} {:02X} {:02X} {:02X} {:?} {:?}\tA:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} ", inst_pc, inst_code, op1, op2, opcode, mode, self.a, self.x, self.y, self.p, (self.sp & 0xff) as u8);
+
+        debugger_print!(PrintLevel::DEBUG, PrintFrom::CPU, {
+            let op1 = system.read_u8(inst_pc + 1, true); // for debug 非破壊
+            let op2 = system.read_u8(inst_pc + 2, true); // for debug 非破壊
+            println!("{:04X} {:02X} {:02X} {:02X} {:?} {:?}\tA:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} ", inst_pc, inst_code, op1, op2, opcode, mode, self.a, self.x, self.y, self.p, (self.sp & 0xff) as u8);
+        });
 
         match opcode {
             /* *************** binary op ***************  */

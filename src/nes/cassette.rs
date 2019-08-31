@@ -1,4 +1,5 @@
 use super::interface::*;
+use super::debugger::*;
 
 pub const PRG_ROM_MAX_SIZE             : usize = 0x8000;
 pub const CHR_ROM_MAX_SIZE             : usize = 0x2000;
@@ -119,15 +120,13 @@ impl Cassette {
         debug_assert!(prg_rom_bytes <= PRG_ROM_MAX_SIZE);
         debug_assert!(chr_rom_bytes <= CHR_ROM_MAX_SIZE);
 
-        if cfg!(debug_assertions) && cfg!(not(no_std)) {
-            println!("[cassette][from ines bin] header_bytes:{:04x}", header_bytes);
-            println!("[cassette][from ines bin] trainer_bytes:{:04x}", trainer_bytes);
-            println!("[cassette][from ines bin] prg_rom_bytes:{:04x}", prg_rom_bytes);
-            println!("[cassette][from ines bin] chr_rom_bytes:{:04x}", chr_rom_bytes);
-            println!("[cassette][from ines bin] trainer_baseaddr:{:04x}", trainer_baseaddr);
-            println!("[cassette][from ines bin] prg_rom_baseaddr:{:04x}", prg_rom_baseaddr);
-            println!("[cassette][from ines bin] chr_rom_baseaddr:{:04x}", chr_rom_baseaddr);
-        }
+        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, println!("header_bytes:{:04x}", header_bytes));
+        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, println!("trainer_bytes:{:04x}", trainer_bytes));
+        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, println!("prg_rom_bytes:{:04x}", prg_rom_bytes));
+        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, println!("chr_rom_bytes:{:04x}", chr_rom_bytes));
+        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, println!("trainer_baseaddr:{:04x}", trainer_baseaddr));
+        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, println!("prg_rom_baseaddr:{:04x}", prg_rom_baseaddr));
+        debugger_print!(PrintLevel::INFO, PrintFrom::CASSETTE, println!("chr_rom_baseaddr:{:04x}", chr_rom_baseaddr));
 
         // Battery Packed RAMの初期値
         if is_exists_trainer {
@@ -161,7 +160,6 @@ impl Cassette {
 impl SystemBus for Cassette {
     fn read_u8(&mut self, addr: u16, _is_nondestructive: bool) -> u8 {
         if addr < PRG_ROM_SYSTEM_BASE_ADDR {
-            println!("test:{:04x}", addr);
             debug_assert!(addr >= BATTERY_PACKED_RAM_BASE_ADDR);
 
             let index = usize::from(addr - BATTERY_PACKED_RAM_BASE_ADDR);

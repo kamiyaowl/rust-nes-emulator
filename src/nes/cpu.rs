@@ -1,5 +1,6 @@
 use super::system::System;
 use super::interface::*;
+use super::debugger::*;
 
 const NMI_READ_LOWER:   u16 = 0xfffa;
 const NMI_READ_UPPER:   u16 = 0xfffb;
@@ -101,17 +102,15 @@ impl Cpu {
         let is_nested_interrupt = self.read_interrupt_flag();
         // RESET, NMI以外は多重割り込みを許容しない
         if is_nested_interrupt && (irq_type == Interrupt::IRQ) || (irq_type == Interrupt::BRK) {
-            if cfg!(debug_assertions) && cfg!(not(no_std)) {
-                println!("[interrupt] skip nested interrupt");
-            }
+            debugger_print!(PrintLevel::DEBUG, PrintFrom::CPU, println!("[interrupt] skip nested interrupt"));
             return;
         }
         // 割り込み種類別の処理
         match irq_type {
             Interrupt::NMI   => {
-                if cfg!(debug_assertions) && cfg!(not(no_std)) {
-                    println!("[interrupt] NMI interrupt");
-                }
+                // vblankの度に出るのでちょっとうるさい
+                debugger_print!(PrintLevel::DEBUG, PrintFrom::CPU, println!("[interrupt] NMI interrupt"));
+
                 self.write_break_flag(false);
                 // PCのUpper, Lower, Status RegisterをStackに格納する
                 self.stack_push(system, (self.pc >> 8) as u8);
@@ -120,15 +119,13 @@ impl Cpu {
                 self.write_interrupt_flag(true);
             },
             Interrupt::RESET => {
-                if cfg!(debug_assertions) && cfg!(not(no_std)) {
-                    println!("[interrupt] RESET interrupt");
-                }
+                debugger_print!(PrintLevel::INFO, PrintFrom::CPU, println!("[interrupt] RESET interrupt"));
+
                 self.write_interrupt_flag(true);
             },
             Interrupt::IRQ   => {
-                if cfg!(debug_assertions) && cfg!(not(no_std)) {
-                    println!("[interrupt] IRQ interrupt");
-                }
+                debugger_print!(PrintLevel::INFO, PrintFrom::CPU, println!("[interrupt] IRQ interrupt"));
+
                 self.write_break_flag(false);
                 // PCのUpper, Lower, Status RegisterをStackに格納する
                 self.stack_push(system, (self.pc >> 8) as u8);
@@ -137,9 +134,8 @@ impl Cpu {
                 self.write_interrupt_flag(true);
             },
             Interrupt::BRK   => {
-                if cfg!(debug_assertions) && cfg!(not(no_std)) {
-                    println!("[interrupt] BRK interrupt");
-                }
+                debugger_print!(PrintLevel::INFO, PrintFrom::CPU, println!("[interrupt] BRK interrupt"));
+
                 self.write_break_flag(true);
                 self.pc = self.pc + 1;
                 // PCのUpper, Lower, Status RegisterをStackに格納する
@@ -166,9 +162,8 @@ impl Cpu {
         let lower = system.read_u8(lower_addr, false);
         let upper = system.read_u8(upper_addr, false);
         self.pc = (lower as u16) | ((upper as u16) << 8);
-        if cfg!(debug_assertions) && cfg!(not(no_std)) {
-            println!("[interrupt] jump to {:04x}", self.pc);
-        }
+
+        debugger_print!(PrintLevel::DEBUG, PrintFrom::CPU, println!("[interrupt] jump to {:04x}", self.pc));
     }
 
 }
