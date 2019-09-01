@@ -647,7 +647,7 @@ impl Cpu {
 
                 let result = arg.wrapping_shr(1) | (if self.read_carry_flag() { 0x80 } else { 0x00 } );
 
-                let is_carry    = (self.a & 0x01) == 0x01;
+                let is_carry    = (arg & 0x01) == 0x01;
                 let is_zero     = result == 0;
                 let is_negative = (result & 0x80) == 0x80;
 
@@ -1267,7 +1267,7 @@ impl Cpu {
                 // ROR
                 let result_ror = arg.wrapping_shr(1) | (if self.read_carry_flag() { 0x80 } else { 0x00 } );
 
-                let is_carry_ror    = (self.a & 0x01) == 0x01;
+                let is_carry_ror    = (arg & 0x01) == 0x01;
                 self.write_carry_flag(is_carry_ror);
 
                 system.write_u8(addr, result_ror, false);
@@ -1335,6 +1335,7 @@ impl Cpu {
                 self.write_negative_flag(is_negative);
                 self.a = result_eor;
 
+                debugger_print!(PrintLevel::HIDDEN, PrintFrom::CPU, format!("addr:{:04X}, arg:{:02X}, result_lsr:{:02X}, self.a:{:02X}(after) result_eor:{:02X}", addr, arg, result_lsr, self.a, result_eor));
                 3 + cyc
             },
             Opcode::SKB => {
