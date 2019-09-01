@@ -28,25 +28,29 @@ jobs:
       - run:
           name: test
           command: cargo test -- --test-threads=1
+          when: always
       - run:
-          name: test
+          name: test ignored
           command: cargo test -- --test-threads=1 --ignored
+          when: always
       - store_artifacts:
           path: framebuffer_run_hello_ppu.bmp
           destination: hello_debug.bmp
       - store_artifacts:
           path: run_nestest_automation.log
           destination: run_nestest_automation_debug.log
-
       - run:
           name: build release
           command: cargo build --release
+          when: always
       - run:
           name: test release
           command: cargo test --release -- --test-threads=1
+          when: always
       - run:
-          name: test release
+          name: test release ignored
           command: cargo test --release -- --test-threads=1 --ignored
+          when: always
       - store_artifacts:
           path: framebuffer_run_hello_ppu.bmp
           destination: hello_release.bmp
