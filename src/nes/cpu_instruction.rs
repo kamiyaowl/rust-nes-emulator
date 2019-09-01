@@ -1226,7 +1226,7 @@ impl Cpu {
                 let is_carry    = !(is_carry1 || is_carry2); // アンダーフローが発生したら0
                 let is_zero     = result == 0;
                 let is_negative = (result & 0x80) == 0x80;
-                let is_overflow = (((self.a ^ arg) & 0x80) == 0x80) && (((self.a ^ result) & 0x80) == 0x80);
+                let is_overflow = (((self.a ^ inc_result) & 0x80) == 0x80) && (((self.a ^ result) & 0x80) == 0x80);
 
                 self.write_carry_flag(is_carry);
                 self.write_zero_flag(is_zero);
@@ -1302,7 +1302,7 @@ impl Cpu {
                 system.write_u8(addr, result_asl, false);
 
                 // ORA
-                let result_ora = self.a | arg;
+                let result_ora = self.a | result_asl;
 
                 let is_zero     = result_ora == 0;
                 let is_negative = (result_ora & 0x80) == 0x80;
@@ -1326,7 +1326,7 @@ impl Cpu {
                 system.write_u8(addr, result_lsr, false);
 
                 // EOR
-                let result_eor = self.a ^ arg;
+                let result_eor = self.a ^ result_lsr;
 
                 let is_zero     = result_eor == 0;
                 let is_negative = (result_eor & 0x80) == 0x80;
