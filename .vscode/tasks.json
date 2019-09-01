@@ -43,7 +43,18 @@
             "problemMatcher": [
                 "$rustc"
             ],
-        }
+        },
+        {
+            "type": "shell",
+            "label": "cargo run",
+            "command": "cargo",
+            "args": [
+                "run",
+            ],
+            "problemMatcher": [
+                "$rustc"
+            ],
+        },
 
     ]
 }

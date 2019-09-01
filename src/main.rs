@@ -179,6 +179,9 @@ fn run_nestest_automation(rom_path: String, log_enable: bool) -> Result<(), Box<
     }
     debugger_disable_fileout!();
 
+    // 最後のRTSが終わって 0001にいるはず
+    assert_eq!(0x0001, cpu.pc);
+    assert_eq!(0x01ff, cpu.sp);
     // C0002, C003が all 0なら問題ないらしい
     // https://github.com/christopherpow/nes-test-roms/blob/fc217a73fe77a0e0726e4e121155882f3fbc7b3b/other/nestest.txt        
     let test_result_lower = u16::from(cpu_sys.read_u8(0xc002, true));
@@ -187,9 +190,6 @@ fn run_nestest_automation(rom_path: String, log_enable: bool) -> Result<(), Box<
     debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[nestest.nes result] more info: https://github.com/christopherpow/nes-test-roms/blob/fc217a73fe77a0e0726e4e121155882f3fbc7b3b/other/nestest.txt"));
     assert_eq!(0x00, test_result_lower);
     assert_eq!(0x00, test_result_upper);
-    // 最後のRTSが終わって 0001にいるはず
-    assert_eq!(0x0001, cpu.pc);
-    assert_eq!(0x01ff, cpu.sp);
 
     Ok(())
 }
@@ -328,5 +328,6 @@ fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    run_nestest_automation("roms/nes-test-roms/other/nestest.nes".to_string(), true)
+    run_gui("roms/nes-test-roms/other/nestest.nes".to_string())
+    // run_nestest_automation("roms/nes-test-roms/other/nestest.nes".to_string(), true)
 }

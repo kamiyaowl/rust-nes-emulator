@@ -295,13 +295,15 @@ impl Ppu {
 
             // attribute読み出し, BGパレット選択に使う
             let raw_attribute = video_system.read_u8(&mut system.cassette, attribute_addr);
-            let bg_palette_id = match (tile_local_x & 0x01, tile_local_y & 0x01) {
-                (0, 0) => (raw_attribute >> 0) & 0x03, // top left
-                (1, 0) => (raw_attribute >> 2) & 0x03, // top right
-                (0, 1) => (raw_attribute >> 4) & 0x03, // bottom left
-                (1, 1) => (raw_attribute >> 6) & 0x03, // bottom right
-                _ => panic!("invalid bg attribute"),
-            };
+            // TODO: palette選択がおかしい
+            let bg_palette_id = 0u8;
+            // let bg_palette_id = match (tile_local_x & 0x01, tile_local_y & 0x01) {
+            //     (0, 0) => (raw_attribute >> 0) & 0x03, // top left
+            //     (1, 0) => (raw_attribute >> 2) & 0x03, // top right
+            //     (0, 1) => (raw_attribute >> 4) & 0x03, // bottom left
+            //     (1, 1) => (raw_attribute >> 6) & 0x03, // bottom right
+            //     _ => panic!("invalid bg attribute"),
+            // };
             // Nametableからtile_id読み出し->pattern tableからデータ構築
             let bg_tile_id = u16::from(video_system.read_u8(&mut system.cassette, nametable_addr));
             // pattern_table 1entryは16byte, 0行目だったら0,8番目のデータを使えば良い
