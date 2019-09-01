@@ -27,19 +27,23 @@ jobs:
       #     command: cargo clippy -- -D warnings
       - run:
           name: test
-          command: cargo test -- --test-threads=1
+          command: cargo test -- --test-threads=1 --ignored
       - store_artifacts:
           path: framebuffer_run_hello_ppu.bmp
           destination: hello_debug.bmp
       - store_artifacts:
-          path: framebuffer_nestest_boot.bmp
-          destination: nestest_boot_debug.bmp
+          path: run_nestest_automation.log
+          destination: run_nestest_automation_debug.log
+
       - run:
           name: build release
           command: cargo build --release
       - run:
           name: test release
-          command: cargo test --release -- --test-threads=1
+          command: cargo test --release -- --test-threads=1 --ignored
       - store_artifacts:
           path: framebuffer_run_hello_ppu.bmp
           destination: hello_release.bmp
+      - store_artifacts:
+          path: run_nestest_automation.log
+          destination: run_nestest_automation_release.log

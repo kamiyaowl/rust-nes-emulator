@@ -18,6 +18,20 @@
         },
         {
             "type": "shell",
+            "label": "cargo test -- --test-threads=1 --ignored",
+            "command": "cargo",
+            "args": [
+                "test",
+                "--",
+                "--test-threads=1",
+                "--ignored",
+            ],
+            "problemMatcher": [
+                "$rustc"
+            ],
+        },
+        {
+            "type": "shell",
             "label": "cargo test -- --test-threads=1 --nocapture",
             "command": "cargo",
             "args": [
