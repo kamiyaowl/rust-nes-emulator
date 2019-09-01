@@ -1242,7 +1242,7 @@ impl Cpu {
                 // ROL
                 let result_rol = arg.wrapping_shl(1) | (if self.read_carry_flag() { 0x01 } else { 0x00 } );
 
-                let is_carry    = (arg    & 0x80) == 0x80;
+                let is_carry    = (arg & 0x80) == 0x80;
                 self.write_carry_flag(is_carry);
 
                 system.write_u8(addr, result_rol, false);
@@ -1296,7 +1296,7 @@ impl Cpu {
                 // ASL
                 let result_asl = arg.wrapping_shl(1);
 
-                let is_carry    = (arg    & 0x80) == 0x80; // shift前データでわかるよね
+                let is_carry    = (arg & 0x80) == 0x80; // shift前データでわかるよね
                 self.write_carry_flag(is_carry);
 
                 system.write_u8(addr, result_asl, false);
@@ -1320,7 +1320,7 @@ impl Cpu {
                 // LSR
                 let result_lsr = arg.wrapping_shr(1);
 
-                let is_carry    = (arg    & 0x01) == 0x01;
+                let is_carry    = (arg & 0x01) == 0x01;
                 self.write_carry_flag(is_carry);
 
                 system.write_u8(addr, result_lsr, false);
