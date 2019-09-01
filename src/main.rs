@@ -301,6 +301,7 @@ fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
         };
 
         // 書く
+        // TODO: パフォーマンス悪すぎ
         window.draw_2d(&event, |c, g, _| {
             clear([0.0, 0.0, 0.0, 1.0], g);
             for j in 0..VISIBLE_SCREEN_HEIGHT {

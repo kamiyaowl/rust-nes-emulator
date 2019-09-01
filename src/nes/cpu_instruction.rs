@@ -352,7 +352,7 @@ impl Instruction {
             0xd4 => Instruction(Opcode::IGN, AddressingMode::ZeroPageX),
             0xf4 => Instruction(Opcode::IGN, AddressingMode::ZeroPageX),
 
-            /* *************** unofficial2 ***************  */
+            /* *************** unofficial2(既存の命令) ***************  */
             0xeb => Instruction(Opcode::SBC, AddressingMode::Immediate),
 
             0x1a => Instruction(Opcode::NOP, AddressingMode::Implied),
@@ -1093,6 +1093,264 @@ impl Cpu {
                 //なにもしない、Implied
                 2
             },
+            /* *************** unofficial1 ***************  */
+            Opcode::ALR => {
+                // Immediateのみ、(A & #Imm) >> 1
+                debug_assert!(mode == AddressingMode::Immediate);
+                let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
+
+                let src = self.a & arg;
+                let result = src.wrapping_shr(1);
+
+                let is_carry    = (src    & 0x01) == 0x01;
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+
+                self.write_carry_flag(is_carry);
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+
+                self.a = result;
+                1 + cyc
+            },
+            Opcode::ANC => {
+                // Immediateのみ、A=A & #IMM, Carryは前回状態のNegativeをコピー
+                debug_assert!(mode == AddressingMode::Immediate);
+                let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
+
+                let result = self.a & arg;
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+                let is_carry    = self.read_negative_flag();
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.write_carry_flag(is_carry);
+                self.a = result;
+                1 + cyc
+            },
+            Opcode::ARR => {
+                // Immediateのみ、Carry=bit6, V=bit6 xor bit5
+                debug_assert!(mode == AddressingMode::Immediate);
+                let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
+
+                let src = self.a & arg;
+                let result = src.wrapping_shr(1) | (if self.read_carry_flag() { 0x80 } else { 0x00 } );
+
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+                let is_carry    = (result & 0x40) == 0x40;
+                let is_overflow = ((result & 0x40) ^ ((result & 0x20) << 1)) == 0x40;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.write_carry_flag(is_carry);
+                self.write_overflow_flag(is_overflow);
+
+                self.a = result;
+                1 + cyc
+            },
+            Opcode::AXS => {
+                // Immediateのみ、X = (A & X) - #IMM, NZCを更新
+                // without borrowとのことなので、減算時cフラグも無視
+                debug_assert!(mode == AddressingMode::Immediate);
+                let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
+
+                let src = self.a & arg;
+
+                let (result, is_carry) = self.a.overflowing_sub(src);
+
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+
+                self.write_carry_flag(is_carry);
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.x = result;
+                1 + cyc
+            },
+            Opcode::LAX => {
+                // A = X = argsっぽい
+                let (Operand(_, cyc), arg) = self.fetch_args(system, mode);
+
+                let is_zero     = arg == 0;
+                let is_negative = (arg & 0x80) == 0x80;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.a = arg;
+                self.x = arg;
+                1 + cyc
+            },
+            Opcode::SAX => {
+                // memory = A & X, flag操作はなし
+                let (Operand(addr, cyc), _arg) = self.fetch_args(system, mode);
+
+                let result = self.a & self.x;
+
+                system.write_u8(addr, result, false);
+                1 + cyc
+            },            
+            Opcode::DCP => {
+                // DEC->CMPっぽい
+                let (Operand(addr, cyc), arg) = self.fetch_args(system, mode);
+
+                // DEC
+                let dec_result = arg.wrapping_sub(1);
+                system.write_u8(addr, dec_result, false);
+
+                // CMP
+                let result = self.a.wrapping_sub(dec_result);
+
+                let is_carry    = self.a >= dec_result;
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+
+                self.write_carry_flag(is_carry);
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                3 + cyc
+            },
+            Opcode::ISC => {
+                // INC->SBC
+                let (Operand(addr, cyc), arg) = self.fetch_args(system, mode);
+
+                // INC
+                let inc_result = arg.wrapping_add(1);
+                system.write_u8(addr, inc_result, false);
+
+                // SBC
+                let (data1, is_carry1) = self.a.overflowing_sub(inc_result);
+                let (result, is_carry2) = data1.overflowing_sub(if self.read_carry_flag() { 0 } else { 1 } );
+
+                let is_carry    = !(is_carry1 || is_carry2); // アンダーフローが発生したら0
+                let is_zero     = result == 0;
+                let is_negative = (result & 0x80) == 0x80;
+                let is_overflow = (((self.a ^ arg) & 0x80) == 0x80) && (((self.a ^ result) & 0x80) == 0x80);
+
+                self.write_carry_flag(is_carry);
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.write_overflow_flag(is_overflow);
+                self.a = result;
+                1 + cyc
+            },
+            Opcode::RLA => {
+                // ROL -> AND
+                let (Operand(addr, cyc), arg) = self.fetch_args(system, mode);
+
+                // ROL
+                let result_rol = arg.wrapping_shl(1) | (if self.read_carry_flag() { 0x01 } else { 0x00 } );
+
+                let is_carry    = (arg    & 0x80) == 0x80;
+                self.write_carry_flag(is_carry);
+
+                system.write_u8(addr, result_rol, false);
+
+                // AND
+                let result_and = self.a & result_rol;
+
+                let is_zero     = result_and == 0;
+                let is_negative = (result_and & 0x80) == 0x80;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+
+                self.a = result_and;
+
+                3 + cyc
+            },            
+            Opcode::RRA => {
+                // ROR -> ADC
+                let (Operand(addr, cyc), arg) = self.fetch_args(system, mode);
+
+                // ROR
+                let result_ror = arg.wrapping_shr(1) | (if self.read_carry_flag() { 0x80 } else { 0x00 } );
+
+                let is_carry_ror    = (self.a & 0x01) == 0x01;
+                self.write_carry_flag(is_carry_ror);
+
+                system.write_u8(addr, result_ror, false);
+
+                // ADC
+                let tmp = u16::from(self.a) + u16::from(result_ror) + (if self.read_carry_flag() { 1 } else { 0 } );
+                let result_adc = (tmp & 0xff) as u8;
+
+                let is_carry    = tmp > 0x00ffu16;
+                let is_zero     = result_adc == 0;
+                let is_negative = (result_adc & 0x80) == 0x80;
+                let is_overflow = ((self.a ^ result_adc) & (result_ror ^ result_adc) & 0x80) == 0x80;
+
+                self.write_carry_flag(is_carry);
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.write_overflow_flag(is_overflow);
+                self.a = result_adc;
+
+                3 + cyc
+            },
+            Opcode::SLO => {
+                // ASL -> ORA
+                let (Operand(addr, cyc), arg) = self.fetch_args(system, mode);
+
+                // ASL
+                let result_asl = arg.wrapping_shl(1);
+
+                let is_carry    = (arg    & 0x80) == 0x80; // shift前データでわかるよね
+                self.write_carry_flag(is_carry);
+
+                system.write_u8(addr, result_asl, false);
+
+                // ORA
+                let result_ora = self.a | arg;
+
+                let is_zero     = result_ora == 0;
+                let is_negative = (result_ora & 0x80) == 0x80;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.a = result_ora;
+
+                3 + cyc
+            },
+            Opcode::SRE => {
+                // LSR -> EOR
+                let (Operand(addr, cyc), arg) = self.fetch_args(system, mode);
+
+                // LSR
+                let result_lsr = arg.wrapping_shr(1);
+
+                let is_carry    = (arg    & 0x01) == 0x01;
+                self.write_carry_flag(is_carry);
+
+                system.write_u8(addr, result_lsr, false);
+
+                // EOR
+                let result_eor = self.a ^ arg;
+
+                let is_zero     = result_eor == 0;
+                let is_negative = (result_eor & 0x80) == 0x80;
+
+                self.write_zero_flag(is_zero);
+                self.write_negative_flag(is_negative);
+                self.a = result_eor;
+
+                3 + cyc
+            },
+            Opcode::SKB => {
+                // Immediateをフェッチするけど、なにもしない
+                debug_assert!(mode == AddressingMode::Immediate);
+                let (Operand(_addr, cyc), _arg) = self.fetch_args(system, mode);
+
+                1 + cyc
+            },            
+            Opcode::IGN => {
+                // フェッチするけど、なにもしない
+                let (Operand(_addr, cyc), _arg) = self.fetch_args(system, mode);
+
+                1 + cyc
+            },            
+            
             _ => panic!("unimplemented opcode. inst_pc:{:04X} inst_code:{:02X} [{:?} {:?}]", inst_pc, inst_code, opcode, mode),
         }
     }

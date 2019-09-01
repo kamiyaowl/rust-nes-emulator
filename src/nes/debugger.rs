@@ -20,8 +20,8 @@ pub enum PrintFrom {
 }
 
 lazy_static! {
-    pub static ref debugger_out_path       : RwLock<String> = RwLock::new("emulator.log".to_string());
-    pub static ref debugger_fileout_enable : RwLock<bool>   = RwLock::new(false);
+    pub static ref DEBUGGER_OUT_PATH       : RwLock<String> = RwLock::new("emulator.log".to_string());
+    pub static ref DEBUGGER_FILEOUT_ENABLE : RwLock<bool>   = RwLock::new(false);
 }
 
 /// デバッグ情報のファイル出力を有効化します
@@ -50,8 +50,8 @@ macro_rules! debugger_enable_fileout {
             file.write_all(": rust-nes-emulator log\n".as_bytes()).unwrap();
             file.flush().unwrap();
             // global変数に泣く泣くセット
-            let mut debugger_out_path_ptr       = debugger_out_path.write().unwrap();
-            let mut debugger_fileout_enable_ptr = debugger_fileout_enable.write().unwrap();
+            let mut debugger_out_path_ptr       = DEBUGGER_OUT_PATH.write().unwrap();
+            let mut debugger_fileout_enable_ptr = DEBUGGER_FILEOUT_ENABLE.write().unwrap();
             *debugger_out_path_ptr = $filepath;
             *debugger_fileout_enable_ptr = true;
         }
@@ -62,8 +62,8 @@ macro_rules! debugger_enable_fileout {
 macro_rules! debugger_disable_fileout {
     () => {
         if cfg!(not(no_std)) {
-            let mut debugger_out_path_ptr       = debugger_out_path.write().unwrap();
-            let mut debugger_fileout_enable_ptr = debugger_fileout_enable.write().unwrap();
+            let mut debugger_out_path_ptr       = DEBUGGER_OUT_PATH.write().unwrap();
+            let mut debugger_fileout_enable_ptr = DEBUGGER_FILEOUT_ENABLE.write().unwrap();
             *debugger_out_path_ptr = "emulator.log".to_string();
             *debugger_fileout_enable_ptr = false;
         }        
@@ -109,8 +109,8 @@ macro_rules! debugger_print {
                 use std::io::{BufWriter, Write};
                 use fs::OpenOptions;
                 // debug print有効化されてたらやる
-                let debugger_out_path_ptr       = debugger_out_path.read().unwrap();
-                let debugger_fileout_enable_ptr = debugger_fileout_enable.read().unwrap();
+                let debugger_out_path_ptr       = DEBUGGER_OUT_PATH.read().unwrap();
+                let debugger_fileout_enable_ptr = DEBUGGER_FILEOUT_ENABLE.read().unwrap();
                 if *debugger_fileout_enable_ptr {
                     let mut file = BufWriter::new(
                         OpenOptions::new()
