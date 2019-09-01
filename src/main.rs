@@ -153,12 +153,8 @@ fn run_cpu_ppu(rom_path: String, save_path: String, frame_count: usize, validate
     Ok(())
 }
 
-/// nestest.nesをC000から開始して一通りのテストを流す
-fn run_nestest_automation(rom_path: String, log_enable: bool) -> Result<(), Box<dyn std::error::Error>> {
-    if log_enable {
-        debugger_enable_fileout!("run_nestest_automation.log".to_string());
-    }
-
+/// nestestを起動して、テストを実行してスクショ比較する
+fn run_nestest(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
     let mut ppu: Ppu = Default::default();
@@ -170,72 +166,66 @@ fn run_nestest_automation(rom_path: String, log_enable: bool) -> Result<(), Box<
     cpu_sys.reset();
     ppu.reset();
     video_sys.reset();
-    cpu.pc = 0xc000; // nestestはc000から開始させる
-    cpu.p = 0x24; // break flagは建てないっぽい
+    cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
 
     let mut fb = [[[0; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
 
-    let test_cpu_step = 8991; // nesttest.logより
-    for _i in 0..test_cpu_step {
-        let cpu_cycle = usize::from(cpu.step(&mut cpu_sys, &ppu));
-        ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
+    // cpuを基準にppuを動かしてあげる
+    let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT + 1);
+    for i in 0..60 {
+        let mut total_cycle: usize = 0;
+        while total_cycle < cycle_for_draw_once {
+            let cpu_cycle = usize::from(cpu.step(&mut cpu_sys, &ppu));
+            ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
+
+            debugger_print!(PrintLevel::DEBUG, PrintFrom::TEST, format!("cycle_for_draw_once={}, total_cycle={}, cpu_cycle={}", cycle_for_draw_once, total_cycle, cpu_cycle));
+            total_cycle = total_cycle + cpu_cycle;
+        }
+        match i {
+            4 => {
+                // 4frameで起動画像が出るはず
+                debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[frame={}] validate normal menu screenshot", i));
+                print_framebuffer(&fb);
+                save_framebuffer(&fb, "nestest_normal_menu.bmp".to_string());
+                let _ = validate_framebuffer(&fb, "screenshot/nestest_normal_menu.bmp".to_string());
+            },
+            5 => {
+                // テスト開始ボタン押させる
+                debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[frame={}] press start button", i));
+                cpu_sys.pad1.push_button(PadButton::Start);
+            },
+            25 => {
+                debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[frame={}] validate normal test pass screenshot", i));
+                print_framebuffer(&fb);
+                save_framebuffer(&fb, "nestest_normal.bmp".to_string());
+                let _ = validate_framebuffer(&fb, "screenshot/nestest_normal.bmp".to_string());
+            },
+            26 => {
+                // unofficial testに遷移させる
+                debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[frame={}] press select button", i));
+                cpu_sys.pad1.push_button(PadButton::Select);
+            },
+            29 => {
+                debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[frame={}] validate extra menu screenshot", i));
+                print_framebuffer(&fb);
+                save_framebuffer(&fb, "nestest_extra_menu.bmp".to_string());
+                let _ = validate_framebuffer(&fb, "screenshot/nestest_extra_menu.bmp".to_string());
+            },
+            30 => {
+                // テスト開始ボタン押させる
+                debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[frame={}] press start button", i));
+                cpu_sys.pad1.push_button(PadButton::Start);
+            },
+            50 => {
+                debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[frame={}] validate extra test pass screenshot", i));
+                print_framebuffer(&fb);
+                save_framebuffer(&fb, "nestest_extra.bmp".to_string());
+                let _ = validate_framebuffer(&fb, "screenshot/nestest_extra.bmp".to_string());
+            },
+            _ => {},
+        };
     }
     debugger_disable_fileout!();
-
-    // 最後のRTSが終わって 0001にいるはず
-    assert_eq!(0x0001, cpu.pc);
-    assert_eq!(0x01ff, cpu.sp);
-    // C0002, C003が all 0なら問題ないらしい
-    // https://github.com/christopherpow/nes-test-roms/blob/fc217a73fe77a0e0726e4e121155882f3fbc7b3b/other/nestest.txt        
-    let test_result_lower = u16::from(cpu_sys.read_u8(0xc002, true));
-    let test_result_upper = u16::from(cpu_sys.read_u8(0xc003, true));
-    debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[nestest.nes result] $C002={:02X}, $C003={:02X} pc={:04X}, sp={:04X}", test_result_lower, test_result_upper, cpu.pc, cpu.sp));
-    debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[nestest.nes result] more info: https://github.com/christopherpow/nes-test-roms/blob/fc217a73fe77a0e0726e4e121155882f3fbc7b3b/other/nestest.txt"));
-    assert_eq!(0x00, test_result_lower);
-    assert_eq!(0x00, test_result_upper);
-
-    Ok(())
-}
-
-fn run_nestest(rom_path: String, log_enable: bool) -> Result<(), Box<dyn std::error::Error>> {
-    if log_enable {
-        debugger_enable_fileout!("run_nestest_automation.log".to_string());
-    }
-
-    let mut cpu: Cpu = Default::default();
-    let mut cpu_sys: System = Default::default();
-    let mut ppu: Ppu = Default::default();
-    let mut video_sys: VideoSystem = Default::default();
-
-    load_cassette(&mut cpu_sys.cassette, rom_path)?;
-
-    cpu.reset();
-    cpu_sys.reset();
-    ppu.reset();
-    video_sys.reset();
-    cpu.pc = 0xc000; // nestestはc000から開始させる
-    cpu.p = 0x24; // break flagは建てないっぽい
-
-    let mut fb = [[[0; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
-
-    let test_cpu_step = 8991; // nesttest.logより
-    for _i in 0..test_cpu_step {
-        let cpu_cycle = usize::from(cpu.step(&mut cpu_sys, &ppu));
-        ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
-    }
-    debugger_disable_fileout!();
-
-    // 最後のRTSが終わって 0001にいるはず
-    assert_eq!(0x0001, cpu.pc);
-    assert_eq!(0x01ff, cpu.sp);
-    // C0002, C003が all 0なら問題ないらしい
-    // https://github.com/christopherpow/nes-test-roms/blob/fc217a73fe77a0e0726e4e121155882f3fbc7b3b/other/nestest.txt        
-    let test_result_lower = u16::from(cpu_sys.read_u8(0xc002, true));
-    let test_result_upper = u16::from(cpu_sys.read_u8(0xc003, true));
-    debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[nestest.nes result] $C002={:02X}, $C003={:02X} pc={:04X}, sp={:04X}", test_result_lower, test_result_upper, cpu.pc, cpu.sp));
-    debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[nestest.nes result] more info: https://github.com/christopherpow/nes-test-roms/blob/fc217a73fe77a0e0726e4e121155882f3fbc7b3b/other/nestest.txt"));
-    assert_eq!(0x00, test_result_lower);
-    assert_eq!(0x00, test_result_upper);
 
     Ok(())
 }
@@ -270,26 +260,9 @@ fn test_run_hello_ppu() -> Result<(), Box<dyn std::error::Error>> {
     })
 }
 
-/// nestest.nesのautomation testを実行する
 #[test]
-fn test_run_nestest_automation() -> Result<(), Box<dyn std::error::Error>> {
-    run_nestest_automation("roms/nes-test-roms/other/nestest.nes".to_string(), false)
-}
-
-/// nestest.nesのautomation testを詳細ログ付きで実行する
-#[test]
-#[ignore]
-fn test_run_nestest_automation_with_log() -> Result<(), Box<dyn std::error::Error>> {
-    run_nestest_automation("roms/nes-test-roms/other/nestest.nes".to_string(), true)
-}
-
-/// nestest.nesでテストメニューが正常に表示されることを確認する
-#[test]
-fn test_run_nestest_menu() -> Result<(), Box<dyn std::error::Error>> {
-    run_cpu_ppu("roms/nes-test-roms/other/nestest.nes".to_string(), "test_run_nestest_menu.bmp".to_string(), 4, |_cpu, _sys, fb| {
-        // FBの結果を精査する
-        let _ = validate_framebuffer(fb, "screenshot/nestest.bmp".to_string());
-    })
+fn test_run_nestest() -> Result<(), Box<dyn std::error::Error>> {
+    run_nestest("roms/nes-test-roms/other/nestest.nes".to_string())
 }
 
 fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {

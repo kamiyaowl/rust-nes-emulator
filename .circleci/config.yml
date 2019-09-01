@@ -35,13 +35,19 @@ jobs:
           when: always
       - store_artifacts:
           path: test_run_hello_ppu.bmp
-          destination: hello_debug.bmp
+          destination: hello.bmp
       - store_artifacts:
-          path: run_nestest_automation.log
-          destination: run_nestest_automation_debug.log
+          path: nestest_normal_menu.bmp
+          destination: nestest_normal_menu.bmp
       - store_artifacts:
-          path: test_run_nestest_menu.bmp
-          destination: nestest_menu_debug.bmp
+          path: nestest_normal.bmp
+          destination: nestest_normal.bmp
+      - store_artifacts:
+          path: nestest_extra_menu.bmp
+          destination: nestest_extra_menu.bmp
+      - store_artifacts:
+          path: nestest_extra.bmp
+          destination: nestest_extra.bmp
       - run:
           name: build release
           command: cargo build --release
@@ -56,10 +62,16 @@ jobs:
           when: always
       - store_artifacts:
           path: test_run_hello_ppu.bmp
-          destination: hello_release.bmp
+          destination: release_hello.bmp
       - store_artifacts:
-          path: run_nestest_automation.log
-          destination: run_nestest_automation_release.log
+          path: nestest_normal_menu.bmp
+          destination: release_nestest_normal_menu.bmp
       - store_artifacts:
-          path: test_run_nestest_menu.bmp
-          destination: nestest_menu_release.bmp
+          path: nestest_normal.bmp
+          destination: release_nestest_normal.bmp
+      - store_artifacts:
+          path: nestest_extra_menu.bmp
+          destination: release_nestest_extra_menu.bmp
+      - store_artifacts:
+          path: nestest_extra.bmp
+          destination: release_nestest_extra.bmp
