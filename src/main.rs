@@ -196,7 +196,7 @@ fn run_nestest_automation(rom_path: String, log_enable: bool) -> Result<(), Box<
 
 
 #[test]
-fn run_hello_cpu() -> Result<(), Box<dyn std::error::Error>>  {
+fn test_run_hello_cpu() -> Result<(), Box<dyn std::error::Error>>  {
     run_cpu_only("roms/other/hello.nes".to_string(), 175, |cpu, _sys| {
         // 170step以降はJMPで無限ループしているはず
         assert_eq!(0x804e, cpu.pc);
@@ -209,7 +209,7 @@ fn run_hello_cpu() -> Result<(), Box<dyn std::error::Error>>  {
 }
 
 #[test]
-fn run_hello_ppu() -> Result<(), Box<dyn std::error::Error>> {
+fn test_run_hello_ppu() -> Result<(), Box<dyn std::error::Error>> {
     run_cpu_ppu("roms/other/hello.nes".to_string(), "framebuffer_run_hello_ppu.bmp".to_string(), 1, |cpu, _sys, fb| {
         // 170step以降はJMPで無限ループしているはず
         assert_eq!(0x804e, cpu.pc);
@@ -224,13 +224,13 @@ fn run_hello_ppu() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn run_nestest_automation() -> Result<(), Box<dyn std::error::Error>> {
+fn test_run_nestest_automation() -> Result<(), Box<dyn std::error::Error>> {
     run_nestest_automation("roms/nes-test-roms/other/nestest.nes".to_string(), false)
 }
 
 #[test]
 #[ignore]
-fn run_nestest_automation_with_log() -> Result<(), Box<dyn std::error::Error>> {
+fn test_run_nestest_automation_with_log() -> Result<(), Box<dyn std::error::Error>> {
     run_nestest_automation("roms/nes-test-roms/other/nestest.nes".to_string(), true)
 }
 
