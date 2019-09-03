@@ -259,14 +259,19 @@ fn test_run_nestest() -> Result<(), Box<dyn std::error::Error>> {
     run_nestest("roms/nes-test-roms/other/nestest.nes".to_string())
 }
 
+
+////////////////////////////////////////////////////////////////
+/// GUIでグイグイ
+
 extern crate piston_window;
 extern crate image as im;
 
 use piston_window::*;
+use std::time::{Duration, Instant};
 
 fn main() {
-    let rom_path = "roms/nes-test-roms/other/nestest.nes".to_string();
-    // let rom_path = "roms/my_dump/mario.nes".to_string();
+    // let rom_path = "roms/nes-test-roms/other/nestest.nes".to_string();
+    let rom_path = "roms/my_dump/donkey.nes".to_string();
     // emu
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
@@ -282,7 +287,7 @@ fn main() {
     cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
 
     let mut fb = [[[0; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
-    let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT+1);
+    let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT);
 
     // windowの準備
     let scale = 2;
@@ -311,6 +316,8 @@ fn main() {
     while let Some(e) = window.next() {
         // 描画
         if let Some(_) = e.render_args() {
+            // 1frameの実行時間を控える
+            let start = Instant::now();
             // エミュを進める
             let mut total_cycle: usize = 0;
             while total_cycle < cycle_for_draw_once {
@@ -318,6 +325,8 @@ fn main() {
                 ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
                 total_cycle = total_cycle + cpu_cycle;
             }
+            let duration = start.elapsed();
+
             // 画面更新(毎回やらんほうが良さげ?)
             for j in 0..VISIBLE_SCREEN_HEIGHT {
                 for i in 0..VISIBLE_SCREEN_WIDTH {
@@ -336,6 +345,8 @@ fn main() {
                 clear([0.0; 4], g);
                 image(&texture, c.transform.scale(scale as f64, scale as f64), g);
             });
+            // windowとか
+            window.set_title(format!("[rust-nes-emulator] pc:${:04X} fps:{:.*}", cpu.pc, 1, 1000.0 / (duration.as_millis() as f32)));
         }
         // ボタン入力
         if let Some(Button::Keyboard(key)) = e.press_args() {
