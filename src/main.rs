@@ -311,6 +311,23 @@ fn main() {
     while let Some(e) = window.next() {
         // 描画
         if let Some(_) = e.render_args() {
+            // エミュを進める
+            let mut total_cycle: usize = 0;
+            while total_cycle < cycle_for_draw_once {
+                let cpu_cycle = usize::from(cpu.step(&mut cpu_sys, &ppu));
+                ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
+                total_cycle = total_cycle + cpu_cycle;
+            }
+            // 画面更新(毎回やらんほうが良さげ?)
+            for j in 0..VISIBLE_SCREEN_HEIGHT {
+                for i in 0..VISIBLE_SCREEN_WIDTH {
+                    let x = i as u32;
+                    let y = j as u32;
+                    let color = fb[j][i];
+                    canvas.put_pixel(x, y, im::Rgba([color[0], color[1], color[2], 255]));
+                }
+            }
+            // 書く
             texture.update(&mut texture_context, &canvas).unwrap();
             window.draw_2d(&e, |c, g, device| {
                 // Update texture before rendering.
@@ -337,21 +354,5 @@ fn main() {
                 _ => {},
             }
         };
-        // エミュを進める
-        let mut total_cycle: usize = 0;
-        while total_cycle < cycle_for_draw_once {
-            let cpu_cycle = usize::from(cpu.step(&mut cpu_sys, &ppu));
-            ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
-            total_cycle = total_cycle + cpu_cycle;
-        }
-        // 画面更新(毎回やらんほうが良さげ?)
-        for j in 0..VISIBLE_SCREEN_HEIGHT {
-            for i in 0..VISIBLE_SCREEN_WIDTH {
-                let x = i as u32;
-                let y = j as u32;
-                let color = fb[j][i];
-                canvas.put_pixel(x, y, im::Rgba([color[0], color[1], color[2], 255]));
-            }
-        }
     }
 }
