@@ -14,12 +14,6 @@ use std::io::Read;
 extern crate bmp;
 use bmp::{Image, Pixel};
 
-// for gui
-extern crate piston_window;
-use piston_window::*;
-extern crate image as im;
-use std::time::Instant;
-
 /// NESファイルを読み込んでカセットにロードさせます
 fn load_cassette(cassette: &mut Cassette, path: String) -> Result<(), Box<dyn std::error::Error>> {
     debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("read ines from {}", path));
@@ -265,22 +259,22 @@ fn test_run_nestest() -> Result<(), Box<dyn std::error::Error>> {
     run_nestest("roms/nes-test-roms/other/nestest.nes".to_string())
 }
 
-fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
-    // guiの準備
-    let mut window: PistonWindow =
-        WindowSettings::new("rust-nes-emulator", [256, 240])
-        .exit_on_esc(true)
-        .resizable(false)
-        .build()
-        .unwrap();
+extern crate piston_window;
+extern crate image as im;
+extern crate vecmath;
 
-    // emulatorの準備
+use piston_window::*;
+use vecmath::*;
+
+fn main() {
+    let rom_path = "roms/my_dump/mario.nes".to_string();
+    // emu
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
     let mut ppu: Ppu = Default::default();
     let mut video_sys: VideoSystem = Default::default();
 
-    load_cassette(&mut cpu_sys.cassette, rom_path)?;
+    load_cassette(&mut cpu_sys.cassette, rom_path).unwrap();
 
     cpu.reset();
     cpu_sys.reset();
@@ -289,33 +283,47 @@ fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
     cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
 
     let mut fb = [[[0; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
+    let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT+1);
 
-    // FPS平均計算用
-    const ELAPSED_N: usize = 128;
-    let mut elapsed_ptr = 0;
-    let mut elapsed_secs = [0.0; ELAPSED_N];
 
-    while let Some(event) = window.next() {
-        // 1frame分実行する
-        let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT+1);
+    // windowの準備
+    let scale = 2;
+    let width = (VISIBLE_SCREEN_WIDTH * scale) as u32;
+    let height = (VISIBLE_SCREEN_HEIGHT * scale) as u32;
 
-        let mut total_cycle: usize = 0;
-        let start = Instant::now();
-        while total_cycle < cycle_for_draw_once {
-            let cpu_cycle = usize::from(cpu.step(&mut cpu_sys, &ppu));
-            ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
-            total_cycle = total_cycle + cpu_cycle;
+    let opengl = OpenGL::V3_2;
+    let mut window: PistonWindow =
+        WindowSettings::new("rust-nes-emulator", (width, height))
+        .exit_on_esc(true)
+        .graphics_api(opengl)
+        .build()
+        .unwrap();
 
-            // debug
-            // let mut s = String::new();
-            // std::io::stdin().read_line(&mut s).unwrap();
+    let mut canvas = im::ImageBuffer::new(width, height);
+    let mut texture_context = TextureContext {
+        factory: window.factory.clone(),
+        encoder: window.factory.create_command_buffer().into()
+    };
+    let mut texture: G2dTexture = Texture::from_image(
+            &mut texture_context,
+            &canvas,
+            &TextureSettings::new()
+        ).unwrap();
+
+    while let Some(e) = window.next() {
+        // 描画
+        if let Some(_) = e.render_args() {
+            texture.update(&mut texture_context, &canvas).unwrap();
+            window.draw_2d(&e, |c, g, device| {
+                // Update texture before rendering.
+                texture_context.encoder.flush(device);
+
+                clear([0.0; 4], g);
+                image(&texture, c.transform.scale(scale as f64, scale as f64), g);
+            });
         }
-        let end = start.elapsed(); // 実行時間計測
-        elapsed_secs[elapsed_ptr] = (end.as_millis() as f32) / 1000.0;
-        elapsed_ptr = (elapsed_ptr + 1) % ELAPSED_N;
-
-        // TODO: Key入力でレジスタを叩く
-        if let Some(Button::Keyboard(key)) = event.press_args() {
+        // ボタン入力
+        if let Some(Button::Keyboard(key)) = e.press_args() {
             match key {
                 Key::J => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("a"));      cpu_sys.pad1.push_button(PadButton::A) },
                 Key::K => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("b"));      cpu_sys.pad1.push_button(PadButton::B) },
@@ -331,34 +339,21 @@ fn run_gui(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
                 _ => {},
             }
         };
-
-        // 書く
-        // TODO: パフォーマンス悪すぎ
-        window.draw_2d(&event, |c, g, _| {
-            clear([0.0, 0.0, 0.0, 1.0], g);
-            for j in 0..VISIBLE_SCREEN_HEIGHT {
-                for i in 0..VISIBLE_SCREEN_WIDTH {
-                    let x = i as u32;
-                    let y = j as u32;
-                    let color = fb[j][i];
-                    rectangle([(color[0] as f32) / 255.0, (color[1] as f32) / 255.0, (color[2] as f32) / 255.0, 1.0],
-                                [x as f64, y as f64, (x + 1) as f64, (y + 1) as f64],
-                                c.transform, g);
-                }
+        // エミュを進める
+        let mut total_cycle: usize = 0;
+        while total_cycle < cycle_for_draw_once {
+            let cpu_cycle = usize::from(cpu.step(&mut cpu_sys, &ppu));
+            ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
+            total_cycle = total_cycle + cpu_cycle;
+        }
+        // 画面更新(毎回やらんほうが良さげ?)
+        for j in 0..VISIBLE_SCREEN_HEIGHT {
+            for i in 0..VISIBLE_SCREEN_WIDTH {
+                let x = i as u32;
+                let y = j as u32;
+                let color = fb[j][i];
+                canvas.put_pixel(x, y, im::Rgba([color[0], color[1], color[2], 255]));
             }
-        });
+        }
     }
-
-    // おわりにパフォーマンスとか出してみる
-    let sum = elapsed_secs.iter().fold(0.0, |sum, a| sum + a);
-    let average = sum / (ELAPSED_N as f32);
-    let fps = 1.0 / average;
-    debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[performance] elapsed_average={}, fps_average={}", average, fps));
-
-    Ok(())
-}
-
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    run_gui("roms/nes-test-roms/other/nestest.nes".to_string())
-    // run_nestest_automation("roms/nes-test-roms/other/nestest.nes".to_string(), true)
 }
