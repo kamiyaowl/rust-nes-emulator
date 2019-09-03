@@ -261,13 +261,12 @@ fn test_run_nestest() -> Result<(), Box<dyn std::error::Error>> {
 
 extern crate piston_window;
 extern crate image as im;
-extern crate vecmath;
 
 use piston_window::*;
-use vecmath::*;
 
 fn main() {
-    let rom_path = "roms/my_dump/mario.nes".to_string();
+    let rom_path = "roms/nes-test-roms/other/nestest.nes".to_string();
+    // let rom_path = "roms/my_dump/mario.nes".to_string();
     // emu
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
@@ -284,7 +283,6 @@ fn main() {
 
     let mut fb = [[[0; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
     let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT+1);
-
 
     // windowの準備
     let scale = 2;

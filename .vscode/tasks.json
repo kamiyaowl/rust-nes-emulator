@@ -55,6 +55,18 @@
                 "$rustc"
             ],
         },
+        {
+            "type": "shell",
+            "label": "cargo run --release",
+            "command": "cargo",
+            "args": [
+                "run",
+                "--release",
+            ],
+            "problemMatcher": [
+                "$rustc"
+            ],
+        },
 
     ]
 }
