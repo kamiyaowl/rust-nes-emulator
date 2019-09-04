@@ -272,8 +272,6 @@ impl Ppu {
     /// `tile_global` - スクロールオフセット換算した、4面含めた上でのタイル位置
     /// `tile_local`  - `tile_global`を1Namespace上のタイルでの位置に変換したもの
     /// scrollなしなら上記はすべて一致するはず
-    /// 
-    /// 
     fn draw(&mut self, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
         
         let offset_y = self.current_line % PIXEL_PER_TILE;    // tile換算でのy位置から、実pixelのズレ
@@ -354,6 +352,10 @@ impl Ppu {
         // ステータスを初期化
         system.write_ppu_is_hit_sprite0(false);
         system.write_ppu_is_sprite_overflow(false);
+        // sprite描画無効化
+        if !system.read_ppu_is_write_sprite() {
+            return;
+        }
         // スプライトのサイズを事前計算
         let is_large = system.read_ppu_sprite_is_large();
         let sprite_begin_y = self.current_line;
@@ -368,7 +370,7 @@ impl Ppu {
             // yの値と等しい
             let sprite_y = u16::from(self.oam[target_oam_addr]);
             // 描画範囲内 TODO: 条件見直し
-            if (sprite_begin_y < sprite_y) && (sprite_y <= sprite_end_y) {
+            if (sprite_begin_y <= sprite_y) && (sprite_y < sprite_end_y) {
                 // sprite 0 hitフラグ
                 if sprite_index == 0 {
                     system.write_ppu_is_hit_sprite0(true);
@@ -419,7 +421,6 @@ impl Ppu {
                 // 何もしない
             },
             LineStatus::VerticalBlanking(is_first) => {
-                // Line:241ならVBLANKフラグを立てる, NMI割り込み許可あればやる
                 if is_first {
                     system.write_ppu_is_vblank(true);
                 }

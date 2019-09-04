@@ -233,6 +233,7 @@ impl SystemBus for System {
             if !is_nondestructive {
                 match index {
                     // TODO: APU
+                    0x14 => self.written_oam_dma = true, // OAM DMA
                     0x16 => self.pad1.write_strobe((data & 0x01) == 0x01), // pad1
                     0x17 => self.pad2.write_strobe((data & 0x01) == 0x01), // pad2
                     _ => {},
