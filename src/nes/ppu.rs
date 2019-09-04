@@ -251,7 +251,7 @@ impl Ppu {
         // 転送サイズ
         let transfer_size : u16 = if is_pre_transfer { OAM_DMA_COPY_SIZE_PER_PPU_STEP as u16 } else { (OAM_SIZE as u16) - u16::from(OAM_DMA_COPY_SIZE_PER_PPU_STEP) };
 
-        debugger_print!(PrintLevel::INFO, PrintFrom::PPU, format!("[dma][{}] start_offset:{}, transfer_size:{}, cpu_start_addr:{:04x}, oam_start_addr:{:02x}", if is_pre_transfer { "pre " } else { "post" }, start_offset, transfer_size, cpu_start_addr, oam_start_addr));
+        debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("[dma][{}] start_offset:{:04X}, transfer_size:{:04X}, cpu_start_addr:{:04x}, oam_start_addr:{:02x}", if is_pre_transfer { "pre " } else { "post" }, start_offset, transfer_size, cpu_start_addr, oam_start_addr));
 
         // 転送
         for offset in 0..transfer_size {
@@ -370,7 +370,7 @@ impl Ppu {
             // yの値と等しい
             let sprite_y = u16::from(self.oam[target_oam_addr]);
             // 描画範囲内 TODO: 条件見直し
-            if (sprite_begin_y <= sprite_y) && (sprite_y < sprite_end_y) {
+            if (sprite_begin_y < sprite_y) && (sprite_y < sprite_end_y) {
                 // sprite 0 hitフラグ
                 if sprite_index == 0 {
                     system.write_ppu_is_hit_sprite0(true);
@@ -379,7 +379,7 @@ impl Ppu {
                 // sprite overflow
                 if tmp_index >= SPRITE_TEMP_SIZE {
                     system.write_ppu_is_sprite_overflow(true);
-                    debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("sprite overflow"));
+                    debugger_print!(PrintLevel::INFO, PrintFrom::PPU, format!("sprite overflow"));
                 } else {
                     debug_assert!(tmp_index < SPRITE_TEMP_SIZE);
                     // tmp regに格納する
