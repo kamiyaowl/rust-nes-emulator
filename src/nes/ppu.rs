@@ -15,7 +15,7 @@ pub const RENDER_SCREEN_HEIGHT  : u16 = 262; // 0 ~ 261
 
 pub const PIXEL_PER_TILE    : u16 = 8; // 1tile=8*8
 pub const SCREEN_TILE_WIDTH : u16 = (VISIBLE_SCREEN_WIDTH  as u16) / PIXEL_PER_TILE; // 256/8=32
-pub const SCREEN_TILE_HEIGHT: u16 = (VISIBLE_SCREEN_HEIGHT as u16) / PIXEL_PER_TILE; // 240/8=31
+pub const SCREEN_TILE_HEIGHT: u16 = (VISIBLE_SCREEN_HEIGHT as u16) / PIXEL_PER_TILE; // 240/8=30
 
 /// PPU内部のOAMの容量 dmaの転送サイズと等しい
 pub const OAM_SIZE                       : usize = 0x100; 
@@ -25,6 +25,13 @@ pub const OAM_DMA_COPY_SIZE_PER_PPU_STEP : u8   = 0xaa;
 
 /// pattern1個あたりのエントリサイズ
 pub const PATTERN_TABLE_ENTRY_BYTE: u16 = 16;
+
+/// スプライトテンポラリレジスタ数
+pub const SPRITE_TEMP_SIZE: usize = 8;
+/// スプライト総数
+pub const NUM_OF_SPRITE: usize = 64;
+/// スプライト1個あたり4byte
+pub const SPRITE_SIZE  : usize = 4;
 
 #[derive(Copy, Clone)]
 pub struct Position(pub u8, pub u8);
@@ -46,7 +53,7 @@ impl Color {
 
 /// sprite.tile_idのu8から変換する
 #[derive(Copy, Clone)]
-enum TileId {
+pub enum TileId {
     /// 8*8 spriteの場合
     Normal { id: u8 },
     /// 8*16 spriteの場合
@@ -63,12 +70,12 @@ enum TileId {
     }
 }
 impl TileId {
-    fn normal(src: u8) -> TileId {
+    pub fn normal(src: u8) -> TileId {
         TileId::Normal {
             id: src
         }
     }
-    fn large(src: u8) -> TileId {
+    pub fn large(src: u8) -> TileId {
         TileId::Large {
             pattern_table_addr: (if (src & 0x01) == 0x01 { 0x1000 } else { 0x0000u16 }),
             upper_tile_id: src & 0xfe,
@@ -79,7 +86,7 @@ impl TileId {
 /// 描画に必要な補足情報とか
 /// VHP___CC
 #[derive(Copy, Clone)]
-struct SpriteAttr {
+pub struct SpriteAttr {
     /// V 垂直反転
     is_vert_flip: bool,
     /// H 垂直反転
@@ -90,7 +97,7 @@ struct SpriteAttr {
     palette_id: u8,
 }
 impl SpriteAttr {
-    fn from(src: u8) -> SpriteAttr {
+    pub fn from(src: u8) -> SpriteAttr {
         SpriteAttr {
             is_vert_flip  : (src & 0x80) == 0x80,
             is_hor_flip   : (src & 0x40) == 0x40,
@@ -101,7 +108,7 @@ impl SpriteAttr {
 }
 
 #[derive(Copy, Clone)]
-struct Sprite {
+pub struct Sprite {
     ///  y座標
     /// 実際は+1した場所に表示する
     y: u8, 
@@ -116,7 +123,7 @@ struct Sprite {
 impl Sprite {
     /// SpriteをOAMの情報から生成します。
     /// `is_large` -スプライトサイズが8*16ならtrue、8*8ならfalse
-    fn from(is_large: bool, byte0: u8, byte1: u8, byte2: u8, byte3: u8) -> Sprite {
+    pub fn from(is_large: bool, byte0: u8, byte1: u8, byte2: u8, byte3: u8) -> Sprite {
         Sprite {
             y: byte0,
             tile_id: (if is_large { TileId::large(byte1) } else { TileId::normal(byte1)}),
@@ -154,15 +161,18 @@ impl LineStatus {
 pub struct Ppu {
     /// Object Attribute Memoryの実態
     pub oam: [u8; OAM_SIZE],
+    /// 次の描画で使うスプライトを格納する
+    pub sprite_temps: [Option<Sprite>; SPRITE_TEMP_SIZE],
 
     /// 積もり積もったcpu cycle, 341を超えたらクリアして1行処理しよう
     pub cumulative_cpu_cyc: usize,
     /// 次処理するy_index
     pub current_line: u16,
 
-    /// scroll x
+    // scrollレジスタは1lineごとに更新
+    pub fetch_scroll_x: u8,
+    pub fetch_scroll_y: u8,
     pub current_scroll_x: u8,
-    /// scroll y
     pub current_scroll_y: u8,
 
     /// DMAが稼働中か示す
@@ -179,10 +189,13 @@ impl Default for Ppu {
     fn default() -> Self {
         Self {
             oam: [0; OAM_SIZE],
+            sprite_temps: [None; SPRITE_TEMP_SIZE],
             
             cumulative_cpu_cyc: 0,
             current_line: 241,
 
+            fetch_scroll_x: 0,
+            fetch_scroll_y: 0,
             current_scroll_x: 0,
             current_scroll_y: 0,
 
@@ -196,10 +209,13 @@ impl Default for Ppu {
 impl EmulateControl for Ppu {
     fn reset(&mut self) {
         self.oam = [0; OAM_SIZE];
+        self.sprite_temps = [None; SPRITE_TEMP_SIZE];
 
         self.current_line = 241;
         self.cumulative_cpu_cyc = 0;
 
+        self.fetch_scroll_x = 0;
+        self.fetch_scroll_y = 0;
         self.current_scroll_x = 0;
         self.current_scroll_y = 0;
 
@@ -258,27 +274,20 @@ impl Ppu {
     /// scrollなしなら上記はすべて一致するはず
     /// 
     /// 
-    fn draw(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
-        // tile換算でのy位置から、実pixelのズレ
-        let offset_y = self.current_line % PIXEL_PER_TILE;
-
-        // オフセットなしのtile換算での現在位置
-        let tile_base_y = self.current_line / PIXEL_PER_TILE;
-        // tile換算でのy絶対座標
-        let tile_global_y = (tile_base_y + u16::from(self.current_scroll_y)) % (SCREEN_TILE_HEIGHT * 2);
-        // 1 tile内での絶対座標
-        let tile_local_y = tile_global_y % SCREEN_TILE_HEIGHT;
+    fn draw(&mut self, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
+        
+        let offset_y = self.current_line % PIXEL_PER_TILE;    // tile換算でのy位置から、実pixelのズレ
+        let tile_base_y = self.current_line / PIXEL_PER_TILE; // オフセットなしのtile換算での現在位置
+        let tile_global_y = (tile_base_y + u16::from(self.current_scroll_y)) % (SCREEN_TILE_HEIGHT * 2); // tile換算でのy絶対座標
+        let tile_local_y = tile_global_y % SCREEN_TILE_HEIGHT; // 1 tile内での絶対座標
         // 4面ある内、下側に差し掛かっていたらfalse
         let is_nametable_position_top = tile_global_y < SCREEN_TILE_HEIGHT;
 
         // オフセットなしのtile換算での現在位置 (x方向はtileごとにループ)
         for tile_base_x in 0..SCREEN_TILE_WIDTH {
-            // 4tile換算でのx絶対座標
-            let tile_global_x = (tile_base_x + u16::from(self.current_scroll_x)) % (SCREEN_TILE_WIDTH * 2);
-            // 1 tile内での絶対座標
-            let tile_local_x = tile_global_x % SCREEN_TILE_WIDTH;
-            // 4面ある内、右側にある場合false
-            let is_nametable_position_left = tile_global_x < SCREEN_TILE_WIDTH;
+            let tile_global_x = (tile_base_x + u16::from(self.current_scroll_x)) % (SCREEN_TILE_WIDTH * 2); // 4tile換算でのx絶対座標
+            let tile_local_x = tile_global_x % SCREEN_TILE_WIDTH; // 1 tile内での絶対座標
+            let is_nametable_position_left = tile_global_x < SCREEN_TILE_WIDTH; // 4面ある内、右側にある場合false
 
             // 4面あるうちのどれかがわかるので、該当する面のベースアドレスを返します
             let target_nametable_base_addr = 
@@ -286,24 +295,21 @@ impl Ppu {
                 (if is_nametable_position_left { 0x0000 } else { 0x0400 }) + // 左右面の広域offset
                 (if is_nametable_position_top  { 0x0000 } else { 0x0800 });  // 上下面の広域offset
             // attribute tableはNametableの後32byteにいる, 2*2tileで1attrなので半分に使用
-            let attribute_addr = target_nametable_base_addr + ATTRIBUTE_TABLE_OFFSET + (tile_local_y * SCREEN_TILE_WIDTH / 2) + (tile_local_x / 2);
+            let attribute_addr = target_nametable_base_addr + ATTRIBUTE_TABLE_OFFSET; // TODO:多分計算がおかしい
             // NameTable内でのOffsetを加算すれば完成
             let nametable_addr = target_nametable_base_addr + (tile_local_y * SCREEN_TILE_WIDTH) + tile_local_x;
-
-            debugger_print!(PrintLevel::HIDDEN, PrintFrom::PPU, format!("[line:{}(offset:{})] base=({}, {}), tile=({}, {}), tile_local=({}, {})", self.current_line, offset_y, tile_base_x, tile_base_y, tile_global_x, tile_global_y, tile_local_x, tile_local_y));
-            debugger_print!(PrintLevel::HIDDEN, PrintFrom::PPU, format!("[line:{}(offset:{})] target_nametable_base_addr={:04x}, attribute_addr={:04x}, nametable_addr={:04x}", self.current_line, offset_y, target_nametable_base_addr, attribute_addr, nametable_addr));
 
             // attribute読み出し, BGパレット選択に使う
             let raw_attribute = video_system.read_u8(&mut system.cassette, attribute_addr);
             // TODO: palette選択がおかしい
-            let bg_palette_id = 0u8;
-            // let bg_palette_id = match (tile_local_x & 0x01, tile_local_y & 0x01) {
-            //     (0, 0) => (raw_attribute >> 0) & 0x03, // top left
-            //     (1, 0) => (raw_attribute >> 2) & 0x03, // top right
-            //     (0, 1) => (raw_attribute >> 4) & 0x03, // bottom left
-            //     (1, 1) => (raw_attribute >> 6) & 0x03, // bottom right
-            //     _ => panic!("invalid bg attribute"),
-            // };
+            // let bg_palette_id = 0u8;
+            let bg_palette_id = match (tile_local_x & 0x01, tile_local_y & 0x01) {
+                (0, 0) => (raw_attribute >> 0) & 0x03, // top left
+                (1, 0) => (raw_attribute >> 2) & 0x03, // top right
+                (0, 1) => (raw_attribute >> 4) & 0x03, // bottom left
+                (1, 1) => (raw_attribute >> 6) & 0x03, // bottom right
+                _ => panic!("invalid bg attribute"),
+            };
             // Nametableからtile_id読み出し->pattern tableからデータ構築
             let bg_tile_id = u16::from(video_system.read_u8(&mut system.cassette, nametable_addr));
             // pattern_table 1entryは16byte, 0行目だったら0,8番目のデータを使えば良い
@@ -342,9 +348,53 @@ impl Ppu {
         }
     }
 
-    /// 341cyc溜まったときの処理
+    /// OAMを探索して次の描画で使うスプライトをレジスタにフェッチします
+    /// 8個を超えるとOverflowフラグを立てる
+    fn fetch_sprite(&mut self, system: &mut System) {
+        // ステータスを初期化
+        system.write_ppu_is_hit_sprite0(false);
+        system.write_ppu_is_sprite_overflow(false);
+        // スプライトのサイズを事前計算
+        let is_large = system.read_ppu_sprite_is_large();
+        let sprite_begin_y = self.current_line;
+        let sprite_height  = if is_large { 16 } else { 8 };
+        let sprite_end_y   = sprite_begin_y + sprite_height;
+        // とりあえず全部クリアしておく
+        self.sprite_temps = [None; SPRITE_TEMP_SIZE];
+        // current_line + 1がyと一致するやつを順番に集める(条件分がよりでかいにしてある)
+        let mut tmp_index = 0;
+        for sprite_index in 0..NUM_OF_SPRITE {
+            let target_oam_addr = sprite_index * SPRITE_SIZE;
+            // yの値と等しい
+            let sprite_y = u16::from(self.oam[target_oam_addr]);
+            // 描画範囲内 TODO: 条件見直し
+            if (sprite_begin_y < sprite_y) && (sprite_y <= sprite_end_y) {
+                // sprite 0 hitフラグ
+                if sprite_index == 0 {
+                    system.write_ppu_is_hit_sprite0(true);
+                    debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("sprite zero hit"));
+                }
+                // sprite overflow
+                if tmp_index >= SPRITE_TEMP_SIZE {
+                    system.write_ppu_is_sprite_overflow(true);
+                    debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("sprite overflow"));
+                } else {
+                    debug_assert!(tmp_index < SPRITE_TEMP_SIZE);
+                    // tmp regに格納する
+                    self.sprite_temps[tmp_index] = Some(Sprite::from(is_large, self.oam[target_oam_addr], self.oam[target_oam_addr + 1], self.oam[target_oam_addr + 2], self.oam[target_oam_addr + 3]));
+                    tmp_index = tmp_index + 1;
+                }
+            }
+        }
+    }
+
+    /// 1行描画します
+    /// 341cyc溜まったときに呼び出されることを期待
     fn update_line(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
         debugger_print!(PrintLevel::HIDDEN, PrintFrom::PPU, format!("[step] line:{}", self.current_line));
+        // scroll更新
+        self.current_scroll_x = self.fetch_scroll_x;
+        self.current_scroll_y = self.fetch_scroll_y;
         // OAM DMA
         if self.is_dma_running {
             // 前回のOAM DMAのこりをやる
@@ -357,12 +407,13 @@ impl Ppu {
             self.dma_oam_dst_addr = system.read_ppu_oam_addr();
             self.run_dma(system, true);
         }
-
         // 行の更新
         match LineStatus::from(self.current_line) {
             LineStatus::Visible => {
+                // sprite探索
+                self.fetch_sprite(system);
                 // 1行描く
-                self.draw(cpu, system, video_system, fb);
+                self.draw(system, video_system, fb);
             },
             LineStatus::PostRender => {
                 // 何もしない
@@ -381,6 +432,7 @@ impl Ppu {
             LineStatus::PreRender => {
                 // VBLANKフラグを下ろす
                 system.write_ppu_is_vblank(false);
+
             },
         };
         // 行カウンタを更新して終わり
@@ -397,8 +449,8 @@ impl Ppu {
         
         // PPU_SCROLL書き込み
         let (_, scroll_x, scroll_y) = system.read_ppu_scroll();
-        self.current_scroll_x = scroll_x;
-        self.current_scroll_y = scroll_y;
+        self.fetch_scroll_x = scroll_x;
+        self.fetch_scroll_y = scroll_y;
 
         // PPU_ADDR, PPU_DATA読み書きに答えてあげる
         let (_ , ppu_addr)          = system.read_ppu_addr();
