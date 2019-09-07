@@ -372,8 +372,8 @@ impl Ppu {
                                 },
                             };
                             // x,y flipを考慮してtile上のデータ位置を決定する
-                            let tile_offset_x: usize = if sprite.attr.is_hor_flip  { sprite_offset_x } else { SPRITE_WIDTH - 1 - sprite_offset_x };
-                            let tile_offset_y: usize = if sprite.attr.is_vert_flip { sprite_offset_y % SPRITE_NORMAL_HEIGHT } else { SPRITE_NORMAL_HEIGHT - (sprite_offset_y % SPRITE_NORMAL_HEIGHT) };
+                            let tile_offset_x: usize = if !sprite.attr.is_hor_flip  { sprite_offset_x } else { SPRITE_WIDTH - 1 - sprite_offset_x };
+                            let tile_offset_y: usize = if !sprite.attr.is_vert_flip { sprite_offset_y % SPRITE_NORMAL_HEIGHT } else { SPRITE_NORMAL_HEIGHT - 1 - (sprite_offset_y % SPRITE_NORMAL_HEIGHT) };
                             // tile addrを計算する
                             let sprite_pattern_table_base_addr  = u16::from(sprite_pattern_table_addr) + (u16::from(sprite_tile_id) * PATTERN_TABLE_ENTRY_BYTE);
                             let sprite_pattern_table_addr_lower = sprite_pattern_table_base_addr + (tile_offset_y as u16);
@@ -443,7 +443,7 @@ impl Ppu {
             let sprite_y = u16::from(self.oam[target_oam_addr]);
             let sprite_end_y   = sprite_y + sprite_height;
             // 描画範囲内(y+1)~(y+1+ 8or16)
-            if (sprite_y < sprite_begin_y) && (sprite_begin_y < sprite_end_y) {
+            if (sprite_y < sprite_begin_y) && (sprite_begin_y <= sprite_end_y) {
                 // sprite 0 hitフラグ(1lineごとに処理しているので先に立ててしまう)
                 if sprite_index == 0 {
                     system.write_ppu_is_hit_sprite0(true);

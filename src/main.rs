@@ -272,8 +272,8 @@ use std::time::Instant;
 fn main() {
     // let rom_path = "roms/nes-test-roms/other/nestest.nes".to_string();
     // let rom_path = "roms/nes-test-roms/scrolltest/sssscroll.nes".to_string();
-    // let rom_path = "roms/my_dump/mario.nes".to_string();
-    let rom_path = "roms/my_dump/donkey.nes".to_string();
+    let rom_path = "roms/my_dump/mario.nes".to_string();
+    // let rom_path = "roms/my_dump/donkey.nes".to_string();
     // emu
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
