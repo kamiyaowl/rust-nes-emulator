@@ -341,7 +341,7 @@ impl Ppu {
                 // Spriteを探索する (y位置的に描画しなければならないSpriteは事前に読み込み済)
                 let mut sprite_palette_data_back:  Option<u8> = None; // 背面
                 let mut sprite_palette_data_front: Option<u8> = None; // 全面
-                'draw_sprite: for sprite_index in 0..NUM_OF_SPRITE {
+                'draw_sprite: for sprite_index in 0..SPRITE_TEMP_SIZE {
                     if let Some(sprite) = self.sprite_temps[sprite_index] {
                         // めんどいのでusizeにしておく
                         let sprite_x  = usize::from(sprite.x);
