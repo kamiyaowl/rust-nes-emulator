@@ -176,14 +176,14 @@ fn run_nestest(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
             total_cycle = total_cycle + cpu_cycle;
         }
         match i {
-            4 => {
-                // 4frameで起動画像が出るはず
+            6 => {
+                // 起動画像が出るはず
                 debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[frame={}] validate normal menu screenshot", i));
                 print_framebuffer(&fb);
                 save_framebuffer(&fb, "nestest_normal_menu.bmp".to_string());
                 let _ = validate_framebuffer(&fb, "screenshot/nestest_normal_menu.bmp".to_string());
             },
-            5 => {
+            7 => {
                 // テスト開始ボタン押させる
                 debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[frame={}] press start button", i));
                 cpu_sys.pad1.push_button(PadButton::Start);
@@ -270,9 +270,9 @@ use piston_window::*;
 use std::time::{Duration, Instant};
 
 fn main() {
-    // let rom_path = "roms/nes-test-roms/other/nestest.nes".to_string();
+    let rom_path = "roms/nes-test-roms/other/nestest.nes".to_string();
     // let rom_path = "roms/nes-test-roms/scrolltest/sssscroll.nes".to_string();
-    let rom_path = "roms/my_dump/mario.nes".to_string();
+    // let rom_path = "roms/my_dump/mario.nes".to_string();
     // let rom_path = "roms/my_dump/donkey.nes".to_string();
     // emu
     let mut cpu: Cpu = Default::default();

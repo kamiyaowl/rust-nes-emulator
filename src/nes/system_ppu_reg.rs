@@ -14,9 +14,9 @@ impl System {
     pub fn read_ppu_is_master(&self) -> bool {
         (self.ppu_reg[0] & 0x40u8) == 0x40u8
     }
-    /// 8*16 spriteならtrue,8*8ならfalse
-    pub fn read_ppu_sprite_is_large(&self) -> bool {
-        (self.ppu_reg[0] & 0x20u8) == 0x20u8
+    /// 8もしくは16
+    pub fn read_ppu_sprite_height(&self) -> u8 {
+        if (self.ppu_reg[0] & 0x20u8) == 0x20u8 { 16 } else { 8 }
     }
     pub fn read_ppu_bg_pattern_table_addr(&self) -> u16 {
         if (self.ppu_reg[0] & 0x10u8) == 0x10u8 { 0x1000u16 } else { 0x0000u16 }
@@ -47,11 +47,11 @@ impl System {
         (self.ppu_reg[1] & 0x08u8) == 0x08u8
     }
     /// 左端8pxでスプライトクリッピング
-    pub fn read_ppu_is_clip_sprite_at_leftend(&self) -> bool {
+    pub fn read_ppu_is_clip_sprite_leftend(&self) -> bool {
         (self.ppu_reg[1] & 0x04u8) == 0x04u8
     }
     /// 左端8pxでbgクリッピング
-    pub fn read_ppu_is_clip_bg_at_leftend(&self) -> bool {
+    pub fn read_ppu_is_clip_bg_leftend(&self) -> bool {
         (self.ppu_reg[1] & 0x02u8) == 0x02u8
     }
     pub fn read_is_monochrome(&self) -> bool {

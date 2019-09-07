@@ -32,6 +32,11 @@ pub const SPRITE_TEMP_SIZE: usize = 8;
 pub const NUM_OF_SPRITE: usize = 64;
 /// スプライト1個あたり4byte
 pub const SPRITE_SIZE  : usize = 4;
+/// スプライトの横幅
+pub const SPRITE_WIDTH : usize = 8;
+pub const SPRITE_NORMAL_HEIGHT : usize = 8;
+pub const SPRITE_LARGE_HEIGHT  : usize = 16;
+
 
 #[derive(Copy, Clone)]
 pub struct Position(pub u8, pub u8);
@@ -331,15 +336,64 @@ impl Ppu {
                     (PALETTE_TABLE_BASE_ADDR + PALETTE_BG_OFFSET) +   // 0x3f00
                     (u16::from(bg_palette_id) * PALETTE_ENTRY_SIZE) + // attributeでBG PAlette0~3選択
                     u16::from(bg_palette_offset);                     // palette内の色選択
-                let palette_data = video_system.read_u8(&mut system.cassette, bg_palette_addr);
+                // BG左端8pixel clipping
+                // TODO: #36 クリッピングが微妙に挙動が変なので治す
+                // let is_bg_clipping = system.read_ppu_is_clip_bg_leftend() && (pixel_x < 8);
+                // let bg_palette_data: Option<u8> = if is_bg_clipping { None } else { Some(video_system.read_u8(&mut system.cassette, bg_palette_addr)) };
+                let bg_palette_data: Option<u8> = Some(video_system.read_u8(&mut system.cassette, bg_palette_addr));
+
+                // Spriteを探索する (y位置的に描画しなければならないSpriteは事前に読み込み済)
+                let mut sprite_palette_data_back:  Option<u8> = None; // 背面
+                let mut sprite_palette_data_front: Option<u8> = None; // 全面
+                'draw_sprite: for sprite_index in 0..NUM_OF_SPRITE {
+                    if let Some(sprite) = self.sprite_temps[sprite_index] {
+                        // めんんどいのでusizeにしておく
+                        let sprite_x = usize::from(sprite.x);
+                        let sprite_y = usize::from(sprite.y);
+                        // 左端sprite clippingが有効な場合表示しない
+                        let is_sprite_clipping = system.read_ppu_is_clip_sprite_leftend() && (sprite_x < 8);
+                        // X位置が描画範囲の場合
+                        if !is_sprite_clipping && (pixel_x <= sprite_x) && (sprite_x < usize::from(pixel_x + SPRITE_WIDTH)) {
+                            // sprite上での相対座標
+                            let sprite_offset_x: usize = pixel_x - sprite_x; // 0-7
+                            let sprite_offset_y: usize = pixel_y - sprite_y; // 0-7 or 0-15 (largeの場合, tile参照前に0-7に詰める)
+                            debug_assert!(sprite_offset_x < SPRITE_WIDTH);
+                            debug_assert!(sprite_offset_y < usize::from(system.read_ppu_sprite_height()));
+
+                            // pattern table addrと、tile idはサイズで決まる
+                            let (sprite_pattern_table_addr, tile_id): (u16, u8) = match sprite.tile_id {
+                                TileId::Normal{ id } => (system.read_ppu_sprite_pattern_table_addr(), id),
+                                // 8*16 spriteなので上下でidが別れている
+                                TileId::Large{ pattern_table_addr, upper_tile_id, lower_tile_id } => {
+                                    let is_upper = sprite_offset_y < SPRITE_NORMAL_HEIGHT; // 上8pixelの座標?
+                                    let is_vflip = sprite.attr.is_vert_flip; // 上下反転してる?
+                                    let id = match (is_upper, is_vflip) {
+                                        (true , false) => upper_tile_id, // 描画座標は上8pixel、Flipなし
+                                        (false, false) => lower_tile_id, // 描画座標は下8pixel、Flipなし
+                                        (true , true ) => lower_tile_id, // 描画座標は上8pixel、Flipあり
+                                        (false, true ) => upper_tile_id, // 描画座標は下8pixel、Flipあり
+                                    };
+                                    (pattern_table_addr, id)
+                                },
+                            };
+
+                            // Sprite Overwrapは先にある方を採用するのでbreakしてよい
+                            break 'draw_sprite;
+                        }
+                    } else {
+                        // sprite tempsは前詰めなのでもう処理はいらない
+                        break 'draw_sprite;
+                    }
+                }
 
                 // 書き込む
-                let c = Color::from(palette_data);
-                fb[pixel_y][pixel_x][0] = c.0;
-                fb[pixel_y][pixel_x][1] = c.1;
-                fb[pixel_y][pixel_x][2] = c.2;
-
                 // TODO: #6 Spriteとデータを合成する
+                if let Some(bg) = bg_palette_data {
+                    let c = Color::from(bg);
+                    fb[pixel_y][pixel_x][0] = c.0;
+                    fb[pixel_y][pixel_x][1] = c.1;
+                    fb[pixel_y][pixel_x][2] = c.2;
+                }
 
             }
             
@@ -357,9 +411,9 @@ impl Ppu {
             return;
         }
         // スプライトのサイズを事前計算
-        let is_large = system.read_ppu_sprite_is_large();
         let sprite_begin_y = self.current_line;
-        let sprite_height  = if is_large { 16 } else { 8 };
+        let sprite_height  = u16::from(system.read_ppu_sprite_height());
+        let is_large = sprite_height == 16;
         let sprite_end_y   = sprite_begin_y + sprite_height;
         // とりあえず全部クリアしておく
         self.sprite_temps = [None; SPRITE_TEMP_SIZE];
@@ -369,9 +423,9 @@ impl Ppu {
             let target_oam_addr = sprite_index * SPRITE_SIZE;
             // yの値と等しい
             let sprite_y = u16::from(self.oam[target_oam_addr]);
-            // 描画範囲内 TODO: 条件見直し
+            // 描画範囲内(y+1)~(y+1+ 8or16)
             if (sprite_begin_y < sprite_y) && (sprite_y < sprite_end_y) {
-                // sprite 0 hitフラグ
+                // sprite 0 hitフラグ(1lineごとに処理しているので先に立ててしまう)
                 if sprite_index == 0 {
                     system.write_ppu_is_hit_sprite0(true);
                     debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("sprite zero hit"));
