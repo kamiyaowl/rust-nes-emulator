@@ -7,18 +7,14 @@ edition = "2018"
 [features]
 default = []
 
+[lib]
+path = "src/lib.rs"
+name = "rust_nes_emulator"
+
 [dependencies]
 lazy_static = "1.4.0"
 bmp = "*"
 image = "0.22.1"
-piston_window = "0.103.0"
-find_folder = "0.3.0"
-piston-ai_behavior = "0.31.0"
-piston2d-sprite = "0.57.0"
-piston2d-drag_controller = "0.29.0"
-piston2d-deform_grid = "0.4.0"
-gfx = "0.17.1"
-gfx_device_gl = "0.15.0"
-camera_controllers = "0.31.0"
-rand = "0.6.0"
-shader_version = "0.6.0"
+gfx = "0.18.1"
+gfx_device_gl = "0.16.2"
+piston_window = "0.104.0"
