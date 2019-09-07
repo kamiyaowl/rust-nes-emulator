@@ -304,8 +304,6 @@ impl Ppu {
 
             // attribute読み出し, BGパレット選択に使う
             let raw_attribute = video_system.read_u8(&mut system.cassette, attribute_addr);
-            // TODO: palette選択がおかしい
-            // let bg_palette_id = 0u8;
             let bg_palette_id = match (tile_local_x & 0x01, tile_local_y & 0x01) {
                 (0, 0) => (raw_attribute >> 0) & 0x03, // top left
                 (1, 0) => (raw_attribute >> 2) & 0x03, // top right
@@ -313,6 +311,7 @@ impl Ppu {
                 (1, 1) => (raw_attribute >> 6) & 0x03, // bottom right
                 _ => panic!("invalid bg attribute"),
             };
+
             // Nametableからtile_id読み出し->pattern tableからデータ構築
             let bg_tile_id = u16::from(video_system.read_u8(&mut system.cassette, nametable_addr));
             // pattern_table 1entryは16byte, 0行目だったら0,8番目のデータを使えば良い
@@ -321,8 +320,6 @@ impl Ppu {
             let bg_pattern_table_addr_upper = bg_pattern_table_addr_lower + 8;
             let bg_data_lower = video_system.read_u8(&mut system.cassette, bg_pattern_table_addr_lower);
             let bg_data_upper = video_system.read_u8(&mut system.cassette, bg_pattern_table_addr_upper);
-
-            // TODO: #6 Spriteを検索してデータを確定する
 
             // 描画するか
             for i in 0..PIXEL_PER_TILE {
@@ -386,15 +383,15 @@ impl Ppu {
                     }
                 }
 
-                // 書き込む
-                // TODO: #6 Spriteとデータを合成する
-                if let Some(bg) = bg_palette_data {
-                    let c = Color::from(bg);
-                    fb[pixel_y][pixel_x][0] = c.0;
-                    fb[pixel_y][pixel_x][1] = c.1;
-                    fb[pixel_y][pixel_x][2] = c.2;
+                // 前後関係考慮して書き込む
+                for palette_data in &[sprite_palette_data_back, bg_palette_data, sprite_palette_data_front] {
+                    if let Some(color_index) = palette_data {
+                        let c = Color::from(*color_index);
+                        fb[pixel_y][pixel_x][0] = c.0;
+                        fb[pixel_y][pixel_x][1] = c.1;
+                        fb[pixel_y][pixel_x][2] = c.2;
+                    }
                 }
-
             }
             
         }
