@@ -395,9 +395,6 @@ impl Ppu {
                             } else {
                                 sprite_palette_data_back = Some(sprite_palette_data);
                             }
-
-                            // Sprite Overwrapは先にある方を採用するのでbreakしてよい?
-                            // break 'draw_sprite;
                         }
                     } else {
                         // sprite tempsは前詰めなのでもう処理はいらない
