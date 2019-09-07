@@ -38,6 +38,8 @@ impl System {
         }
     }
     /*************************** 0x2001: PPUMASK ***************************/
+    // 論理が逆っぽいね。0がhide
+
     /// sprite描画有効判定
     pub fn read_ppu_is_write_sprite(&self) -> bool {
         (self.ppu_reg[1] & 0x10u8) == 0x10u8
@@ -48,14 +50,14 @@ impl System {
     }
     /// 左端8pxでスプライトクリッピング
     pub fn read_ppu_is_clip_sprite_leftend(&self) -> bool {
-        (self.ppu_reg[1] & 0x04u8) == 0x04u8
+        (self.ppu_reg[1] & 0x04u8) != 0x04u8
     }
     /// 左端8pxでbgクリッピング
     pub fn read_ppu_is_clip_bg_leftend(&self) -> bool {
-        (self.ppu_reg[1] & 0x02u8) == 0x02u8
+        (self.ppu_reg[1] & 0x02u8) != 0x02u8
     }
     pub fn read_is_monochrome(&self) -> bool {
-        (self.ppu_reg[1] & 0x01u8) == 0x01u8
+        (self.ppu_reg[1] & 0x01u8) != 0x01u8
     }
     /*************************** 0x2002: PPU_STATUS ***************************/
     /// VBlankフラグをみて、NMI割り込みしようね

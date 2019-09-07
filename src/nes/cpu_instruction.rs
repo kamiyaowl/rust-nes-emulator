@@ -1351,8 +1351,6 @@ impl Cpu {
 
                 1 + cyc
             },            
-            
-            _ => panic!("unimplemented opcode. inst_pc:{:04X} inst_code:{:02X} [{:?} {:?}]", inst_pc, inst_code, opcode, mode),
         }
     }
 }
