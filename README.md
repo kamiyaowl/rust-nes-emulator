@@ -40,7 +40,7 @@ rustc 1.37.0 required
 
 ```
 $ docker-compose run build-release
-$ ./target/release/rust-nes-emulator     # Other Platform
+$ ./target/release/rust-nes-emulator
 ```
 
 ## Test ROMs

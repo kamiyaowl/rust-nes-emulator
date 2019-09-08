@@ -289,14 +289,16 @@ impl Ppu {
         
         let offset_y = self.current_line % PIXEL_PER_TILE;    // tile換算でのy位置から、実pixelのズレ
         let tile_base_y = self.current_line / PIXEL_PER_TILE; // オフセットなしのtile換算での現在位置
-        let tile_global_y = (tile_base_y + u16::from(self.current_scroll_y)) % (SCREEN_TILE_HEIGHT * 2); // tile換算でのy絶対座標
+        // scroll regはtile換算でずらす
+        let tile_global_y = (tile_base_y + u16::from(self.current_scroll_y) / PIXEL_PER_TILE) % (SCREEN_TILE_HEIGHT * 2); // tile換算でのy絶対座標
         let tile_local_y = tile_global_y % SCREEN_TILE_HEIGHT; // 1 tile内での絶対座標
         // 4面ある内、下側に差し掛かっていたらfalse
         let is_nametable_position_top = tile_global_y < SCREEN_TILE_HEIGHT;
 
         // オフセットなしのtile換算での現在位置 (x方向はtileごとにループ)
         for tile_base_x in 0..SCREEN_TILE_WIDTH {
-            let tile_global_x = (tile_base_x + u16::from(self.current_scroll_x)) % (SCREEN_TILE_WIDTH * 2); // 4tile換算でのx絶対座標
+            // scroll regはtile換算でずらす
+            let tile_global_x = (tile_base_x + u16::from(self.current_scroll_x) / PIXEL_PER_TILE) % (SCREEN_TILE_WIDTH * 2); // 4tile換算でのx絶対座標
             let tile_local_x = tile_global_x % SCREEN_TILE_WIDTH; // 1 tile内での絶対座標
             let is_nametable_position_left = tile_global_x < SCREEN_TILE_WIDTH; // 4面ある内、右側にある場合false
 
@@ -341,6 +343,9 @@ impl Ppu {
                 let pixel_x = usize::from((tile_base_x * PIXEL_PER_TILE) + i);
                 let pixel_y = usize::from(self.current_line);
 
+                // 画面上の座標は、scrollでずれた分を考慮 TODO: #37
+                // let scroll_offset_x = usize::from(self.current_scroll_x) % usize::from(PIXEL_PER_TILE);
+                // let scroll_offset_y = usize::from(self.current_scroll_y) % usize::from(PIXEL_PER_TILE);
                 // bg作る
                 let bg_palette_offset = (((bg_data_upper >> (7 - i)) & 0x01) << 1) | ((bg_data_lower >> (7 - i)) & 0x01);
                 let bg_palette_addr = 
@@ -493,7 +498,7 @@ impl Ppu {
         }
     }
 
-    /// 1行描画します
+    /// 1行ごとに色々更新する処理です
     /// 341cyc溜まったときに呼び出されることを期待
     fn update_line(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
         debugger_print!(PrintLevel::HIDDEN, PrintFrom::PPU, format!("[step] line:{}", self.current_line));
@@ -512,6 +517,7 @@ impl Ppu {
             self.dma_oam_dst_addr = system.read_ppu_oam_addr();
             self.run_dma(system, true);
         }
+
         // 行の更新
         match LineStatus::from(self.current_line) {
             LineStatus::Visible => {
