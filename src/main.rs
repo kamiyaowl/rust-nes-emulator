@@ -321,6 +321,8 @@ fn main() {
             &canvas,
             &TextureSettings::new()
         ).unwrap();
+    // グリッド表示有無
+    let mut is_show_grid = true;
 
     while let Some(e) = window.next() {
         // 描画
@@ -354,8 +356,15 @@ fn main() {
                 clear([0.0; 4], g);
                 image(&texture, c.transform.scale(scale as f64, scale as f64), g);
                 // debug用にtile境界線とか入れる
-                if cfg!(debug_assertions) {
-
+                if is_show_grid {
+                    for i in 0..SCREEN_TILE_WIDTH {
+                        let x = (PIXEL_PER_TILE * i) as f64 * (scale as f64);
+                        line([1.0, 1.0, 1.0, 1.0], 0.5, [x, 0.0, x, (scale * VISIBLE_SCREEN_HEIGHT) as f64], c.transform, g);
+                    }
+                    for j in 0..SCREEN_TILE_HEIGHT {
+                        let y = (PIXEL_PER_TILE * j) as f64 * (scale as f64);
+                        line([1.0, 1.0, 1.0, 1.0], 0.5, [0.0, y, (scale * VISIBLE_SCREEN_WIDTH) as f64, y], c.transform, g);
+                    }
                 }
             });
             // windowとか
@@ -382,6 +391,10 @@ fn main() {
                 Key::R => {
                     debugger_disable_fileout!();
                 },
+                Key::G => {
+                    is_show_grid = !is_show_grid;
+                    debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("grid: {}", if is_show_grid { "visible"} else { "hidden"}));
+                }
                 _ => {},
             }
         };
