@@ -7,7 +7,7 @@ jobs:
     steps:
       - run:
           name: Install Dependencies
-          command: apt install libgtk-3-dev
+          command: sudo apt install -y libgtk-3-dev
       - checkout
       - run: 
           name: Pull Submodule
