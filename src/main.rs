@@ -183,7 +183,7 @@ fn run_nestest(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
             total_cycle = total_cycle + cpu_cycle;
         }
         match i {
-            6 => {
+            4 => {
                 // 起動画像が出るはず
                 debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[frame={}] validate normal menu screenshot", i));
                 print_framebuffer(&fb);
@@ -196,6 +196,7 @@ fn run_nestest(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
                 cpu_sys.pad1.push_button(PadButton::Start);
             },
             25 => {
+                cpu_sys.pad1.release_button(PadButton::Start);
                 debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[frame={}] validate normal test pass screenshot", i));
                 print_framebuffer(&fb);
                 save_framebuffer(&fb, "nestest_normal.bmp".to_string());
@@ -206,18 +207,19 @@ fn run_nestest(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
                 debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[frame={}] press select button", i));
                 cpu_sys.pad1.push_button(PadButton::Select);
             },
-            29 => {
+            30 => {
                 debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[frame={}] validate extra menu screenshot", i));
                 print_framebuffer(&fb);
                 save_framebuffer(&fb, "nestest_extra_menu.bmp".to_string());
                 let _ = validate_framebuffer(&fb, "screenshot/nestest_extra_menu.bmp".to_string());
             },
-            30 => {
+            35 => {
                 // テスト開始ボタン押させる
                 debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[frame={}] press start button", i));
                 cpu_sys.pad1.push_button(PadButton::Start);
             },
-            50 => {
+            55 => {
+                cpu_sys.pad1.release_button(PadButton::Start);
                 debugger_print!(PrintLevel::INFO, PrintFrom::TEST, format!("[frame={}] validate extra test pass screenshot", i));
                 print_framebuffer(&fb);
                 save_framebuffer(&fb, "nestest_extra.bmp".to_string());
