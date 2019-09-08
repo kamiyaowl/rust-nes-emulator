@@ -373,28 +373,50 @@ fn main() {
             window.set_title(format!("[rust-nes-emulator] pc:${:04X} emu_fps:{:.*}", cpu.pc, 1, emulate_fps));
         }
         // ボタン入力
+        if let Some(Button::Keyboard(key)) = e.release_args() {
+            match key {
+                Key::J => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("release a"));      cpu_sys.pad1.release_button(PadButton::A) },
+                Key::K => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("release b"));      cpu_sys.pad1.release_button(PadButton::B) },
+                Key::U => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("release select")); cpu_sys.pad1.release_button(PadButton::Select) },
+                Key::I => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("release start"));  cpu_sys.pad1.release_button(PadButton::Start) },
+                Key::W => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("release up"));     cpu_sys.pad1.release_button(PadButton::Up) },
+                Key::S => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("release down"));   cpu_sys.pad1.release_button(PadButton::Down) },
+                Key::A => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("release left"));   cpu_sys.pad1.release_button(PadButton::Left) },
+                Key::D => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("release right"));  cpu_sys.pad1.release_button(PadButton::Right) },
+                _ => {},
+            }
+        }
         if let Some(Button::Keyboard(key)) = e.press_args() {
             match key {
-                Key::J => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("a"));      cpu_sys.pad1.push_button(PadButton::A) },
-                Key::K => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("b"));      cpu_sys.pad1.push_button(PadButton::B) },
-                Key::U => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("select")); cpu_sys.pad1.push_button(PadButton::Select) },
-                Key::I => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("start"));  cpu_sys.pad1.push_button(PadButton::Start) },
-                Key::W => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("up"));     cpu_sys.pad1.push_button(PadButton::Up) },
-                Key::S => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("down"));   cpu_sys.pad1.push_button(PadButton::Down) },
-                Key::A => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("left"));   cpu_sys.pad1.push_button(PadButton::Left) },
-                Key::D => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("right"));  cpu_sys.pad1.push_button(PadButton::Right) },
+                Key::J => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("press a"));      cpu_sys.pad1.push_button(PadButton::A) },
+                Key::K => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("press b"));      cpu_sys.pad1.push_button(PadButton::B) },
+                Key::U => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("press select")); cpu_sys.pad1.push_button(PadButton::Select) },
+                Key::I => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("press start"));  cpu_sys.pad1.push_button(PadButton::Start) },
+                Key::W => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("press up"));     cpu_sys.pad1.push_button(PadButton::Up) },
+                Key::S => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("press down"));   cpu_sys.pad1.push_button(PadButton::Down) },
+                Key::A => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("press left"));   cpu_sys.pad1.push_button(PadButton::Left) },
+                Key::D => { debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("press right"));  cpu_sys.pad1.push_button(PadButton::Right) },
                 Key::P => { 
                     save_framebuffer(&fb, "run_gui_ss.bmp".to_string());
                  },
                 Key::E => { 
                     debugger_enable_fileout!("nes_gui.log".to_string());
                 },
-                Key::R => {
+                Key::X => {
                     debugger_disable_fileout!();
                 },
                 Key::G => {
                     is_show_grid = !is_show_grid;
                     debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("grid: {}", if is_show_grid { "visible"} else { "hidden"}));
+                },
+                Key::R => {
+                    // Reset
+                    cpu.reset();
+                    cpu_sys.reset();
+                    ppu.reset();
+                    video_sys.reset();
+                    cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
+                    debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!(" reset"));
                 },
                 Key::O => {
                     // 別のファイルを開いてリセットする
@@ -409,7 +431,7 @@ fn main() {
                             ppu.reset();
                             video_sys.reset();
                             cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
-                            debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("load: {}", file_path.clone()));
+                            debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!(" load: {}", file_path.clone()));
                         },
                         _ => {},
                     }
