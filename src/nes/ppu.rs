@@ -279,13 +279,13 @@ impl Ppu {
         // ステータス更新
         self.is_dma_running  = is_pre_transfer;
     }
-    /// 1列書きます
+    /// 1行書きます
     /// 
     /// `tile_base`   - スクロールオフセット加算なしの現在のタイル位置
     /// `tile_global` - スクロールオフセット換算した、4面含めた上でのタイル位置
     /// `tile_local`  - `tile_global`を1Namespace上のタイルでの位置に変換したもの
     /// scrollなしなら上記はすべて一致するはず
-    fn draw(&mut self, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
+    fn draw_line(&mut self, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
         
         let offset_y = self.current_line % PIXEL_PER_TILE;    // tile換算でのy位置から、実pixelのズレ
         let tile_base_y = self.current_line / PIXEL_PER_TILE; // オフセットなしのtile換算での現在位置
@@ -350,7 +350,7 @@ impl Ppu {
 
                 // BG左端8pixel clipping
                 let is_bg_clipping = system.read_ppu_is_clip_bg_leftend() && (pixel_x < 8);
-                let bg_palette_data: Option<u8> = if is_bg_clipping { None } else { Some(video_system.read_u8(&mut system.cassette, bg_palette_addr)) };
+                let bg_palette_data: Option<u8> = if is_bg_clipping || !system.read_ppu_is_write_bg() { None } else { Some(video_system.read_u8(&mut system.cassette, bg_palette_addr)) };
 
                 // Spriteを探索して描画するデータを取得する
                 let (sprite_palette_data_back, sprite_palette_data_front) = self.get_sprite_draw_data(system, video_system, pixel_x, pixel_y);
@@ -373,6 +373,10 @@ impl Ppu {
     /// `pixel_y` - 描画対象の表示するリーンにおけるy座標
     /// retval - (bgよりも後ろに描画するデータ, bgより前に描画するデータ)
     fn get_sprite_draw_data(&mut self, system: &mut System, video_system: &mut VideoSystem, pixel_x: usize, pixel_y: usize) -> (Option<u8>, Option<u8>){
+        // Sprite描画無効化されていたら即終了
+        if !system.read_ppu_is_write_sprite() {
+            return (None, None);
+        }
         // Spriteを探索する (y位置的に描画しなければならないSpriteは事前に読み込み済)
         let mut sprite_palette_data_back:  Option<u8> = None; // 背面
         let mut sprite_palette_data_front: Option<u8> = None; // 全面
@@ -513,7 +517,7 @@ impl Ppu {
                 // sprite探索
                 self.fetch_sprite(system);
                 // 1行描く
-                self.draw(system, video_system, fb);
+                self.draw_line(system, video_system, fb);
             },
             LineStatus::PostRender => {
                 // 何もしない
