@@ -281,7 +281,6 @@ impl Ppu {
     }
     /// 1列書きます
     /// 
-    /// 実装補足
     /// `tile_base`   - スクロールオフセット加算なしの現在のタイル位置
     /// `tile_global` - スクロールオフセット換算した、4面含めた上でのタイル位置
     /// `tile_local`  - `tile_global`を1Namespace上のタイルでの位置に変換したもの
@@ -353,73 +352,8 @@ impl Ppu {
                 let is_bg_clipping = system.read_ppu_is_clip_bg_leftend() && (pixel_x < 8);
                 let bg_palette_data: Option<u8> = if is_bg_clipping { None } else { Some(video_system.read_u8(&mut system.cassette, bg_palette_addr)) };
 
-                // Spriteを探索する (y位置的に描画しなければならないSpriteは事前に読み込み済)
-                let mut sprite_palette_data_back:  Option<u8> = None; // 背面
-                let mut sprite_palette_data_front: Option<u8> = None; // 全面
-                'draw_sprite: for sprite_index in 0..SPRITE_TEMP_SIZE {
-                    if let Some(sprite) = self.sprite_temps[sprite_index] {
-                        // めんどいのでusizeにしておく
-                        let sprite_x  = usize::from(sprite.x);
-                        let sprite_y  = usize::from(sprite.y);
-                        // 左端sprite clippingが有効な場合表示しない
-                        let is_sprite_clipping = system.read_ppu_is_clip_sprite_leftend() && (pixel_x < 8);
-                        // X位置が描画範囲の場合
-                        if !is_sprite_clipping && (sprite_x <= pixel_x) && (pixel_x < usize::from(sprite_x + SPRITE_WIDTH)) {
-                            // sprite上での相対座標
-                            let sprite_offset_x: usize = pixel_x - sprite_x; // 0-7
-                            let sprite_offset_y: usize = pixel_y - sprite_y - 1; // 0-7 or 0-15 (largeの場合, tile参照前に0-7に詰める)
-                            debug_assert!(sprite_offset_x < SPRITE_WIDTH);
-                            debug_assert!(sprite_offset_y < usize::from(system.read_ppu_sprite_height()));
-                            // pattern table addrと、tile idはサイズで決まる
-                            let (sprite_pattern_table_addr, sprite_tile_id): (u16, u8) = match sprite.tile_id {
-                                TileId::Normal{ id } => (system.read_ppu_sprite_pattern_table_addr(), id),
-                                // 8*16 spriteなので上下でidが別れている
-                                TileId::Large{ pattern_table_addr, upper_tile_id, lower_tile_id } => {
-                                    let is_upper = sprite_offset_y < SPRITE_NORMAL_HEIGHT; // 上8pixelの座標?
-                                    let is_vflip = sprite.attr.is_vert_flip; // 上下反転してる?
-                                    let id = match (is_upper, is_vflip) {
-                                        (true , false) => upper_tile_id, // 描画座標は上8pixel、Flipなし
-                                        (false, false) => lower_tile_id, // 描画座標は下8pixel、Flipなし
-                                        (true , true ) => lower_tile_id, // 描画座標は上8pixel、Flipあり
-                                        (false, true ) => upper_tile_id, // 描画座標は下8pixel、Flipあり
-                                    };
-                                    (pattern_table_addr, id)
-                                },
-                            };
-                            // x,y flipを考慮してtile上のデータ位置を決定する
-                            let tile_offset_x: usize = if !sprite.attr.is_hor_flip  { sprite_offset_x } else { SPRITE_WIDTH - 1 - sprite_offset_x };
-                            let tile_offset_y: usize = if !sprite.attr.is_vert_flip { sprite_offset_y % SPRITE_NORMAL_HEIGHT } else { SPRITE_NORMAL_HEIGHT - 1 - (sprite_offset_y % SPRITE_NORMAL_HEIGHT) };
-                            // tile addrを計算する
-                            let sprite_pattern_table_base_addr  = u16::from(sprite_pattern_table_addr) + (u16::from(sprite_tile_id) * PATTERN_TABLE_ENTRY_BYTE);
-                            let sprite_pattern_table_addr_lower = sprite_pattern_table_base_addr + (tile_offset_y as u16);
-                            let sprite_pattern_table_addr_upper = sprite_pattern_table_addr_lower + 8;
-                            let sprite_data_lower = video_system.read_u8(&mut system.cassette, sprite_pattern_table_addr_lower);
-                            let sprite_data_upper = video_system.read_u8(&mut system.cassette, sprite_pattern_table_addr_upper);
-                            // 該当するx位置のpixel patternを作る
-                            let sprite_palette_offset = (((sprite_data_upper >> (7 - tile_offset_x)) & 0x01) << 1) | ((sprite_data_lower >> (7 - tile_offset_x)) & 0x01);
-                            // paletteのアドレスを計算する
-                            let sprite_palette_addr = 
-                                (PALETTE_TABLE_BASE_ADDR + PALETTE_SPRITE_OFFSET) +        // 0x3f10
-                                (u16::from(sprite.attr.palette_id) * PALETTE_ENTRY_SIZE) + // attributeでSprite Palette0~3選択
-                                u16::from(sprite_palette_offset);                          // palette内の色選択
-                            // パレットが透明色の場合はこのpixelは描画しない
-                            let is_tranparent = (sprite_palette_addr & 0x03) == 0x00; // 背景色が選択された
-                            if !is_tranparent {
-                                // パレットを読み出し
-                                let sprite_palette_data = video_system.read_u8(&mut system.cassette, sprite_palette_addr);
-                                // 表裏の優先度がattrにあるので、該当する方に書き込み
-                                if sprite.attr.is_draw_front {
-                                    sprite_palette_data_front = Some(sprite_palette_data);
-                                } else {
-                                    sprite_palette_data_back = Some(sprite_palette_data);
-                                }
-                            }
-                        }
-                    } else {
-                        // sprite tempsは前詰めなのでもう処理はいらない
-                        break 'draw_sprite;
-                    }
-                }
+                // Spriteを探索して描画するデータを取得する
+                let (sprite_palette_data_back, sprite_palette_data_front) = self.get_sprite_draw_data(system, video_system, pixel_x, pixel_y);
 
                 // 前後関係考慮して書き込む
                 for palette_data in &[sprite_palette_data_back, bg_palette_data, sprite_palette_data_front] {
@@ -433,6 +367,81 @@ impl Ppu {
             }
             
         }
+    }
+    /// 指定されたpixelにあるスプライトを描画します
+    /// `pixel_x` - 描画対象の表示するリーンにおけるx座標
+    /// `pixel_y` - 描画対象の表示するリーンにおけるy座標
+    /// retval - (bgよりも後ろに描画するデータ, bgより前に描画するデータ)
+    fn get_sprite_draw_data(&mut self, system: &mut System, video_system: &mut VideoSystem, pixel_x: usize, pixel_y: usize) -> (Option<u8>, Option<u8>){
+        // Spriteを探索する (y位置的に描画しなければならないSpriteは事前に読み込み済)
+        let mut sprite_palette_data_back:  Option<u8> = None; // 背面
+        let mut sprite_palette_data_front: Option<u8> = None; // 全面
+        'draw_sprite: for sprite_index in 0..SPRITE_TEMP_SIZE {
+            if let Some(sprite) = self.sprite_temps[sprite_index] {
+                // めんどいのでusizeにしておく
+                let sprite_x  = usize::from(sprite.x);
+                let sprite_y  = usize::from(sprite.y);
+                // 左端sprite clippingが有効な場合表示しない
+                let is_sprite_clipping = system.read_ppu_is_clip_sprite_leftend() && (pixel_x < 8);
+                // X位置が描画範囲の場合
+                if !is_sprite_clipping && (sprite_x <= pixel_x) && (pixel_x < usize::from(sprite_x + SPRITE_WIDTH)) {
+                    // sprite上での相対座標
+                    let sprite_offset_x: usize = pixel_x - sprite_x; // 0-7
+                    let sprite_offset_y: usize = pixel_y - sprite_y - 1; // 0-7 or 0-15 (largeの場合, tile参照前に0-7に詰める)
+                    debug_assert!(sprite_offset_x < SPRITE_WIDTH);
+                    debug_assert!(sprite_offset_y < usize::from(system.read_ppu_sprite_height()));
+                    // pattern table addrと、tile idはサイズで決まる
+                    let (sprite_pattern_table_addr, sprite_tile_id): (u16, u8) = match sprite.tile_id {
+                        TileId::Normal{ id } => (system.read_ppu_sprite_pattern_table_addr(), id),
+                        // 8*16 spriteなので上下でidが別れている
+                        TileId::Large{ pattern_table_addr, upper_tile_id, lower_tile_id } => {
+                            let is_upper = sprite_offset_y < SPRITE_NORMAL_HEIGHT; // 上8pixelの座標?
+                            let is_vflip = sprite.attr.is_vert_flip; // 上下反転してる?
+                            let id = match (is_upper, is_vflip) {
+                                (true , false) => upper_tile_id, // 描画座標は上8pixel、Flipなし
+                                (false, false) => lower_tile_id, // 描画座標は下8pixel、Flipなし
+                                (true , true ) => lower_tile_id, // 描画座標は上8pixel、Flipあり
+                                (false, true ) => upper_tile_id, // 描画座標は下8pixel、Flipあり
+                            };
+                            (pattern_table_addr, id)
+                        },
+                    };
+                    // x,y flipを考慮してtile上のデータ位置を決定する
+                    let tile_offset_x: usize = if !sprite.attr.is_hor_flip  { sprite_offset_x } else { SPRITE_WIDTH - 1 - sprite_offset_x };
+                    let tile_offset_y: usize = if !sprite.attr.is_vert_flip { sprite_offset_y % SPRITE_NORMAL_HEIGHT } else { SPRITE_NORMAL_HEIGHT - 1 - (sprite_offset_y % SPRITE_NORMAL_HEIGHT) };
+                    // tile addrを計算する
+                    let sprite_pattern_table_base_addr  = u16::from(sprite_pattern_table_addr) + (u16::from(sprite_tile_id) * PATTERN_TABLE_ENTRY_BYTE);
+                    let sprite_pattern_table_addr_lower = sprite_pattern_table_base_addr + (tile_offset_y as u16);
+                    let sprite_pattern_table_addr_upper = sprite_pattern_table_addr_lower + 8;
+                    let sprite_data_lower = video_system.read_u8(&mut system.cassette, sprite_pattern_table_addr_lower);
+                    let sprite_data_upper = video_system.read_u8(&mut system.cassette, sprite_pattern_table_addr_upper);
+                    // 該当するx位置のpixel patternを作る
+                    let sprite_palette_offset = (((sprite_data_upper >> (7 - tile_offset_x)) & 0x01) << 1) | ((sprite_data_lower >> (7 - tile_offset_x)) & 0x01);
+                    // paletteのアドレスを計算する
+                    let sprite_palette_addr = 
+                        (PALETTE_TABLE_BASE_ADDR + PALETTE_SPRITE_OFFSET) +        // 0x3f10
+                        (u16::from(sprite.attr.palette_id) * PALETTE_ENTRY_SIZE) + // attributeでSprite Palette0~3選択
+                        u16::from(sprite_palette_offset);                          // palette内の色選択
+                    // パレットが透明色の場合はこのpixelは描画しない
+                    let is_tranparent = (sprite_palette_addr & 0x03) == 0x00; // 背景色が選択された
+                    if !is_tranparent {
+                        // パレットを読み出し
+                        let sprite_palette_data = video_system.read_u8(&mut system.cassette, sprite_palette_addr);
+                        // 表裏の優先度がattrにあるので、該当する方に書き込み
+                        if sprite.attr.is_draw_front {
+                            sprite_palette_data_front = Some(sprite_palette_data);
+                        } else {
+                            sprite_palette_data_back = Some(sprite_palette_data);
+                        }
+                    }
+                }
+            } else {
+                // sprite tempsは前詰めなのでもう処理はいらない
+                break 'draw_sprite;
+            }
+        }        
+        // 描画するデータを返す
+        (sprite_palette_data_back, sprite_palette_data_front)
     }
 
     /// OAMを探索して次の描画で使うスプライトをレジスタにフェッチします

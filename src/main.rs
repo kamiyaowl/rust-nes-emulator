@@ -15,6 +15,7 @@ extern crate bmp;
 use bmp::{Image, Pixel};
 
 /// NESファイルを読み込んでカセットにロードさせます
+#[allow(dead_code)]
 fn load_cassette(cassette: &mut Cassette, path: String) -> Result<(), Box<dyn std::error::Error>> {
     debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("read ines from {}", path));
     
@@ -30,6 +31,7 @@ fn load_cassette(cassette: &mut Cassette, path: String) -> Result<(), Box<dyn st
 }
 
 /// FrameBufferの中身をコンソール出力します。色があれば#, なければ.が出力されます
+#[allow(dead_code)]
 fn print_framebuffer(fb: &[[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
     println!("=========================== frame buffer print ===========================");
     for j in 0..VISIBLE_SCREEN_HEIGHT {
@@ -47,6 +49,7 @@ fn print_framebuffer(fb: &[[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_S
 }
 
 /// FrameBufferの中身をbmpファイルに保存します
+#[allow(dead_code)]
 fn save_framebuffer(fb: &[[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT], path: String) {
     let mut img = Image::new(VISIBLE_SCREEN_WIDTH as u32, VISIBLE_SCREEN_HEIGHT as u32);
 
@@ -63,6 +66,7 @@ fn save_framebuffer(fb: &[[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SC
 }
 
 /// FrameBufferの中身を保存されたbmpファイルと比較します
+#[allow(dead_code)]
 fn validate_framebuffer(fb: &[[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT], path: String) -> Result<(), Box<dyn std::error::Error>>  {
     let img = bmp::open(path)?;
 
@@ -83,6 +87,7 @@ fn validate_framebuffer(fb: &[[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBL
 }
 
 /// cpuだけで指定したサイクル流す
+#[allow(dead_code)]
 fn run_cpu_only(rom_path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &System)) -> Result<(), Box<dyn std::error::Error>> {
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
@@ -108,6 +113,7 @@ fn run_cpu_only(rom_path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &Sys
 }
 
 /// 指定したフレーム数だけ流す
+#[allow(dead_code)]
 fn run_cpu_ppu(rom_path: String, save_path: String, frame_count: usize, validate: impl Fn(&Cpu, &System, &[[[u8; 3]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT])) -> Result<(), Box<dyn std::error::Error>> {
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
@@ -148,6 +154,7 @@ fn run_cpu_ppu(rom_path: String, save_path: String, frame_count: usize, validate
 }
 
 /// nestestを起動して、テストを実行してスクショ比較する
+#[allow(dead_code)]
 fn run_nestest(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
