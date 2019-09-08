@@ -6,23 +6,32 @@ use super::video_system::*;
 
 /// 1lineあたりかかるCPUサイクル
 pub const CPU_CYCLE_PER_LINE: usize = (341/3); // ppu cyc -> cpu cyc
+/// 色の種類(RGB)
 pub const NUM_OF_COLOR: usize = 3;
+/// ユーザーに表示される領域幅
 pub const VISIBLE_SCREEN_WIDTH  : usize = 256;
+/// ユーザーに表示される領域高さ
 pub const VISIBLE_SCREEN_HEIGHT : usize = 240;
-
-pub const RENDER_SCREEN_WIDTH   : u16 = 256;
+/// 実際に描画する幅(これは表示幅に等しい)
+pub const RENDER_SCREEN_WIDTH   : u16 = VISIBLE_SCREEN_WIDTH as u16;
+/// VBlank期間を考慮した描画領域高さ
 pub const RENDER_SCREEN_HEIGHT  : u16 = 262; // 0 ~ 261
-
+/// 1tileあたりのpixel数
 pub const PIXEL_PER_TILE    : u16 = 8; // 1tile=8*8
+/// 横タイル数 32
 pub const SCREEN_TILE_WIDTH : u16 = (VISIBLE_SCREEN_WIDTH  as u16) / PIXEL_PER_TILE; // 256/8=32
+/// 縦タイル数 30
 pub const SCREEN_TILE_HEIGHT: u16 = (VISIBLE_SCREEN_HEIGHT as u16) / PIXEL_PER_TILE; // 240/8=30
+/// 1属性テーブルエントリに対する横, 縦タイル数
+pub const BG_NUM_OF_TILE_PER_ATTRIBUTE_TABLE_ENTRY: u16 = 4;
+/// 属性テーブルの横エントリ数 8
+pub const ATTRIBUTE_TABLE_WIDTH:  u16 = (SCREEN_TILE_WIDTH / BG_NUM_OF_TILE_PER_ATTRIBUTE_TABLE_ENTRY);
 
 /// PPU内部のOAMの容量 dmaの転送サイズと等しい
 pub const OAM_SIZE  : usize = 0x100; 
 /// DMA転送を2line処理で終えようと思ったときの1回目で転送するバイト数
 /// 341cyc/513cyc*256byte=170.1byte
 pub const OAM_DMA_COPY_SIZE_PER_PPU_STEP : u8   = 0xaa; 
-
 /// pattern1個あたりのエントリサイズ
 pub const PATTERN_TABLE_ENTRY_BYTE: u16 = 16;
 
@@ -297,23 +306,30 @@ impl Ppu {
                 system.read_ppu_name_table_base_addr() +                     // NameTable ベースアドレス(0x2000, 0x2400, 0x2800, 0x2c00)
                 (if is_nametable_position_left { 0x0000 } else { 0x0400 }) + // 左右面の広域offset
                 (if is_nametable_position_top  { 0x0000 } else { 0x0800 });  // 上下面の広域offset
-            // attribute tableはNametableの後32byteにいる, 2*2tileで1attrなので半分に使用
-            let attribute_addr = target_nametable_base_addr + ATTRIBUTE_TABLE_OFFSET; // TODO:多分計算がおかしい
-            // NameTable内でのOffsetを加算すれば完成
-            let nametable_addr = target_nametable_base_addr + (tile_local_y * SCREEN_TILE_WIDTH) + tile_local_x;
 
-            // attribute読み出し, BGパレット選択に使う
+            // attribute tableはNametableの後32byteにいるのでアドレス計算して読み出す。縦横4*4tileで1attrになっている
+            let attribute_base_addr = target_nametable_base_addr + ATTRIBUTE_TABLE_OFFSET; // 23c0, 27c0, 2bc0, 2fc0のどれか
+            let attribute_x_offset  = (tile_base_x / BG_NUM_OF_TILE_PER_ATTRIBUTE_TABLE_ENTRY) % ATTRIBUTE_TABLE_WIDTH;
+            let attribute_y_offset  = tile_base_y / BG_NUM_OF_TILE_PER_ATTRIBUTE_TABLE_ENTRY;
+            let attribute_addr = 
+                attribute_base_addr +                          // base addr
+                (attribute_y_offset * ATTRIBUTE_TABLE_WIDTH) + // y offset
+                attribute_x_offset;                            // x offset
+
+            // attribute読み出し, BGパレット選択に使う。4*4の位置で使うパレット情報を変える
             let raw_attribute = video_system.read_u8(&mut system.cassette, attribute_addr);
-            let bg_palette_id = match (tile_local_x & 0x01, tile_local_y & 0x01) {
-                (0, 0) => (raw_attribute >> 0) & 0x03, // top left
-                (1, 0) => (raw_attribute >> 2) & 0x03, // top right
-                (0, 1) => (raw_attribute >> 4) & 0x03, // bottom left
-                (1, 1) => (raw_attribute >> 6) & 0x03, // bottom right
+            let bg_palette_id = match (tile_local_x & 0x03 < 0x2, tile_local_y & 0x03 < 0x2) {
+                (true , true ) => (raw_attribute >> 0) & 0x03, // top left
+                (false, true ) => (raw_attribute >> 2) & 0x03, // top right
+                (true , false) => (raw_attribute >> 4) & 0x03, // bottom left
+                (false, false) => (raw_attribute >> 6) & 0x03, // bottom right
                 _ => panic!("invalid bg attribute"),
             };
 
             // Nametableからtile_id読み出し->pattern tableからデータ構築
+            let nametable_addr = target_nametable_base_addr + (tile_local_y * SCREEN_TILE_WIDTH) + tile_local_x;
             let bg_tile_id = u16::from(video_system.read_u8(&mut system.cassette, nametable_addr));
+
             // pattern_table 1entryは16byte, 0行目だったら0,8番目のデータを使えば良い
             let bg_pattern_table_base_addr  = system.read_ppu_bg_pattern_table_addr() + (bg_tile_id * PATTERN_TABLE_ENTRY_BYTE);
             let bg_pattern_table_addr_lower = bg_pattern_table_base_addr + offset_y;
