@@ -272,8 +272,10 @@ fn test_run_nestest() -> Result<(), Box<dyn std::error::Error>> {
 
 extern crate piston_window;
 extern crate image as im;
+extern crate nfd;
 
 use piston_window::*;
+use nfd::Response;
 use std::time::Instant;
 
 fn main() {
@@ -288,7 +290,6 @@ fn main() {
     let mut video_sys: VideoSystem = Default::default();
 
     load_cassette(&mut cpu_sys.cassette, rom_path).unwrap();
-
     cpu.reset();
     cpu_sys.reset();
     ppu.reset();
@@ -322,7 +323,7 @@ fn main() {
             &TextureSettings::new()
         ).unwrap();
     // グリッド表示有無
-    let mut is_show_grid = true;
+    let mut is_show_grid = false;
 
     while let Some(e) = window.next() {
         // 描画
@@ -394,6 +395,24 @@ fn main() {
                 Key::G => {
                     is_show_grid = !is_show_grid;
                     debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("grid: {}", if is_show_grid { "visible"} else { "hidden"}));
+                },
+                Key::O => {
+                    // 別のファイルを開いてリセットする
+                    let result = nfd::open_file_dialog(None, None).unwrap_or_else(|e| {
+                        panic!(e);
+                    });
+                    match result {
+                        Response::Okay(file_path) => {
+                            load_cassette(&mut cpu_sys.cassette, file_path.clone()).unwrap();
+                            cpu.reset();
+                            cpu_sys.reset();
+                            ppu.reset();
+                            video_sys.reset();
+                            cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
+                            debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("load: {}", file_path.clone()));
+                        },
+                        _ => {},
+                    }
                 }
                 _ => {},
             }
