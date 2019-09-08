@@ -26,6 +26,23 @@ Work In Progress...
 
 ![hello](https://raw.githubusercontent.com/kamiyaowl/rust-nes-emulator/master/screenshot/hello.bmp)
 
+---
+
+## Build & Run
+
+```
+$ cargo run --release
+```
+
+rustc 1.37.0 required
+
+## Build (on Docker)
+
+```
+$ docker-compose run build-release
+$ ./target/release/rust-nes-emulator     # Other Platform
+```
+
 ## Test ROMs
 
 Thank you for the wonderful !
