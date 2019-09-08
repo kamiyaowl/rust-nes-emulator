@@ -16,18 +16,17 @@ use bmp::{Image, Pixel};
 
 /// NESファイルを読み込んでカセットにロードさせます
 #[allow(dead_code)]
-fn load_cassette(cassette: &mut Cassette, path: String) -> Result<(), Box<dyn std::error::Error>> {
+#[cfg(not(no_std))] // Vecがだめ
+fn load_cassette(cassette: &mut Cassette, path: String) {
     debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!("read ines from {}", path));
     
-    let mut file = File::open(path)?;
+    let mut file = File::open(path).unwrap();
     let mut buf: Vec<u8> = Vec::new();
-    let _ = file.read_to_end(&mut buf)?;
+    let _ = file.read_to_end(&mut buf).unwrap();
     // casseteに展開
     if !cassette.from_ines_binary(|addr: usize| buf[addr]) {
         panic!("ines binary read error");
     }
-
-    Ok(())
 }
 
 /// FrameBufferの中身をコンソール出力します。色があれば#, なければ.が出力されます
@@ -67,8 +66,8 @@ fn save_framebuffer(fb: &[[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SC
 
 /// FrameBufferの中身を保存されたbmpファイルと比較します
 #[allow(dead_code)]
-fn validate_framebuffer(fb: &[[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT], path: String) -> Result<(), Box<dyn std::error::Error>>  {
-    let img = bmp::open(path)?;
+fn validate_framebuffer(fb: &[[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT], path: String) {
+    let img = bmp::open(path).unwrap();
 
     for j in 0..VISIBLE_SCREEN_HEIGHT {
         for i in 0..VISIBLE_SCREEN_WIDTH {
@@ -82,19 +81,17 @@ fn validate_framebuffer(fb: &[[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBL
             assert_eq!(expect.b, c[2]);
         }
     }
-
-    Ok(())
 }
 
 /// cpuだけで指定したサイクル流す
 #[allow(dead_code)]
-fn run_cpu_only(rom_path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &System)) -> Result<(), Box<dyn std::error::Error>> {
+fn run_cpu_only(rom_path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &System)) {
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
     let mut ppu: Ppu = Default::default();
     let mut video_sys: VideoSystem = Default::default();
 
-    load_cassette(&mut cpu_sys.cassette, rom_path)?;
+    load_cassette(&mut cpu_sys.cassette, rom_path);
 
     cpu.reset();
     cpu_sys.reset();
@@ -108,19 +105,17 @@ fn run_cpu_only(rom_path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &Sys
         cpu_cycle = cpu_cycle + usize::from(cpu.step(&mut cpu_sys, &ppu));
     }
     validate(&cpu, &cpu_sys);
-
-    Ok(())
 }
 
 /// 指定したフレーム数だけ流す
 #[allow(dead_code)]
-fn run_cpu_ppu(rom_path: String, save_path: String, frame_count: usize, validate: impl Fn(&Cpu, &System, &[[[u8; 3]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT])) -> Result<(), Box<dyn std::error::Error>> {
+fn run_cpu_ppu(rom_path: String, save_path: String, frame_count: usize, validate: impl Fn(&Cpu, &System, &[[[u8; 3]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT])) {
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
     let mut ppu: Ppu = Default::default();
     let mut video_sys: VideoSystem = Default::default();
 
-    load_cassette(&mut cpu_sys.cassette, rom_path)?;
+    load_cassette(&mut cpu_sys.cassette, rom_path);
 
     cpu.reset();
     cpu_sys.reset();
@@ -149,19 +144,17 @@ fn run_cpu_ppu(rom_path: String, save_path: String, frame_count: usize, validate
     save_framebuffer(&fb, save_path);
 
     validate(&cpu, &cpu_sys, &fb);
-
-    Ok(())
 }
 
 /// nestestを起動して、テストを実行してスクショ比較する
 #[allow(dead_code)]
-fn run_nestest(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
+fn run_nestest(rom_path: String) {
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
     let mut ppu: Ppu = Default::default();
     let mut video_sys: VideoSystem = Default::default();
 
-    load_cassette(&mut cpu_sys.cassette, rom_path)?;
+    load_cassette(&mut cpu_sys.cassette, rom_path);
 
     cpu.reset();
     cpu_sys.reset();
@@ -229,13 +222,11 @@ fn run_nestest(rom_path: String) -> Result<(), Box<dyn std::error::Error>> {
         };
     }
     debugger_disable_fileout!();
-
-    Ok(())
 }
 
 /// hello worldのromで、一通りの処理が終わって無限ループまでたどり着くことを確認する
 #[test]
-fn test_run_hello_cpu() -> Result<(), Box<dyn std::error::Error>>  {
+fn test_run_hello_cpu() {
     run_cpu_only("roms/other/hello.nes".to_string(), 175, |cpu, _sys| {
         // 170step以降はJMPで無限ループしているはず
         assert_eq!(0x804e, cpu.pc);
@@ -249,7 +240,7 @@ fn test_run_hello_cpu() -> Result<(), Box<dyn std::error::Error>>  {
 
 /// 画面上にhello world!が正しく表示されることを確認する
 #[test]
-fn test_run_hello_ppu() -> Result<(), Box<dyn std::error::Error>> {
+fn test_run_hello_ppu() {
     run_cpu_ppu("roms/other/hello.nes".to_string(), "test_run_hello_ppu.bmp".to_string(), 1, |cpu, _sys, fb| {
         // 170step以降はJMPで無限ループしているはず
         assert_eq!(0x804e, cpu.pc);
@@ -264,7 +255,7 @@ fn test_run_hello_ppu() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn test_run_nestest() -> Result<(), Box<dyn std::error::Error>> {
+fn test_run_nestest() {
     run_nestest("roms/nes-test-roms/other/nestest.nes".to_string())
 }
 
@@ -291,7 +282,7 @@ fn main() {
     let mut ppu: Ppu = Default::default();
     let mut video_sys: VideoSystem = Default::default();
 
-    load_cassette(&mut cpu_sys.cassette, rom_path).unwrap();
+    load_cassette(&mut cpu_sys.cassette, rom_path);
     cpu.reset();
     cpu_sys.reset();
     ppu.reset();
@@ -427,7 +418,7 @@ fn main() {
                     });
                     match result {
                         Response::Okay(file_path) => {
-                            load_cassette(&mut cpu_sys.cassette, file_path.clone()).unwrap();
+                            load_cassette(&mut cpu_sys.cassette, file_path.clone());
                             cpu.reset();
                             cpu_sys.reset();
                             ppu.reset();
