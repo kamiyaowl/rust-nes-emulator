@@ -1,0 +1,22 @@
+version: "3"
+services:
+    test:
+      build: .
+      volumes:
+        - ./:/work
+      command: cargo test
+    test-release:
+      build: .
+      volumes:
+        - ./:/work
+      command: cargo test --release
+    build:
+      build: .
+      volumes:
+        - ./:/work
+      command: cargo build
+    build-release:
+      build: .
+      volumes:
+        - ./:/work
+      command: cargo build --release
