@@ -387,13 +387,17 @@ impl Ppu {
                                 (PALETTE_TABLE_BASE_ADDR + PALETTE_SPRITE_OFFSET) +        // 0x3f10
                                 (u16::from(sprite.attr.palette_id) * PALETTE_ENTRY_SIZE) + // attributeでSprite Palette0~3選択
                                 u16::from(sprite_palette_offset);                          // palette内の色選択
-                            // パレットを読み出し
-                            let sprite_palette_data = video_system.read_u8(&mut system.cassette, sprite_palette_addr);
-                            // 表裏の優先度がattrにあるので、該当する方に書き込み
-                            if sprite.attr.is_draw_front {
-                                sprite_palette_data_front = Some(sprite_palette_data);
-                            } else {
-                                sprite_palette_data_back = Some(sprite_palette_data);
+                            // パレットが透明色の場合はこのpixelは描画しない
+                            let is_tranparent = (sprite_palette_addr & 0x03) == 0x00; // 背景色が選択された
+                            if !is_tranparent {
+                                // パレットを読み出し
+                                let sprite_palette_data = video_system.read_u8(&mut system.cassette, sprite_palette_addr);
+                                // 表裏の優先度がattrにあるので、該当する方に書き込み
+                                if sprite.attr.is_draw_front {
+                                    sprite_palette_data_front = Some(sprite_palette_data);
+                                } else {
+                                    sprite_palette_data_back = Some(sprite_palette_data);
+                                }
                             }
                         }
                     } else {
