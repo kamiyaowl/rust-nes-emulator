@@ -327,7 +327,7 @@ fn main() {
                 ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
                 total_cycle = total_cycle + cpu_cycle;
             }
-            let duration = start.elapsed();
+            let emulate_duration = start.elapsed();
 
             // 画面更新(毎回やらんほうが良さげ?)
             for j in 0..VISIBLE_SCREEN_HEIGHT {
@@ -352,7 +352,8 @@ fn main() {
                 }
             });
             // windowとか
-            window.set_title(format!("[rust-nes-emulator] pc:${:04X} fps:{:.*}", cpu.pc, 1, 1000.0 / (duration.as_millis() as f32)));
+            let emulate_fps = 1000.0 / (emulate_duration.as_millis() as f32);
+            window.set_title(format!("[rust-nes-emulator] pc:${:04X} emu_fps:{:.*}", cpu.pc, 1, emulate_fps));
         }
         // ボタン入力
         if let Some(Button::Keyboard(key)) = e.press_args() {
