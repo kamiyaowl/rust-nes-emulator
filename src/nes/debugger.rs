@@ -29,7 +29,7 @@ lazy_static! {
 #[macro_export]
 macro_rules! debugger_enable_fileout {
     ($filepath: expr) => {
-        if cfg!(not(no_std)) {
+        if cfg!(all(not(debug_assertions), not(no_std))) {
             use std::io::{BufWriter, Write};
             use std::fs;
             use fs::OpenOptions;
@@ -61,7 +61,7 @@ macro_rules! debugger_enable_fileout {
 #[macro_export]
 macro_rules! debugger_disable_fileout {
     () => {
-        if cfg!(not(no_std)) {
+        if cfg!(all(not(debug_assertions), not(no_std))) {
             let mut debugger_out_path_ptr       = DEBUGGER_OUT_PATH.write().unwrap();
             let mut debugger_fileout_enable_ptr = DEBUGGER_FILEOUT_ENABLE.write().unwrap();
             *debugger_out_path_ptr = "emulator.log".to_string();
@@ -104,7 +104,7 @@ macro_rules! debugger_print {
                 print!("{}", print_str);
             }    
             // ファイル出力、こちらはフィルタ無視
-            if cfg!(not(no_std)) {
+            if cfg!(all(not(debug_assertions), not(no_std))) {
                 use std::fs;
                 use std::io::{BufWriter, Write};
                 use fs::OpenOptions;

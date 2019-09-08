@@ -272,8 +272,8 @@ use std::time::Instant;
 fn main() {
     // let rom_path = "roms/nes-test-roms/other/nestest.nes".to_string();
     // let rom_path = "roms/nes-test-roms/scrolltest/sssscroll.nes".to_string();
-    let rom_path = "roms/my_dump/mario.nes".to_string();
-    // let rom_path = "roms/my_dump/donkey.nes".to_string();
+    // let rom_path = "roms/my_dump/mario.nes".to_string();
+    let rom_path = "roms/my_dump/donkey.nes".to_string();
     // emu
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
@@ -346,6 +346,10 @@ fn main() {
 
                 clear([0.0; 4], g);
                 image(&texture, c.transform.scale(scale as f64, scale as f64), g);
+                // debug用にtile境界線とか入れる
+                if cfg!(debug_assertions) {
+
+                }
             });
             // windowとか
             window.set_title(format!("[rust-nes-emulator] pc:${:04X} fps:{:.*}", cpu.pc, 1, 1000.0 / (duration.as_millis() as f32)));

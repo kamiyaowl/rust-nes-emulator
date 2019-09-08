@@ -323,7 +323,6 @@ impl Ppu {
                 (false, true ) => (raw_attribute >> 2) & 0x03, // top right
                 (true , false) => (raw_attribute >> 4) & 0x03, // bottom left
                 (false, false) => (raw_attribute >> 6) & 0x03, // bottom right
-                _ => panic!("invalid bg attribute"),
             };
 
             // Nametableからtile_id読み出し->pattern tableからデータ構築
