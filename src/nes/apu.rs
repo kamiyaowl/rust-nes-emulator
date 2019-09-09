@@ -4,7 +4,8 @@ use super::system::*;
 pub struct PulseSound {
     // $4000 / $4004
     /// Duty Cycleを設定する
-    pub dutyCycle: f32,
+    /// 0-1000
+    pub dutyCycle: u16,
     /// 再生時間カウンタ有効
     pub isLengthCounterHalt: bool,
     /// 音響選択
@@ -31,7 +32,7 @@ pub struct PulseSound {
 impl Default for PulseSound {
     fn default() -> Self {
         Self {
-            dutyCycle: 0.0,
+            dutyCycle: 0,
             isLengthCounterHalt: false,
             isConstantVolume: false,
             volume: 0,
@@ -51,7 +52,7 @@ pub struct TriangleSound {
     /// 再生時間カウンタ有効
     pub isLengthCounterHalt: bool,
     /// 再生時間カウンタ値
-    pub counterValue: u8,
+    pub counterLoad: u8,
     // $400a, $400b
     /// 周波数
     pub timerValue: u16,
@@ -63,7 +64,7 @@ impl Default for TriangleSound {
     fn default() -> Self {
         Self {
             isLengthCounterHalt: false,
-            counterValue: 0,
+            counterLoad: 0,
             timerValue: 0,
             lengthCounterLoad: 0,
         }
@@ -74,7 +75,7 @@ impl Default for TriangleSound {
 pub struct NoiseSound {
     // $400c
     /// 再生時間カウンタ有効
-    pub lengthCounterHalt: bool,
+    pub isLengthCounterHalt: bool,
     /// 音響選択
     pub isConstantVolume: bool,
     /// 音量値 4bit
@@ -92,7 +93,7 @@ pub struct NoiseSound {
 impl Default for NoiseSound {
     fn default() -> Self {
         Self {
-            lengthCounterHalt: false,
+            isLengthCounterHalt: false,
             isConstantVolume: false,
             volume: 0,
             isNoiseTypeLoop: false,
@@ -106,7 +107,7 @@ impl Default for NoiseSound {
 pub struct DmcSound {
     // $4010
     /// Loop時に割り込み有効
-    pub irqEnable: bool,
+    pub isIrqEnable: bool,
     /// ループ有効
     pub isLoopEnable: bool,
     /// サンプルレートビット 4bit
@@ -127,7 +128,7 @@ pub struct DmcSound {
 impl Default for DmcSound {
     fn default() -> Self {
         Self {
-            irqEnable: false,
+            isIrqEnable: false,
             isLoopEnable: false,
             frequency: 0,
             loadCounter: 0,
