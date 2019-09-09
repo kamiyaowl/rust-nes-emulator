@@ -460,9 +460,6 @@ impl Ppu {
     /// OAMを探索して次の描画で使うスプライトをレジスタにフェッチします
     /// 8個を超えるとOverflowフラグを立てる
     fn fetch_sprite(&mut self, system: &mut System) {
-        // ステータスを初期化
-        system.write_ppu_is_hit_sprite0(false);
-        system.write_ppu_is_sprite_overflow(false);
         // sprite描画無効化
         if !system.read_ppu_is_write_sprite() {
             return;
@@ -522,6 +519,10 @@ impl Ppu {
             self.run_dma(system, true);
         }
 
+        // ステータスを初期化
+        system.write_ppu_is_hit_sprite0(false);
+        system.write_ppu_is_sprite_overflow(false);
+        
         // 行の更新
         match LineStatus::from(self.current_line) {
             LineStatus::Visible => {
