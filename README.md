@@ -2,7 +2,7 @@
 
 # rust-nes-emulator
 
-NES Emulator written by Rust
+NES Emulator written in Rust
 
 | Super Mario Bros. | Donkey Kong |
 | - | - |
