@@ -354,12 +354,13 @@ impl Ppu {
 
             // BG左端8pixel clipも考慮してBGデータ作る
             let is_bg_clipping = system.read_ppu_is_clip_bg_leftend() && (pixel_x < 8);
-            let is_tranparent = (bg_palette_addr & 0x03) == 0x00; // 背景色が選択された
+            let is_tranparent = (bg_palette_addr & 0x03) == 0x00; // 背景色が選択された場合はここで処理してしまう
             let bg_palette_data: Option<u8> = 
-                if is_bg_clipping || !system.read_ppu_is_write_bg() || is_tranparent { None } else { Some(video_system.read_u8(&mut system.cassette, bg_palette_addr)) };
+                if is_bg_clipping || !system.read_ppu_is_write_bg() || is_tranparent { None } 
+                else { Some(video_system.read_u8(&mut system.cassette, bg_palette_addr)) };
 
-            // 最初に背景色で埋める
-            let transparent_color = Color::from(video_system.read_u8(&mut system.cassette, bg_palette_addr));
+            // 最初に背景色で埋める(もしかしたらBGのアドレスをPaletteだけ変えないとだめかも)
+            let transparent_color = Color::from(video_system.read_u8(&mut system.cassette, PALETTE_TABLE_BASE_ADDR + PALETTE_BG_OFFSET));
             fb[pixel_y][pixel_x][0] = transparent_color.0;
             fb[pixel_y][pixel_x][1] = transparent_color.1;
             fb[pixel_y][pixel_x][2] = transparent_color.2;

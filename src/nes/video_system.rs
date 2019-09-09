@@ -124,7 +124,7 @@ impl VideoSystem {
         } else {
             // Palette with mirroring
             let index = usize::from(addr - PALETTE_TABLE_BASE_ADDR) % PALETTE_SIZE;
-            // Marioの空が黒くなるらしい
+            // Marioの空が黒くなる
             match index {
                 0x10 => self.palette[0x00],
                 0x14 => self.palette[0x04],
@@ -149,7 +149,7 @@ impl VideoSystem {
         } else {
             // Palette with mirroring
             let index = usize::from(addr - PALETTE_TABLE_BASE_ADDR) % PALETTE_SIZE;
-            // Marioの空が黒くなるらしい
+            // Marioの空が黒くなる
             match index {
                 0x10 => self.palette[0x00] = data,
                 0x14 => self.palette[0x04] = data,

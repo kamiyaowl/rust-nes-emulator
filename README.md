@@ -8,6 +8,8 @@ NES Emulator written by Rust
 
 ### Super Mario Bros.
 
+![mario](https://raw.githubusercontent.com/kamiyaowl/rust-nes-emulator/master/screenshot/mario.bmp)
+
 Work In Progress...
 
 ### Donkey Kong
