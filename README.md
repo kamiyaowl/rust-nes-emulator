@@ -37,6 +37,10 @@ NES Emulator written in Rust
   - [ ] Tri Wave
   - [ ] Noise
   - [ ] DMC
+- [ ] Emulation feature
+    - [ ] Snapshot
+    - [ ] Restore
+    - [ ] ROM Selection Bootloader
 
 ## Screenshot (Operation checked)
 
