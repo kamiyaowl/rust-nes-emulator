@@ -67,7 +67,7 @@ impl System {
         (self.ppu_reg[PPU_MASK_OFFSET] & 0x02u8) != 0x02u8
     }
     pub fn read_is_monochrome(&self) -> bool {
-        (self.ppu_reg[PPU_MASK_OFFSET] & 0x01u8) != 0x01u8
+        (self.ppu_reg[PPU_MASK_OFFSET] & 0x01u8) == 0x01u8
     }
     /*************************** 0x2002: PPU_STATUS ***************************/
     /// VBlankフラグをみて、NMI割り込みしようね

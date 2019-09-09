@@ -374,6 +374,16 @@ impl Ppu {
                     fb[pixel_y][pixel_x][2] = c.2;
                 }
             }
+
+            // モノクロ出力対応(とりあえず総加平均...)
+            if system.read_is_monochrome() {
+                let data = ((u16::from(fb[pixel_y][pixel_x][0]) + 
+                             u16::from(fb[pixel_y][pixel_x][1]) + 
+                             u16::from(fb[pixel_y][pixel_x][2])) / 3) as u8;
+                fb[pixel_y][pixel_x][0] = data;
+                fb[pixel_y][pixel_x][1] = data;
+                fb[pixel_y][pixel_x][2] = data;
+            }
             
         }
     }
