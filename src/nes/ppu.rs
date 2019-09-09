@@ -518,7 +518,6 @@ impl Ppu {
             self.dma_oam_dst_addr = system.read_ppu_oam_addr();
             self.run_dma(system, true);
         }
-
         // ステータスを初期化
         system.write_ppu_is_hit_sprite0(false);
         system.write_ppu_is_sprite_overflow(false);
