@@ -483,7 +483,7 @@ impl Ppu {
             // 描画範囲内(y+1)~(y+1+ 8or16)
             if (sprite_y < sprite_begin_y) && (sprite_begin_y <= sprite_end_y) {
                 // sprite 0 hitフラグ(1lineごとに処理しているので先に立ててしまう)
-                let is_zero_hit_delay = sprite_begin_y > (sprite_end_y - 2); //1lineずつ処理だとマリオ等早く検知しすぎるので TODO: #40
+                let is_zero_hit_delay = sprite_begin_y > (sprite_end_y - 3); //1lineずつ処理だとマリオ等早く検知しすぎるので TODO: #40
                 if sprite_index == 0 && is_zero_hit_delay {
                     system.write_ppu_is_hit_sprite0(true);
                     debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("sprite zero hit"));
