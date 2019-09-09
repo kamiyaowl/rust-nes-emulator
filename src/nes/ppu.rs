@@ -298,6 +298,10 @@ impl Ppu {
         // 描画座標系でループさせる
         let pixel_y = usize::from(self.current_line);
         for pixel_x in 0..VISIBLE_SCREEN_WIDTH {
+            // Sprite: 探索したテンポラリレジスタから描画するデータを取得する
+            let (sprite_palette_data_back, sprite_palette_data_front) = self.get_sprite_draw_data(system, video_system, pixel_x, pixel_y);
+
+            // BG(Nametable): 座標に該当するNametableと属性テーブルからデータを取得する
             let offset_x    = ((pixel_x as u16) + u16::from(self.current_scroll_x)) % PIXEL_PER_TILE;
             let tile_base_x = ((pixel_x as u16) + u16::from(self.current_scroll_x)) / PIXEL_PER_TILE;
             // scroll regはtile換算でずらす
@@ -341,19 +345,24 @@ impl Ppu {
             let bg_data_lower = video_system.read_u8(&mut system.cassette, bg_pattern_table_addr_lower);
             let bg_data_upper = video_system.read_u8(&mut system.cassette, bg_pattern_table_addr_upper);
 
-            // bg作る
+            // bgの描画色を作る
             let bg_palette_offset = (((bg_data_upper >> (7 - offset_x)) & 0x01) << 1) | ((bg_data_lower >> (7 - offset_x)) & 0x01);
             let bg_palette_addr = 
                 (PALETTE_TABLE_BASE_ADDR + PALETTE_BG_OFFSET) +   // 0x3f00
                 (u16::from(bg_palette_id) * PALETTE_ENTRY_SIZE) + // attributeでBG Palette0~3選択
                 u16::from(bg_palette_offset);                     // palette内の色選択
 
-            // BG左端8pixel clipping
+            // BG左端8pixel clipも考慮してBGデータ作る
             let is_bg_clipping = system.read_ppu_is_clip_bg_leftend() && (pixel_x < 8);
-            let bg_palette_data: Option<u8> = if is_bg_clipping || !system.read_ppu_is_write_bg() { None } else { Some(video_system.read_u8(&mut system.cassette, bg_palette_addr)) };
+            let is_tranparent = (bg_palette_addr & 0x03) == 0x00; // 背景色が選択された
+            let bg_palette_data: Option<u8> = 
+                if is_bg_clipping || !system.read_ppu_is_write_bg() || is_tranparent { None } else { Some(video_system.read_u8(&mut system.cassette, bg_palette_addr)) };
 
-            // Spriteを探索して描画するデータを取得する
-            let (sprite_palette_data_back, sprite_palette_data_front) = self.get_sprite_draw_data(system, video_system, pixel_x, pixel_y);
+            // 最初に背景色で埋める
+            let transparent_color = Color::from(video_system.read_u8(&mut system.cassette, bg_palette_addr));
+            fb[pixel_y][pixel_x][0] = transparent_color.0;
+            fb[pixel_y][pixel_x][1] = transparent_color.1;
+            fb[pixel_y][pixel_x][2] = transparent_color.2;
 
             // 前後関係考慮して書き込む
             for palette_data in &[sprite_palette_data_back, bg_palette_data, sprite_palette_data_front] {
