@@ -1,11 +1,19 @@
 use super::system::*;
+use super::cpu::*;
+
+#[derive(Copy, Clone)]
+pub enum PulseDutyCycle {
+    Duty12_5,
+    Duty25_0,
+    Duty50_0,
+    Duty75_0,
+}
 
 #[derive(Copy, Clone)]
 pub struct PulseSound {
     // $4000 / $4004
     /// Duty Cycleを設定する
-    /// 0-1000
-    pub dutyCycle: u16,
+    pub dutyCycle: PulseDutyCycle,
     /// 再生時間カウンタ有効
     pub isLengthCounterHalt: bool,
     /// 音響選択
@@ -32,7 +40,7 @@ pub struct PulseSound {
 impl Default for PulseSound {
     fn default() -> Self {
         Self {
-            dutyCycle: 0,
+            dutyCycle: PulseDutyCycle::Duty12_5,
             isLengthCounterHalt: false,
             isConstantVolume: false,
             volume: 0,
@@ -43,6 +51,12 @@ impl Default for PulseSound {
             timerValue: 0,
             lengthCounterLoad: 0,
         }
+    }
+}
+
+impl PulseSound {
+    pub fn get_freq(&self) -> u32 {
+        CPU_FREQ / (16 * (u32::from(self.timerValue) + 1))
     }
 }
 
@@ -140,13 +154,26 @@ impl Default for DmcSound {
 
 
 pub struct Apu {
+    /// Frame Sequencer、CPUサイクルに連動して加算 11bit
+    pub frameSeqCounter: u16,
+
 }
 impl Default for Apu {
     fn default() -> Self {
         Self {
+            frameSeqCounter: 0,
         }
     }
 }
 
 impl Apu {
+    /// FrameSe
+    fn increment_seq(&mut self, cpu_cyc: u8) {
+        self.frameSeqCounter = (self.frameSeqCounter + u16::from(cpu_cyc)) & 0x03ff; // 11bit
+    }
+    /// APUの処理を進めます
+    pub fn step(&mut self, cpu: &mut Cpu, cpu_cyc: u8) {
+        // TODO:がんばる
+
+    }
 }

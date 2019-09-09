@@ -14,9 +14,10 @@ pub mod system_ppu_reg;
 pub mod system_apu_reg;
 pub mod video_system;
 
-pub use system::*;
+pub use apu::*;
 pub use cpu::*;
 pub use cassette::*;
 pub use ppu::*;
 pub use pad::*;
+pub use system::*;
 pub use video_system::*;

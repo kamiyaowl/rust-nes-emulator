@@ -27,10 +27,10 @@ impl System {
         let base_offset = if index == 0 { APU_PULSE_1_OFFSET } else { APU_PULSE_2_OFFSET };
         // 順番に読んで値を決めるだけ
         dst.dutyCycle = match (self.io_reg[base_offset + 0] >> 6) & 0x03 {
-            0 => 875, // 87.5%
-            1 => 750, // 75.0%
-            2 => 500, // 50.0%
-            3 => 250, // 25.0%
+            0 => PulseDutyCycle::Duty12_5,
+            1 => PulseDutyCycle::Duty25_0,
+            2 => PulseDutyCycle::Duty50_0,
+            3 => PulseDutyCycle::Duty75_0,
             _ => panic!("invalid pulse dutyCycle: {}", self.io_reg[base_offset + 0]),
         };
         // $4000 DDLCVVVV

@@ -2,14 +2,15 @@ use super::system::System;
 use super::interface::*;
 use super::debugger::*;
 
-const NMI_READ_LOWER:   u16 = 0xfffa;
-const NMI_READ_UPPER:   u16 = 0xfffb;
-const RESET_READ_LOWER: u16 = 0xfffc;
-const RESET_READ_UPPER: u16 = 0xfffd;
-const IRQ_READ_LOWER:   u16 = 0xfffe;
-const IRQ_READ_UPPER:   u16 = 0xffff;
-const BRK_READ_LOWER:   u16 = 0xfffe;
-const BRK_READ_UPPER:   u16 = 0xffff;
+pub const CPU_FREQ:         u32 = 1790000;
+pub const NMI_READ_LOWER:   u16 = 0xfffa;
+pub const NMI_READ_UPPER:   u16 = 0xfffb;
+pub const RESET_READ_LOWER: u16 = 0xfffc;
+pub const RESET_READ_UPPER: u16 = 0xfffd;
+pub const IRQ_READ_LOWER:   u16 = 0xfffe;
+pub const IRQ_READ_UPPER:   u16 = 0xffff;
+pub const BRK_READ_LOWER:   u16 = 0xfffe;
+pub const BRK_READ_UPPER:   u16 = 0xffff;
 
 #[derive(PartialEq, Eq)]
 pub enum Interrupt {
