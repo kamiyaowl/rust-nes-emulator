@@ -287,19 +287,22 @@ impl Ppu {
     /// scrollなしなら上記はすべて一致するはず
     fn draw_line(&mut self, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
 
-        let offset_y = self.current_line % PIXEL_PER_TILE;    // tile換算でのy位置から、実pixelのズレ
-        let tile_base_y = self.current_line / PIXEL_PER_TILE; // オフセットなしのtile換算での現在位置
+        let offset_y    = (self.current_line + u16::from(self.current_scroll_y)) % PIXEL_PER_TILE;    // tile換算でのy位置から、実pixelのズレ
+        let tile_base_y = (self.current_line + u16::from(self.current_scroll_y)) / PIXEL_PER_TILE; // オフセットなしのtile換算での現在位置
         // scroll regはtile換算でずらす
-        let tile_global_y = (tile_base_y + u16::from(self.current_scroll_y) / PIXEL_PER_TILE) % (SCREEN_TILE_HEIGHT * 2); // tile換算でのy絶対座標
+        let tile_global_y = tile_base_y % (SCREEN_TILE_HEIGHT * 2); // tile換算でのy絶対座標
         let tile_local_y = tile_global_y % SCREEN_TILE_HEIGHT; // 1 tile内での絶対座標
         // 4面ある内、下側に差し掛かっていたらfalse
         let is_nametable_position_top = tile_global_y < SCREEN_TILE_HEIGHT;
 
-                
-        for tile_base_x in 0..SCREEN_TILE_WIDTH {
+        // 描画座標系でループさせる
+        let pixel_y = usize::from(self.current_line);
+        for pixel_x in 0..VISIBLE_SCREEN_WIDTH {
+            let offset_x    = ((pixel_x as u16) + u16::from(self.current_scroll_x)) % PIXEL_PER_TILE;
+            let tile_base_x = ((pixel_x as u16) + u16::from(self.current_scroll_x)) / PIXEL_PER_TILE;
             // scroll regはtile換算でずらす
-            let tile_global_x = (tile_base_x + u16::from(self.current_scroll_x) / PIXEL_PER_TILE) % (SCREEN_TILE_WIDTH * 2); // 4tile換算でのx絶対座標
-            let tile_local_x = tile_global_x % SCREEN_TILE_WIDTH; // 1 tile内での絶対座標
+            let tile_global_x = tile_base_x  % (SCREEN_TILE_WIDTH * 2); // 4tile換算でのx絶対座標
+            let tile_local_x  = tile_global_x % SCREEN_TILE_WIDTH; // 1 tile内での絶対座標
             let is_nametable_position_left = tile_global_x < SCREEN_TILE_WIDTH; // 4面ある内、右側にある場合false
 
             // 4面あるうちのどれかがわかるので、該当する面のベースアドレスを返します
@@ -338,34 +341,27 @@ impl Ppu {
             let bg_data_lower = video_system.read_u8(&mut system.cassette, bg_pattern_table_addr_lower);
             let bg_data_upper = video_system.read_u8(&mut system.cassette, bg_pattern_table_addr_upper);
 
-            // 描画するか
-            for i in 0..PIXEL_PER_TILE {
-                // やっと画面上の座標
-                let pixel_x = usize::from((tile_base_x * PIXEL_PER_TILE) + i);
-                let pixel_y = usize::from(self.current_line);
+            // bg作る
+            let bg_palette_offset = (((bg_data_upper >> (7 - offset_x)) & 0x01) << 1) | ((bg_data_lower >> (7 - offset_x)) & 0x01);
+            let bg_palette_addr = 
+                (PALETTE_TABLE_BASE_ADDR + PALETTE_BG_OFFSET) +   // 0x3f00
+                (u16::from(bg_palette_id) * PALETTE_ENTRY_SIZE) + // attributeでBG Palette0~3選択
+                u16::from(bg_palette_offset);                     // palette内の色選択
 
-                // bg作る
-                let bg_palette_offset = (((bg_data_upper >> (7 - i)) & 0x01) << 1) | ((bg_data_lower >> (7 - i)) & 0x01);
-                let bg_palette_addr = 
-                    (PALETTE_TABLE_BASE_ADDR + PALETTE_BG_OFFSET) +   // 0x3f00
-                    (u16::from(bg_palette_id) * PALETTE_ENTRY_SIZE) + // attributeでBG Palette0~3選択
-                    u16::from(bg_palette_offset);                     // palette内の色選択
+            // BG左端8pixel clipping
+            let is_bg_clipping = system.read_ppu_is_clip_bg_leftend() && (pixel_x < 8);
+            let bg_palette_data: Option<u8> = if is_bg_clipping || !system.read_ppu_is_write_bg() { None } else { Some(video_system.read_u8(&mut system.cassette, bg_palette_addr)) };
 
-                // BG左端8pixel clipping
-                let is_bg_clipping = system.read_ppu_is_clip_bg_leftend() && (pixel_x < 8);
-                let bg_palette_data: Option<u8> = if is_bg_clipping || !system.read_ppu_is_write_bg() { None } else { Some(video_system.read_u8(&mut system.cassette, bg_palette_addr)) };
+            // Spriteを探索して描画するデータを取得する
+            let (sprite_palette_data_back, sprite_palette_data_front) = self.get_sprite_draw_data(system, video_system, pixel_x, pixel_y);
 
-                // Spriteを探索して描画するデータを取得する
-                let (sprite_palette_data_back, sprite_palette_data_front) = self.get_sprite_draw_data(system, video_system, pixel_x, pixel_y);
-
-                // 前後関係考慮して書き込む
-                for palette_data in &[sprite_palette_data_back, bg_palette_data, sprite_palette_data_front] {
-                    if let Some(color_index) = palette_data {
-                        let c = Color::from(*color_index);
-                        fb[pixel_y][pixel_x][0] = c.0;
-                        fb[pixel_y][pixel_x][1] = c.1;
-                        fb[pixel_y][pixel_x][2] = c.2;
-                    }
+            // 前後関係考慮して書き込む
+            for palette_data in &[sprite_palette_data_back, bg_palette_data, sprite_palette_data_front] {
+                if let Some(color_index) = palette_data {
+                    let c = Color::from(*color_index);
+                    fb[pixel_y][pixel_x][0] = c.0;
+                    fb[pixel_y][pixel_x][1] = c.1;
+                    fb[pixel_y][pixel_x][2] = c.2;
                 }
             }
             
