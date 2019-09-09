@@ -276,13 +276,30 @@ fn main() {
     // let rom_path = "roms/nes-test-roms/scrolltest/sssscroll.nes".to_string();
     let rom_path = "roms/my_dump/mario.nes".to_string();
     // let rom_path = "roms/my_dump/donkey.nes".to_string();
+
+    let rom_exists = std::path::Path::new(&rom_path).is_file();
+
     // emu
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
     let mut ppu: Ppu = Default::default();
     let mut video_sys: VideoSystem = Default::default();
 
-    load_cassette(&mut cpu_sys.cassette, rom_path);
+    if rom_exists {
+        load_cassette(&mut cpu_sys.cassette, rom_path);
+    } else {
+        // 選んで
+        let result = nfd::open_file_dialog(None, None).unwrap_or_else(|e| {
+            panic!(e);
+        });
+        match result {
+            Response::Okay(file_path) => {
+                load_cassette(&mut cpu_sys.cassette, file_path.clone());
+                debugger_print!(PrintLevel::INFO, PrintFrom::MAIN, format!(" load: {}", file_path.clone()));
+            },
+            _ => panic!("no input file"),
+        }
+    }
     cpu.reset();
     cpu_sys.reset();
     ppu.reset();
