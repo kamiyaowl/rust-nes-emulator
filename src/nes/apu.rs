@@ -3,12 +3,12 @@ use super::system::*;
 #[derive(Copy, Clone)]
 pub struct PulseSound {
     // $4000 / $4004
-    /// 0-100でDuty Cycleを設定する
-    pub dutyCycle: u8,
+    /// Duty Cycleを設定する
+    pub dutyCycle: f32,
     /// 再生時間カウンタ有効
-    pub lengthCounterHalt: bool,
+    pub isLengthCounterHalt: bool,
     /// 音響選択
-    pub constantVolume: bool,
+    pub isConstantVolume: bool,
     /// 音量値 4bit
     pub volume: u8,
 
@@ -18,7 +18,7 @@ pub struct PulseSound {
     /// 周波数スイープ値
     pub sweepPeriod: u8,
     /// 周波数スイープの方向(add/sub)
-    pub isSweepPositive: bool,
+    pub isSweepNegative: bool,
     /// 周波数範囲
     pub sweepShift: u8,
 
@@ -31,13 +31,13 @@ pub struct PulseSound {
 impl Default for PulseSound {
     fn default() -> Self {
         Self {
-            dutyCycle: 0,
-            lengthCounterHalt: false,
-            constantVolume: false,
+            dutyCycle: 0.0,
+            isLengthCounterHalt: false,
+            isConstantVolume: false,
             volume: 0,
             isSweepEnable: false,
             sweepPeriod: 0,
-            isSweepPositive: false,
+            isSweepNegative: false,
             sweepShift: 0,
             timerValue: 0,
             lengthCounterLoad: 0,
@@ -49,7 +49,7 @@ impl Default for PulseSound {
 pub struct TriangleSound {
     // $4008
     /// 再生時間カウンタ有効
-    pub lengthCounterHalt: bool,
+    pub isLengthCounterHalt: bool,
     /// 再生時間カウンタ値
     pub counterValue: u8,
     // $400a, $400b
@@ -62,7 +62,7 @@ pub struct TriangleSound {
 impl Default for TriangleSound {
     fn default() -> Self {
         Self {
-            lengthCounterHalt: false,
+            isLengthCounterHalt: false,
             counterValue: 0,
             timerValue: 0,
             lengthCounterLoad: 0,
@@ -76,7 +76,7 @@ pub struct NoiseSound {
     /// 再生時間カウンタ有効
     pub lengthCounterHalt: bool,
     /// 音響選択
-    pub constantVolume: bool,
+    pub isConstantVolume: bool,
     /// 音量値 4bit
     pub volume: u8,
     // $400E
@@ -93,7 +93,7 @@ impl Default for NoiseSound {
     fn default() -> Self {
         Self {
             lengthCounterHalt: false,
-            constantVolume: false,
+            isConstantVolume: false,
             volume: 0,
             isNoiseTypeLoop: false,
             noisePeriod: 0,
