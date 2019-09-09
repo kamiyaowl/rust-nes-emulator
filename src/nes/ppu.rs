@@ -286,7 +286,7 @@ impl Ppu {
     /// `tile_local`  - `tile_global`を1Namespace上のタイルでの位置に変換したもの
     /// scrollなしなら上記はすべて一致するはず
     fn draw_line(&mut self, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
-        
+
         let offset_y = self.current_line % PIXEL_PER_TILE;    // tile換算でのy位置から、実pixelのズレ
         let tile_base_y = self.current_line / PIXEL_PER_TILE; // オフセットなしのtile換算での現在位置
         // scroll regはtile換算でずらす
@@ -295,7 +295,7 @@ impl Ppu {
         // 4面ある内、下側に差し掛かっていたらfalse
         let is_nametable_position_top = tile_global_y < SCREEN_TILE_HEIGHT;
 
-        // オフセットなしのtile換算での現在位置 (x方向はtileごとにループ)
+                
         for tile_base_x in 0..SCREEN_TILE_WIDTH {
             // scroll regはtile換算でずらす
             let tile_global_x = (tile_base_x + u16::from(self.current_scroll_x) / PIXEL_PER_TILE) % (SCREEN_TILE_WIDTH * 2); // 4tile換算でのx絶対座標
@@ -309,9 +309,10 @@ impl Ppu {
                 (if is_nametable_position_top  { 0x0000 } else { 0x0800 });  // 上下面の広域offset
 
             // attribute tableはNametableの後32byteにいるのでアドレス計算して読み出す。縦横4*4tileで1attrになっている
+            // scroll対応のためにoffset計算はglobal位置を使っている（もしかしたら1Nametableでクリッピングがいるかも)
             let attribute_base_addr = target_nametable_base_addr + ATTRIBUTE_TABLE_OFFSET; // 23c0, 27c0, 2bc0, 2fc0のどれか
-            let attribute_x_offset  = (tile_base_x / BG_NUM_OF_TILE_PER_ATTRIBUTE_TABLE_ENTRY) % ATTRIBUTE_TABLE_WIDTH;
-            let attribute_y_offset  = tile_base_y / BG_NUM_OF_TILE_PER_ATTRIBUTE_TABLE_ENTRY;
+            let attribute_x_offset  = (tile_global_x / BG_NUM_OF_TILE_PER_ATTRIBUTE_TABLE_ENTRY) % ATTRIBUTE_TABLE_WIDTH;
+            let attribute_y_offset  =  tile_global_y / BG_NUM_OF_TILE_PER_ATTRIBUTE_TABLE_ENTRY;
             let attribute_addr = 
                 attribute_base_addr +                          // base addr
                 (attribute_y_offset * ATTRIBUTE_TABLE_WIDTH) + // y offset
@@ -343,9 +344,6 @@ impl Ppu {
                 let pixel_x = usize::from((tile_base_x * PIXEL_PER_TILE) + i);
                 let pixel_y = usize::from(self.current_line);
 
-                // 画面上の座標は、scrollでずれた分を考慮 TODO: #37
-                // let scroll_offset_x = usize::from(self.current_scroll_x) % usize::from(PIXEL_PER_TILE);
-                // let scroll_offset_y = usize::from(self.current_scroll_y) % usize::from(PIXEL_PER_TILE);
                 // bg作る
                 let bg_palette_offset = (((bg_data_upper >> (7 - i)) & 0x01) << 1) | ((bg_data_lower >> (7 - i)) & 0x01);
                 let bg_palette_addr = 
