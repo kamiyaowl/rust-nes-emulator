@@ -63,8 +63,8 @@ jobs:
           when: always
       # deploy to netlify (require $NETLIFY_AUTH_TOKEN, $NETLIFY_SITE_ID)
       - run:
-          name: npm install
-          command: cd wasm && npm install
+          name: npm install && build
+          command: cd wasm && npm install && npm run build
       - run:
           name: Deploy to netlify
           command: netlify deploy --prod -d ./wasm
