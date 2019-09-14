@@ -8,6 +8,12 @@ edition = "2018"
 path = "src/main.rs"
 name = "rust_nes_emulator_desktop"
 
+[profile.dev]
+opt-level = 0
+
+[profile.release]
+opt-level = 3
+
 [dependencies.rust-nes-emulator]
 path = "../"
 

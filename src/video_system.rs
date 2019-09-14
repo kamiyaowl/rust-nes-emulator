@@ -1,27 +1,26 @@
-use super::interface::*;
 use super::cassette::*;
+use super::interface::*;
 
-pub const PATTERN_TABLE_BASE_ADDR     : u16 = 0x0000;
-pub const NAME_TABLE_BASE_ADDR        : u16 = 0x2000;
-pub const NAME_TABLE_MIRROR_BASE_ADDR : u16 = 0x3000;
-pub const PALETTE_TABLE_BASE_ADDR     : u16 = 0x3f00;
-pub const VIDEO_ADDRESS_SIZE          : u16 = 0x4000;
+pub const PATTERN_TABLE_BASE_ADDR: u16 = 0x0000;
+pub const NAME_TABLE_BASE_ADDR: u16 = 0x2000;
+pub const NAME_TABLE_MIRROR_BASE_ADDR: u16 = 0x3000;
+pub const PALETTE_TABLE_BASE_ADDR: u16 = 0x3f00;
+pub const VIDEO_ADDRESS_SIZE: u16 = 0x4000;
 
-pub const NAME_TABLE_SIZE        : usize = 0x0400;
-pub const NUM_OF_NAME_TABLE      : usize = 2;
-pub const ATTRIBUTE_TABLE_SIZE   : u16   = 0x0040;
-pub const ATTRIBUTE_TABLE_OFFSET : u16   = 0x03c0; // NameTable+3c0で属性テーブル
+pub const NAME_TABLE_SIZE: usize = 0x0400;
+pub const NUM_OF_NAME_TABLE: usize = 2;
+pub const ATTRIBUTE_TABLE_SIZE: u16 = 0x0040;
+pub const ATTRIBUTE_TABLE_OFFSET: u16 = 0x03c0; // NameTable+3c0で属性テーブル
 
-pub const PALETTE_SIZE          : usize = 0x20;
-pub const PALETTE_ENTRY_SIZE    : u16   = 0x04;
-pub const PALETTE_BG_OFFSET     : u16   = 0x00;
-pub const PALETTE_SPRITE_OFFSET : u16   = 0x10;
+pub const PALETTE_SIZE: usize = 0x20;
+pub const PALETTE_ENTRY_SIZE: u16 = 0x04;
+pub const PALETTE_BG_OFFSET: u16 = 0x00;
+pub const PALETTE_SPRITE_OFFSET: u16 = 0x10;
 
 pub struct VideoSystem {
-    // 0x0000 - 0x1fff 
+    // 0x0000 - 0x1fff
     // pattern table 0/1
     // cassetteのCHR-RAMを読む
-
     /// 0x2000-0x2fff
     /// name table 0/1/2/3 (0x400が4面)
     /// 実際には2面しか持っていないのでカセットのミラーリング設定を引用
@@ -63,7 +62,7 @@ impl EmulateControl for VideoSystem {
 impl VideoSystem {
     /// NameTable Mirrorのアドレス変換をします
     /// 戻り値: (table_index[0,1,2,3のどれか], offset[中身のindex])
-    /// 
+    ///
     /// [A, B]: A-0x2000, B-0x2400
     /// [C, D]: C-0x2800, D-0x2c00
     fn convert_name_table_addr(&self, mirror_mode: NameTableMirror, addr: u16) -> (usize, usize) {
@@ -82,27 +81,27 @@ impl VideoSystem {
                 } else {
                     1
                 }
-            },
+            }
             NameTableMirror::Vertical => {
                 // [A, B]
                 // [A, B]
-                let tmp_addr = if addr >= 0x2800 { addr - 0x800 } else { addr };// とりあえず上の領域で考える
+                let tmp_addr = if addr >= 0x2800 { addr - 0x800 } else { addr }; // とりあえず上の領域で考える
                 if tmp_addr < 0x2400 {
                     0
                 } else {
                     1
                 }
-            },
+            }
             NameTableMirror::SingleScreen => {
                 // [A, A]
                 // [A, A]
                 0
-            },
+            }
             NameTableMirror::FourScreen => {
                 // [A, B]
                 // [C, D]
                 usize::from((addr - 0x2000) / 4)
-            },
+            }
             _ => {
                 unimplemented!();
             }
@@ -119,7 +118,8 @@ impl VideoSystem {
             self.nametables[index][offset]
         } else if addr < PALETTE_TABLE_BASE_ADDR {
             // 0x3000 -> 0x2000にミラーする
-            let (index, offset) = self.convert_name_table_addr(cassette.nametable_mirror, addr - 0x1000);
+            let (index, offset) =
+                self.convert_name_table_addr(cassette.nametable_mirror, addr - 0x1000);
             self.nametables[index][offset]
         } else {
             // Palette with mirroring
@@ -130,7 +130,7 @@ impl VideoSystem {
                 0x14 => self.palette[0x04],
                 0x18 => self.palette[0x08],
                 0x1c => self.palette[0x0c],
-                _    => self.palette[index],
+                _ => self.palette[index],
             }
         }
     }
@@ -144,7 +144,8 @@ impl VideoSystem {
             self.nametables[index][offset] = data;
         } else if addr < PALETTE_TABLE_BASE_ADDR {
             // 0x3000 -> 0x2000にミラーする
-            let (index, offset) = self.convert_name_table_addr(cassette.nametable_mirror, addr - 0x1000);
+            let (index, offset) =
+                self.convert_name_table_addr(cassette.nametable_mirror, addr - 0x1000);
             self.nametables[index][offset] = data;
         } else {
             // Palette with mirroring
@@ -155,7 +156,7 @@ impl VideoSystem {
                 0x14 => self.palette[0x04] = data,
                 0x18 => self.palette[0x08] = data,
                 0x1c => self.palette[0x0c] = data,
-                _    => self.palette[index] = data,
+                _ => self.palette[index] = data,
             };
         }
     }

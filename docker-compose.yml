@@ -4,19 +4,19 @@ services:
       build: .
       volumes:
         - ./:/work
-      command: cargo test
+      command: cd test && cargo test
     test-release:
       build: .
       volumes:
         - ./:/work
-      command: cargo test --release
-    build:
+      command: cd test && cargo test --release
+    build-desktop:
       build: .
       volumes:
         - ./:/work
-      command: cargo build
-    build-release:
+      command: cd desktop && cargo build
+    build-desktop-release:
       build: .
       volumes:
         - ./:/work
-      command: cargo build --release
+      command: cd desktop && cargo build --release

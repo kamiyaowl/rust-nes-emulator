@@ -67,9 +67,10 @@ NES Emulator written in Rust
 
 ---
 
-## Build & Run
+## Build & Run (for Desktop)
 
 ```
+$ cd desktop
 $ cargo run --release
 ```
 
@@ -79,7 +80,7 @@ rustc 1.37.0 required
 
 ```
 $ docker-compose run build-release
-$ ./target/release/rust-nes-emulator
+$ ./desktop/target/release/rust-nes-emulator-desktop
 ```
 
 ## Test ROMs

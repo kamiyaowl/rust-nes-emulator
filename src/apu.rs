@@ -1,5 +1,5 @@
-use super::system::*;
 use super::cpu::*;
+use super::system::*;
 
 #[derive(Copy, Clone)]
 pub enum PulseDutyCycle {
@@ -152,17 +152,13 @@ impl Default for DmcSound {
     }
 }
 
-
 pub struct Apu {
     /// Frame Sequencer、CPUサイクルに連動して加算 11bit
     pub frameSeqCounter: u16,
-
 }
 impl Default for Apu {
     fn default() -> Self {
-        Self {
-            frameSeqCounter: 0,
-        }
+        Self { frameSeqCounter: 0 }
     }
 }
 

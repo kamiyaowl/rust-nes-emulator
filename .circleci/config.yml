@@ -18,63 +18,20 @@ jobs:
       - run:
           name: rustup component add
           command: rustup component add clippy rustfmt
-      # いまはまだformatもlintも気にしない
-      # - run:
-      #     name: fmt
-      #     command: cargo fmt -- --check
+      # debug build and test
       - run:
           name: build
-          command: cargo build
-      # - run:
-      #     name: lint
-      #     command: cargo clippy -- -D warnings
+          command: cd test && cargo build
       - run:
           name: test
-          command: cargo test -- --test-threads=1
+          command: cd test && cargo test
           when: always
-      - run:
-          name: test ignored
-          command: cargo test -- --test-threads=1 --ignored
-          when: always
-      - store_artifacts:
-          path: test_run_hello_ppu.bmp
-          destination: hello.bmp
-      - store_artifacts:
-          path: nestest_normal_menu.bmp
-          destination: nestest_normal_menu.bmp
-      - store_artifacts:
-          path: nestest_normal.bmp
-          destination: nestest_normal.bmp
-      - store_artifacts:
-          path: nestest_extra_menu.bmp
-          destination: nestest_extra_menu.bmp
-      - store_artifacts:
-          path: nestest_extra.bmp
-          destination: nestest_extra.bmp
+      # release build and test
       - run:
           name: build release
-          command: cargo build --release
+          command: cd test && cargo build --release
           when: always
       - run:
           name: test release
-          command: cargo test --release -- --test-threads=1
+          command: cd test && cargo test --release
           when: always
-      - run:
-          name: test release ignored
-          command: cargo test --release -- --test-threads=1 --ignored
-          when: always
-      - store_artifacts:
-          path: test_run_hello_ppu.bmp
-          destination: release_hello.bmp
-      - store_artifacts:
-          path: nestest_normal_menu.bmp
-          destination: release_nestest_normal_menu.bmp
-      - store_artifacts:
-          path: nestest_normal.bmp
-          destination: release_nestest_normal.bmp
-      - store_artifacts:
-          path: nestest_extra_menu.bmp
-          destination: release_nestest_extra_menu.bmp
-      - store_artifacts:
-          path: nestest_extra.bmp
-          destination: release_nestest_extra.bmp

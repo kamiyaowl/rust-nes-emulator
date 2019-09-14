@@ -1,22 +1,22 @@
-use super::interface::*;
 use super::cassette::*;
+use super::interface::*;
 use super::pad::*;
 
-pub const WRAM_SIZE           : usize = 0x0800;
-pub const PPU_REG_SIZE        : usize = 0x0008;
-pub const APU_IO_REG_SIZE     : usize = 0x0018;
-pub const EROM_SIZE           : usize = 0x1FE0;
-pub const ERAM_SIZE           : usize = 0x2000;
-pub const PROM_SIZE           : usize = 0x8000; // 32KB
+pub const WRAM_SIZE: usize = 0x0800;
+pub const PPU_REG_SIZE: usize = 0x0008;
+pub const APU_IO_REG_SIZE: usize = 0x0018;
+pub const EROM_SIZE: usize = 0x1FE0;
+pub const ERAM_SIZE: usize = 0x2000;
+pub const PROM_SIZE: usize = 0x8000; // 32KB
 
-pub const WRAM_BASE_ADDR       : u16 = 0x0000;
-pub const PPU_REG_BASE_ADDR    : u16 = 0x2000;
-pub const APU_IO_REG_BASE_ADDR : u16 = 0x4000;
-pub const CASSETTE_BASE_ADDR   : u16 = 0x4020;
+pub const WRAM_BASE_ADDR: u16 = 0x0000;
+pub const PPU_REG_BASE_ADDR: u16 = 0x2000;
+pub const APU_IO_REG_BASE_ADDR: u16 = 0x4000;
+pub const CASSETTE_BASE_ADDR: u16 = 0x4020;
 
 /// Memory Access Dispatcher
 pub struct System {
-    /// 0x0000 - 0x07ff: WRAM 
+    /// 0x0000 - 0x07ff: WRAM
     /// 0x0800 - 0x1f7ff: WRAM  Mirror x3
     pub wram: [u8; WRAM_SIZE],
     //  0x2000 - 0x2007: PPU I/O
@@ -39,64 +39,64 @@ pub struct System {
     pub pad2: Pad,
 
     /* PPUのアドレス空間に対する要求トリガ */
-    pub written_oam_data   : bool, // OAM_DATAがかかれた
-    pub written_ppu_scroll : bool, // PPU_SCROLLが2回書かれた
-    pub written_ppu_addr   : bool, // PPU_ADDRが2回書かれた
-    pub written_ppu_data   : bool, // PPU_DATAがかかれた
-    pub written_oam_dma    : bool, // OAM_DMAが書かれた
-    pub read_oam_data      : bool, // OAM_DATAが読まれた
-    pub read_ppu_data      : bool, // PPU_DATAが読まれた
+    pub written_oam_data: bool,   // OAM_DATAがかかれた
+    pub written_ppu_scroll: bool, // PPU_SCROLLが2回書かれた
+    pub written_ppu_addr: bool,   // PPU_ADDRが2回書かれた
+    pub written_ppu_data: bool,   // PPU_DATAがかかれた
+    pub written_oam_dma: bool,    // OAM_DMAが書かれた
+    pub read_oam_data: bool,      // OAM_DATAが読まれた
+    pub read_ppu_data: bool,      // PPU_DATAが読まれた
 
     /* 2回海ができるPPU register対応 */
     /// $2005, $2006は状態を共有する、$2002を読み出すと、どっちを書くかはリセットされる
-    pub ppu_is_second_write : bool, // 初期値falseで, 2回目の書き込みが分岐するようにtrueにする
-    pub ppu_scroll_y_reg    : u8,   // $2005
-    pub ppu_addr_lower_reg  : u8,   // $2006
+    pub ppu_is_second_write: bool, // 初期値falseで, 2回目の書き込みが分岐するようにtrueにする
+    pub ppu_scroll_y_reg: u8,   // $2005
+    pub ppu_addr_lower_reg: u8, // $2006
 }
 
 impl Default for System {
     fn default() -> Self {
         Self {
-            wram:    [0; WRAM_SIZE],
+            wram: [0; WRAM_SIZE],
             ppu_reg: [0; PPU_REG_SIZE],
-            io_reg:  [0; APU_IO_REG_SIZE],
+            io_reg: [0; APU_IO_REG_SIZE],
 
             cassette: Default::default(),
             pad1: Default::default(),
             pad2: Default::default(),
 
-            written_oam_data    : false,
-            written_ppu_scroll  : false,
-            written_ppu_addr    : false,
-            written_ppu_data    : false,
-            written_oam_dma     : false,
-            read_oam_data       : false,
-            read_ppu_data       : false,
+            written_oam_data: false,
+            written_ppu_scroll: false,
+            written_ppu_addr: false,
+            written_ppu_data: false,
+            written_oam_dma: false,
+            read_oam_data: false,
+            read_ppu_data: false,
 
-            ppu_is_second_write : false,
-            ppu_scroll_y_reg    : 0,
-            ppu_addr_lower_reg  : 0,
+            ppu_is_second_write: false,
+            ppu_scroll_y_reg: 0,
+            ppu_addr_lower_reg: 0,
         }
     }
 }
 
 impl EmulateControl for System {
     fn reset(&mut self) {
-        self.wram    = [0; WRAM_SIZE];
+        self.wram = [0; WRAM_SIZE];
         self.ppu_reg = [0; PPU_REG_SIZE];
-        self.io_reg  = [0; APU_IO_REG_SIZE];
+        self.io_reg = [0; APU_IO_REG_SIZE];
 
-        self.written_oam_data    = false;
-        self.written_ppu_scroll  = false;
-        self.written_ppu_addr    = false;
-        self.written_ppu_data    = false;
-        self.written_oam_dma     = false;
-        self.read_oam_data       = false;
-        self.read_ppu_data       = false;
+        self.written_oam_data = false;
+        self.written_ppu_scroll = false;
+        self.written_ppu_addr = false;
+        self.written_ppu_data = false;
+        self.written_oam_dma = false;
+        self.read_oam_data = false;
+        self.read_ppu_data = false;
 
         self.ppu_is_second_write = false;
-        self.ppu_scroll_y_reg    = 0;
-        self.ppu_addr_lower_reg  = 0;
+        self.ppu_scroll_y_reg = 0;
+        self.ppu_addr_lower_reg = 0;
     }
     fn get_dump_size() -> usize {
         0x4020
@@ -116,40 +116,38 @@ impl SystemBus for System {
         if addr < PPU_REG_BASE_ADDR {
             // mirror support
             let index = usize::from(addr) % self.wram.len();
-            self.wram[index] 
+            self.wram[index]
         } else if addr < APU_IO_REG_BASE_ADDR {
             // mirror support
-            let index = usize::from(addr - PPU_REG_BASE_ADDR) % self.ppu_reg.len(); 
+            let index = usize::from(addr - PPU_REG_BASE_ADDR) % self.ppu_reg.len();
             debug_assert!(index < 0x9);
             match index {
                 // PPU_STATUS 2度書きレジスタの状態をリセット, VBLANKフラグをクリア
                 0x02 => {
-                    let data = self.ppu_reg[index];  // 先にフェッチしないとあかんやんけ
+                    let data = self.ppu_reg[index]; // 先にフェッチしないとあかんやんけ
                     if !is_nondestructive {
                         self.ppu_is_second_write = false;
                         self.write_ppu_is_vblank(false);
                     }
                     data
-                },
+                }
                 // OAM_DATAの読み出しフラグ
                 0x04 => {
                     if !is_nondestructive {
                         self.read_oam_data = true;
                     }
-                    self.ppu_reg[index] 
-                },
+                    self.ppu_reg[index]
+                }
                 // PPU_DATA update/address incrementのためにフラグを立てる
                 // バッファが入るので1step遅れで結果が入る
                 0x07 => {
                     if !is_nondestructive {
                         self.read_ppu_data = true;
                     }
-                    self.ppu_reg[index] 
-                },
+                    self.ppu_reg[index]
+                }
                 // default
-                _ => {
-                    self.ppu_reg[index] 
-                },
+                _ => self.ppu_reg[index],
             }
         } else if addr < CASSETTE_BASE_ADDR {
             let index = usize::from(addr - APU_IO_REG_BASE_ADDR);
@@ -161,7 +159,7 @@ impl SystemBus for System {
                     _ => self.io_reg[index],
                 }
             } else {
-                self.io_reg[index] 
+                self.io_reg[index]
             }
         } else {
             self.cassette.read_u8(addr, is_nondestructive)
@@ -182,7 +180,7 @@ impl SystemBus for System {
                         self.written_oam_data = true
                     }
                     self.ppu_reg[index] = data;
-                },
+                }
                 // $2005 PPU_SCROLL 2回書き
                 0x05 => {
                     if self.ppu_is_second_write {
@@ -196,9 +194,9 @@ impl SystemBus for System {
                         self.ppu_reg[index] = data;
                         if !is_nondestructive {
                             self.ppu_is_second_write = true;
-                        }                        
+                        }
                     }
-                },
+                }
                 // $2006 PPU_ADDR 2回書き
                 0x06 => {
                     if self.ppu_is_second_write {
@@ -212,9 +210,9 @@ impl SystemBus for System {
                         self.ppu_reg[index] = data;
                         if !is_nondestructive {
                             self.ppu_is_second_write = true;
-                        }                        
+                        }
                     }
-                },
+                }
                 // $2007 PPU_DATA addr autoincrement
                 0x07 => {
                     self.ppu_reg[index] = data;
@@ -222,11 +220,11 @@ impl SystemBus for System {
                         // PPUに書いてもらおう
                         self.written_ppu_data = true;
                     }
-                },
+                }
                 // default
                 _ => {
                     self.ppu_reg[index] = data;
-                },
+                }
             };
         } else if addr < CASSETTE_BASE_ADDR {
             let index = usize::from(addr - APU_IO_REG_BASE_ADDR);
@@ -236,7 +234,7 @@ impl SystemBus for System {
                     0x14 => self.written_oam_dma = true, // OAM DMA
                     0x16 => self.pad1.write_strobe((data & 0x01) == 0x01), // pad1
                     0x17 => self.pad2.write_strobe((data & 0x01) == 0x01), // pad2
-                    _ => {},
+                    _ => {}
                 }
             }
             self.io_reg[index] = data;
