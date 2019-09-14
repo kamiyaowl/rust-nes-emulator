@@ -67,5 +67,5 @@ jobs:
           command: cd wasm && npm install && npm run build
       - run:
           name: Deploy to netlify
-          command: netlify deploy --prod -d ./wasm
+          command: netlify deploy --prod -d ./wasm/dist
 

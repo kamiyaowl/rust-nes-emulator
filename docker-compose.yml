@@ -50,10 +50,10 @@ services:
         - ./:/work
       working_dir: /work/wasm
       command: wasm-pack build --release
-    # preview wasm at localhost:4444
-    serve-wasm:
-      image: nginx:latest
-      ports:
-        - "4444:80"
+    # build wasm webpage
+    build-wasm-webpage:
+      build: .
       volumes:
-        - ./wasm:/usr/share/nginx/html
+        - ./:/work
+      working_dir: /work/wasm
+      command: npm run build

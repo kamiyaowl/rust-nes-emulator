@@ -69,20 +69,37 @@ NES Emulator written in Rust
 
 ---
 
-## Build & Run (for Desktop)
+## Build
 
-```
+rustc 1.37.0 required
+
+### Desktop Application
+
+```shell
 $ cd desktop
 $ cargo run --release
 ```
 
-rustc 1.37.0 required
+#### on Docker
 
-## Build (on Docker)
-
-```
+```shell
 $ docker-compose run build-desktop-release
-$ ./desktop/target/release/rust-nes-emulator-desktop
+```
+
+### WebAssembly Application
+
+```shell
+$ cd wasm
+$ wasm-pack build --release
+$ npm install
+$ npm run build
+```
+
+#### on Docker
+
+```shell
+$ docker-compose run build-wasm-release
+$ docker-compose run build-wasm-webpage
 ```
 
 ## Test ROMs
