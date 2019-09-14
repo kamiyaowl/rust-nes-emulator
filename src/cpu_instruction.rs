@@ -2,7 +2,6 @@ use super::cpu::*;
 use super::ppu::Ppu; // TODO: 削除
 use super::system::System;
 use super::interface::{SystemBus};
-use super::debugger::*;
 
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 enum Opcode {
@@ -486,16 +485,6 @@ impl Cpu {
         let inst_code = self.fetch_u8(system);
 
         let Instruction(opcode, mode) = Instruction::from(inst_code);
-
-        debugger_print!(PrintLevel::DEBUG, PrintFrom::CPU, {
-            let op1 = system.read_u8(inst_pc + 1, true); // for debug 非破壊
-            let op2 = system.read_u8(inst_pc + 2, true); // for debug 非破壊
-            let Operand(addr, _) = self.fetch_operand(system, mode); // pcを破壊してしまい太郎
-            self.pc = inst_pc + 1; // 復旧させとくか...
-            let arg = system.read_u8(addr, true); // 非破壊読み出し
-
-            format!("{:04X} {:02X} {:02X} {:02X} {:?} {:<9?}\t${:04X}=#{:04X}\tA:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} CYC:{} SL:{}", inst_pc, inst_code, op1, op2, opcode, mode, addr, arg, self.a, self.x, self.y, self.p, (self.sp & 0xff) as u8, ppu.cumulative_cpu_cyc * 3, ppu.current_line)
-        });
 
         match opcode {
             /* *************** binary op ***************  */
@@ -1335,7 +1324,6 @@ impl Cpu {
                 self.write_negative_flag(is_negative);
                 self.a = result_eor;
 
-                debugger_print!(PrintLevel::HIDDEN, PrintFrom::CPU, format!("addr:{:04X}, arg:{:02X}, result_lsr:{:02X}, self.a:{:02X}(after) result_eor:{:02X}", addr, arg, result_lsr, self.a, result_eor));
                 3 + cyc
             },
             Opcode::SKB => {

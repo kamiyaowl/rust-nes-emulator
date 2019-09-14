@@ -1,5 +1,4 @@
 use super::interface::*;
-use super::debugger::*;
 
 #[derive(Copy, Clone)]
 pub enum PadButton {
@@ -65,7 +64,6 @@ impl Pad {
         let data = self.button_reg.wrapping_shr(self.read_shift_index.into()) & 0x01;
         // strobeが無効であればデータを進める
         if !self.strobe_enable {
-            debugger_print!(PrintLevel::HIDDEN, PrintFrom::PAD, format!(" pad read data:{:02x} index:{}", self.button_reg, self.read_shift_index));
             self.read_shift_index = (self.read_shift_index + 1) % 8;
         }
         data

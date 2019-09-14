@@ -1,5 +1,4 @@
 use super::interface::*;
-use super::debugger::*;
 use super::cpu::*;
 use super::system::*;
 use super::video_system::*;
@@ -265,8 +264,6 @@ impl Ppu {
         // 転送サイズ
         let transfer_size : u16 = if is_pre_transfer { OAM_DMA_COPY_SIZE_PER_PPU_STEP as u16 } else { (OAM_SIZE as u16) - u16::from(OAM_DMA_COPY_SIZE_PER_PPU_STEP) };
 
-        debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("[dma][{}] start_offset:{:04X}, transfer_size:{:04X}, cpu_start_addr:{:04x}, oam_start_addr:{:02x}", if is_pre_transfer { "pre " } else { "post" }, start_offset, transfer_size, cpu_start_addr, oam_start_addr));
-
         // 転送
         for offset in 0..transfer_size {
             let cpu_addr = cpu_start_addr.wrapping_add(offset);
@@ -493,12 +490,10 @@ impl Ppu {
                 let is_zero_hit_delay = sprite_begin_y > (sprite_end_y - 3); //1lineずつ処理だとマリオ等早く検知しすぎるので TODO: #40
                 if sprite_index == 0 && is_zero_hit_delay {
                     system.write_ppu_is_hit_sprite0(true);
-                    debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("sprite zero hit"));
                 }
                 // sprite overflow
                 if tmp_index >= SPRITE_TEMP_SIZE {
                     system.write_ppu_is_sprite_overflow(true);
-                    debugger_print!(PrintLevel::INFO, PrintFrom::PPU, format!("sprite overflow"));
                 } else {
                     debug_assert!(tmp_index < SPRITE_TEMP_SIZE);
                     // tmp regに格納する
@@ -512,7 +507,6 @@ impl Ppu {
     /// 1行ごとに色々更新する処理です
     /// 341cyc溜まったときに呼び出されることを期待
     fn update_line(&mut self, cpu: &mut Cpu, system: &mut System, video_system: &mut VideoSystem, fb: &mut [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
-        debugger_print!(PrintLevel::HIDDEN, PrintFrom::PPU, format!("[step] line:{}", self.current_line));
         // scroll更新
         self.current_scroll_x = self.fetch_scroll_x;
         self.current_scroll_y = self.fetch_scroll_y;
@@ -583,13 +577,11 @@ impl Ppu {
         if is_write_ppu_req {
             video_system.write_u8(&mut system.cassette, ppu_addr, ppu_data);
             system.increment_ppu_addr();
-            debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("[from cpu] write_req addr:{:04x}, data:{:02x}", ppu_addr, ppu_data));
         }
         if is_read_ppu_req {
             let data = video_system.read_u8(&mut system.cassette, ppu_addr);
             system.write_ppu_data(data);
             system.increment_ppu_addr();
-            debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("[from cpu] read_req  addr:{:04x}, data:{:02x}", ppu_addr, data));
         }
 
         // OAM R/W (おおよそはDMAでやられるから使わないらしい)
@@ -597,12 +589,10 @@ impl Ppu {
         let (is_read_oam_req, is_write_oam_req, oam_data) = system.read_oam_data();
         if is_write_oam_req {
             self.oam[usize::from(oam_addr)] = oam_data;
-            debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("[oam][from cpu] write_req addr:{:04x}, data:{:02x}", oam_addr, oam_data));
         }
         if is_read_oam_req {
             let data = self.oam[usize::from(oam_addr)];
             system.write_oam_data(data);
-            debugger_print!(PrintLevel::DEBUG, PrintFrom::PPU, format!("[oam][from cpu] read_req  addr:{:04x}, data:{:02x}", oam_addr, data));
         }
 
         // clock cycle判定して行更新
@@ -612,5 +602,4 @@ impl Ppu {
             self.update_line(cpu, system, video_system, fb);
         }
     }
-
 }

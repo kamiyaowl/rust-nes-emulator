@@ -1,6 +1,5 @@
 use super::system::System;
 use super::interface::*;
-use super::debugger::*;
 
 pub const CPU_FREQ:         u32 = 1790000;
 pub const NMI_READ_LOWER:   u16 = 0xfffa;
@@ -103,15 +102,11 @@ impl Cpu {
         let is_nested_interrupt = self.read_interrupt_flag();
         // RESET, NMI以外は多重割り込みを許容しない
         if is_nested_interrupt && (irq_type == Interrupt::IRQ) || (irq_type == Interrupt::BRK) {
-            debugger_print!(PrintLevel::DEBUG, PrintFrom::CPU, format!("[interrupt] skip nested interrupt"));
             return;
         }
         // 割り込み種類別の処理
         match irq_type {
             Interrupt::NMI   => {
-                // vblankの度に出るのでちょっとうるさい
-                debugger_print!(PrintLevel::DEBUG, PrintFrom::CPU, format!("[interrupt] NMI interrupt"));
-
                 self.write_break_flag(false);
                 // PCのUpper, Lower, Status RegisterをStackに格納する
                 self.stack_push(system, (self.pc >> 8) as u8);
@@ -120,13 +115,9 @@ impl Cpu {
                 self.write_interrupt_flag(true);
             },
             Interrupt::RESET => {
-                debugger_print!(PrintLevel::INFO, PrintFrom::CPU, format!("[interrupt] RESET interrupt"));
-
                 self.write_interrupt_flag(true);
             },
             Interrupt::IRQ   => {
-                debugger_print!(PrintLevel::INFO, PrintFrom::CPU, format!("[interrupt] IRQ interrupt"));
-
                 self.write_break_flag(false);
                 // PCのUpper, Lower, Status RegisterをStackに格納する
                 self.stack_push(system, (self.pc >> 8) as u8);
@@ -135,8 +126,6 @@ impl Cpu {
                 self.write_interrupt_flag(true);
             },
             Interrupt::BRK   => {
-                debugger_print!(PrintLevel::INFO, PrintFrom::CPU, format!("[interrupt] BRK interrupt"));
-
                 self.write_break_flag(true);
                 self.pc = self.pc + 1;
                 // PCのUpper, Lower, Status RegisterをStackに格納する
@@ -163,9 +152,5 @@ impl Cpu {
         let lower = system.read_u8(lower_addr, false);
         let upper = system.read_u8(upper_addr, false);
         self.pc = (lower as u16) | ((upper as u16) << 8);
-
-        debugger_print!(PrintLevel::DEBUG, PrintFrom::CPU, format!("[interrupt] jump to {:04x}", self.pc));
     }
-
 }
-

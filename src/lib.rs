@@ -3,8 +3,6 @@
 extern crate lazy_static; // TODO: no_std supportの対応を要確認(lib自体はサポートしてる)
 
 /* internal */
-#[macro_use]
-pub mod debugger;
 pub mod interface;
 
 pub mod apu;
