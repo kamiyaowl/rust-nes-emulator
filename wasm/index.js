@@ -1,4 +1,4 @@
-const js = import("./pkg/rust_nes_emulator_wasm.js");
-js.then(js => {
-  js.greet("Hello Rust wasm!");
+const wasm = import('./node_modules/rust-nes-emulator-wasm/rust_nes_emulator_wasm.js');
+wasm.then(wasm => {
+  wasm.greet('WebAssembly');
 });
