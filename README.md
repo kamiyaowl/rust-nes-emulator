@@ -79,7 +79,7 @@ rustc 1.37.0 required
 ## Build (on Docker)
 
 ```
-$ docker-compose run build-release
+$ docker-compose run build-desktop-release
 $ ./desktop/target/release/rust-nes-emulator-desktop
 ```
 
