@@ -11,6 +11,9 @@ jobs:
       - run:
           name: Install nodejs
           command: sudo npm install -g n && sudo n latest
+      - run:
+          name: Install netlify-cli
+          command: sudo npm install -g netlify-cli --unsafe-perm=true --allow-root
       # code checkout
       - checkout
       - run: 
@@ -63,9 +66,6 @@ jobs:
           command: cd wasm && wasm-pack build --release
           when: always
       # deploy to netlify
-      - run:
-          name: Install netlify-cli
-          command: sudo npm install -g netlify-cli
       - run:
           name: Deploy to netlify
           command: netlify deploy --site-id $NETLIFY_SITE_ID -p ./wasm --access-token $NETLIFY_TOKEN
