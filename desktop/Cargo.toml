@@ -7,15 +7,15 @@ edition = "2018"
 [features]
 default = []
 
-[profile.dev]
-opt-level = 0
-
-[profile.release]
-opt-level = 3
-
 [lib]
 path = "src/lib.rs"
 name = "rust_nes_emulator"
 
 [dependencies]
 lazy_static = "1.4.0"
+bmp = "*"
+image = "0.22.1"
+gfx = "0.18.1"
+gfx_device_gl = "0.16.2"
+piston_window = "0.104.0"
+nfd = "0.0.4"
