@@ -1,0 +1,16 @@
+[package]
+name = "rust-nes-emulator-wasm"
+version = "0.1.0"
+authors = ["K <kamiyaowl@gmail.com>"]
+edition = "2018"
+
+[lib]
+path = "src/main.rs"
+name = "rust_nes_emulator_wasm"
+crate-type = ["cdylib"]
+
+[dependencies.rust-nes-emulator]
+path = "../"
+
+[dependencies]
+wasm-bindgen = "0.2.50"
