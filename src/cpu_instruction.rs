@@ -1,56 +1,110 @@
 use super::cpu::*;
+use super::interface::SystemBus;
 use super::ppu::Ppu; // TODO: 削除
 use super::system::System;
-use super::interface::{SystemBus};
-use super::debugger::*;
 
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 enum Opcode {
     // binary op
-    ADC, SBC, AND, EOR, ORA,  
+    ADC,
+    SBC,
+    AND,
+    EOR,
+    ORA,
     // shift/rotate
-    ASL, LSR, ROL, ROR, 
+    ASL,
+    LSR,
+    ROL,
+    ROR,
     // inc/dec
-    INC, INX, INY, DEC, DEX, DEY, 
+    INC,
+    INX,
+    INY,
+    DEC,
+    DEX,
+    DEY,
     // load/store
-    LDA, LDX, LDY, STA, STX, STY, 
+    LDA,
+    LDX,
+    LDY,
+    STA,
+    STX,
+    STY,
     // set/clear flag
-    SEC, SED, SEI, CLC, CLD, CLI, CLV, 
+    SEC,
+    SED,
+    SEI,
+    CLC,
+    CLD,
+    CLI,
+    CLV,
     // compare
-    CMP, CPX, CPY, 
+    CMP,
+    CPX,
+    CPY,
     // jump return
-    JMP, JSR, RTI, RTS, 
+    JMP,
+    JSR,
+    RTI,
+    RTS,
     // branch
-    BCC, BCS, BEQ, BMI, BNE, BPL, BVC, BVS, 
+    BCC,
+    BCS,
+    BEQ,
+    BMI,
+    BNE,
+    BPL,
+    BVC,
+    BVS,
     // push/pop
-    PHA, PHP, PLA, PLP, 
+    PHA,
+    PHP,
+    PLA,
+    PLP,
     // transfer
-    TAX, TAY, TSX, TXA, TXS, TYA,
+    TAX,
+    TAY,
+    TSX,
+    TXA,
+    TXS,
+    TYA,
     // other
-    BRK, BIT, NOP,
+    BRK,
+    BIT,
+    NOP,
     // unofficial1
     // https://wiki.nesdev.com/w/index.php/Programming_with_unofficial_opcodes
-    ALR, ANC, ARR, AXS, LAX, SAX, 
-    DCP, ISC, RLA, RRA, SLO, SRE, 
-    SKB, IGN, 
+    ALR,
+    ANC,
+    ARR,
+    AXS,
+    LAX,
+    SAX,
+    DCP,
+    ISC,
+    RLA,
+    RRA,
+    SLO,
+    SRE,
+    SKB,
+    IGN,
     // unofficial2
     //ADC, SBC, NOP,
-
 }
 
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
 enum AddressingMode {
     Implied,
     Accumulator,
-    Immediate, 
-    Absolute,  
-    ZeroPage,  
-    ZeroPageX, 
-    ZeroPageY, 
-    AbsoluteX, 
-    AbsoluteY, 
-    Relative, 
-    Indirect,  
+    Immediate,
+    Absolute,
+    ZeroPage,
+    ZeroPageX,
+    ZeroPageY,
+    AbsoluteX,
+    AbsoluteY,
+    Relative,
+    Indirect,
     IndirectX,
     IndirectY,
 }
@@ -62,7 +116,7 @@ struct Operand(u16, u8);
 struct Instruction(Opcode, AddressingMode);
 
 impl Instruction {
-        /// romのコードを命令に変換します
+    /// romのコードを命令に変換します
     pub fn from(inst_code: u8) -> Instruction {
         match inst_code {
             /* *************** binary op ***************  */
@@ -144,7 +198,7 @@ impl Instruction {
 
             0xe8 => Instruction(Opcode::INX, AddressingMode::Implied),
             0xc8 => Instruction(Opcode::INY, AddressingMode::Implied),
-            
+
             0xc6 => Instruction(Opcode::DEC, AddressingMode::ZeroPage),
             0xd6 => Instruction(Opcode::DEC, AddressingMode::ZeroPageX),
             0xce => Instruction(Opcode::DEC, AddressingMode::Absolute),
@@ -152,7 +206,7 @@ impl Instruction {
 
             0xca => Instruction(Opcode::DEX, AddressingMode::Implied),
             0x88 => Instruction(Opcode::DEY, AddressingMode::Implied),
-            
+
             /* *************** load/store op ***************  */
             0xa9 => Instruction(Opcode::LDA, AddressingMode::Immediate),
             0xa5 => Instruction(Opcode::LDA, AddressingMode::ZeroPage),
@@ -162,19 +216,19 @@ impl Instruction {
             0xb9 => Instruction(Opcode::LDA, AddressingMode::AbsoluteY),
             0xa1 => Instruction(Opcode::LDA, AddressingMode::IndirectX),
             0xb1 => Instruction(Opcode::LDA, AddressingMode::IndirectY),
-            
+
             0xa2 => Instruction(Opcode::LDX, AddressingMode::Immediate),
             0xa6 => Instruction(Opcode::LDX, AddressingMode::ZeroPage),
             0xb6 => Instruction(Opcode::LDX, AddressingMode::ZeroPageY),
             0xae => Instruction(Opcode::LDX, AddressingMode::Absolute),
             0xbe => Instruction(Opcode::LDX, AddressingMode::AbsoluteY),
-            
+
             0xa0 => Instruction(Opcode::LDY, AddressingMode::Immediate),
             0xa4 => Instruction(Opcode::LDY, AddressingMode::ZeroPage),
             0xb4 => Instruction(Opcode::LDY, AddressingMode::ZeroPageX),
             0xac => Instruction(Opcode::LDY, AddressingMode::Absolute),
             0xbc => Instruction(Opcode::LDY, AddressingMode::AbsoluteX),
-            
+
             0x85 => Instruction(Opcode::STA, AddressingMode::ZeroPage),
             0x95 => Instruction(Opcode::STA, AddressingMode::ZeroPageX),
             0x8d => Instruction(Opcode::STA, AddressingMode::Absolute),
@@ -182,16 +236,15 @@ impl Instruction {
             0x99 => Instruction(Opcode::STA, AddressingMode::AbsoluteY),
             0x81 => Instruction(Opcode::STA, AddressingMode::IndirectX),
             0x91 => Instruction(Opcode::STA, AddressingMode::IndirectY),
-            
+
             0x86 => Instruction(Opcode::STX, AddressingMode::ZeroPage),
             0x96 => Instruction(Opcode::STX, AddressingMode::ZeroPageY),
             0x8e => Instruction(Opcode::STX, AddressingMode::Absolute),
-            
+
             0x84 => Instruction(Opcode::STY, AddressingMode::ZeroPage),
             0x94 => Instruction(Opcode::STY, AddressingMode::ZeroPageX),
             0x8c => Instruction(Opcode::STY, AddressingMode::Absolute),
-            
-            
+
             /* *************** set/clear flag ***************  */
             0x38 => Instruction(Opcode::SEC, AddressingMode::Implied),
             0xf8 => Instruction(Opcode::SED, AddressingMode::Implied),
@@ -333,7 +386,7 @@ impl Instruction {
             0xe2 => Instruction(Opcode::SKB, AddressingMode::Immediate),
 
             0x0c => Instruction(Opcode::IGN, AddressingMode::Absolute),
-            
+
             0x1c => Instruction(Opcode::IGN, AddressingMode::AbsoluteX),
             0x3c => Instruction(Opcode::IGN, AddressingMode::AbsoluteX),
             0x5c => Instruction(Opcode::IGN, AddressingMode::AbsoluteX),
@@ -387,40 +440,59 @@ impl Cpu {
     /// 実装するときは命令直後のオペランドを読み取るときはCpu::fetch, それ以外はSystem::read
     fn fetch_operand(&mut self, system: &mut System, mode: AddressingMode) -> Operand {
         match mode {
-            AddressingMode::Implied     => Operand(0, 0),
+            AddressingMode::Implied => Operand(0, 0),
             AddressingMode::Accumulator => Operand(0, 1),
-            AddressingMode::Immediate   => Operand(u16::from(self.fetch_u8(system)) , 1),
-            AddressingMode::Absolute    => Operand(self.fetch_u16(system), 3),
-            AddressingMode::ZeroPage    => Operand(u16::from(self.fetch_u8(system)) , 2),
-            AddressingMode::ZeroPageX   => Operand(u16::from(self.fetch_u8(system).wrapping_add(self.x)), 3),
-            AddressingMode::ZeroPageY   => Operand(u16::from(self.fetch_u8(system).wrapping_add(self.y)), 3),
-            AddressingMode::AbsoluteX   => {
+            AddressingMode::Immediate => Operand(u16::from(self.fetch_u8(system)), 1),
+            AddressingMode::Absolute => Operand(self.fetch_u16(system), 3),
+            AddressingMode::ZeroPage => Operand(u16::from(self.fetch_u8(system)), 2),
+            AddressingMode::ZeroPageX => {
+                Operand(u16::from(self.fetch_u8(system).wrapping_add(self.x)), 3)
+            }
+            AddressingMode::ZeroPageY => {
+                Operand(u16::from(self.fetch_u8(system).wrapping_add(self.y)), 3)
+            }
+            AddressingMode::AbsoluteX => {
                 let data = self.fetch_u16(system).wrapping_add(u16::from(self.x));
-                let additional_cyc = if (data & 0xff00u16) != (data.wrapping_add(u16::from(self.x)) & 0xff00u16) { 1 } else { 0 };
+                let additional_cyc =
+                    if (data & 0xff00u16) != (data.wrapping_add(u16::from(self.x)) & 0xff00u16) {
+                        1
+                    } else {
+                        0
+                    };
                 Operand(data, 3 + additional_cyc)
-            },
-            AddressingMode::AbsoluteY   => {
+            }
+            AddressingMode::AbsoluteY => {
                 let data = self.fetch_u16(system).wrapping_add(u16::from(self.y));
-                let additional_cyc = if (data & 0xff00u16) != (data.wrapping_add(u16::from(self.y)) & 0xff00u16) { 1 } else { 0 };
+                let additional_cyc =
+                    if (data & 0xff00u16) != (data.wrapping_add(u16::from(self.y)) & 0xff00u16) {
+                        1
+                    } else {
+                        0
+                    };
                 Operand(data, 3 + additional_cyc)
-            },
-            AddressingMode::Relative    => {
+            }
+            AddressingMode::Relative => {
                 let src_addr = self.fetch_u8(system);
                 let signed_data = ((src_addr as i8) as i32) + (self.pc as i32); // 符号拡張して計算する
                 debug_assert!(signed_data >= 0);
                 debug_assert!(signed_data < 0x10000);
 
                 let data = signed_data as u16;
-                let additional_cyc = if (data & 0xff00u16) != (self.pc & 0xff00u16) { 1 } else { 0 };
+                let additional_cyc = if (data & 0xff00u16) != (self.pc & 0xff00u16) {
+                    1
+                } else {
+                    0
+                };
 
                 Operand(data, 1 + additional_cyc)
-            },
-            AddressingMode::Indirect    => {
+            }
+            AddressingMode::Indirect => {
                 let src_addr_lower = self.fetch_u8(system);
                 let src_addr_upper = self.fetch_u8(system);
 
                 let dst_addr_lower = u16::from(src_addr_lower) | (u16::from(src_addr_upper) << 8); // operandそのまま
-                let dst_addr_upper = u16::from(src_addr_lower.wrapping_add(1)) | (u16::from(src_addr_upper) << 8); // operandのlowerに+1したもの
+                let dst_addr_upper =
+                    u16::from(src_addr_lower.wrapping_add(1)) | (u16::from(src_addr_upper) << 8); // operandのlowerに+1したもの
 
                 let dst_data_lower = u16::from(system.read_u8(dst_addr_lower, false));
                 let dst_data_upper = u16::from(system.read_u8(dst_addr_upper, false));
@@ -428,29 +500,35 @@ impl Cpu {
                 let data = dst_data_lower | (dst_data_upper << 8);
 
                 Operand(data, 5)
-            },
-            AddressingMode::IndirectX   => {
+            }
+            AddressingMode::IndirectX => {
                 let src_addr = self.fetch_u8(system);
                 let dst_addr = src_addr.wrapping_add(self.x);
 
                 let data_lower = u16::from(system.read_u8(u16::from(dst_addr), false));
-                let data_upper = u16::from(system.read_u8(u16::from(dst_addr.wrapping_add(1)), false));
+                let data_upper =
+                    u16::from(system.read_u8(u16::from(dst_addr.wrapping_add(1)), false));
 
                 let data = data_lower | (data_upper << 8);
                 Operand(data, 5)
-            },
-            AddressingMode::IndirectY   => {
+            }
+            AddressingMode::IndirectY => {
                 let src_addr = self.fetch_u8(system);
 
                 let data_lower = u16::from(system.read_u8(u16::from(src_addr), false));
-                let data_upper = u16::from(system.read_u8(u16::from(src_addr.wrapping_add(1)), false));
+                let data_upper =
+                    u16::from(system.read_u8(u16::from(src_addr.wrapping_add(1)), false));
 
                 let base_data = data_lower | (data_upper << 8);
                 let data = base_data.wrapping_add(u16::from(self.y));
-                let additional_cyc = if (base_data & 0xff00u16) != (data & 0xff00u16) { 1 } else { 0 };
+                let additional_cyc = if (base_data & 0xff00u16) != (data & 0xff00u16) {
+                    1
+                } else {
+                    0
+                };
 
                 Operand(data, 4 + additional_cyc)
-            },
+            }
         }
     }
     /// addressだけでなくデータまで一発で引きたい場合
@@ -466,13 +544,13 @@ impl Cpu {
                 let Operand(data, cyc) = self.fetch_operand(system, mode);
                 debug_assert!(data < 0x100u16);
                 (Operand(data, cyc), data as u8)
-            },
+            }
             // 他は帰ってきたアドレスからデータを引きなおす。使わない場合もある
             _ => {
                 let Operand(addr, cyc) = self.fetch_operand(system, mode);
                 let data = system.read_u8(addr, false);
                 (Operand(addr, cyc), data)
-            },
+            }
         }
     }
 
@@ -480,22 +558,12 @@ impl Cpu {
     /// ret: cycle数
     /// http://obelisk.me.uk/6502/reference.html
     // TODO: debug printようにppu借りる
-    pub fn step(&mut self, system: &mut System, ppu: &Ppu) -> u8 { 
+    pub fn step(&mut self, system: &mut System, ppu: &Ppu) -> u8 {
         // 命令がおいてあるところのaddress
         let inst_pc = self.pc;
         let inst_code = self.fetch_u8(system);
 
         let Instruction(opcode, mode) = Instruction::from(inst_code);
-
-        debugger_print!(PrintLevel::DEBUG, PrintFrom::CPU, {
-            let op1 = system.read_u8(inst_pc + 1, true); // for debug 非破壊
-            let op2 = system.read_u8(inst_pc + 2, true); // for debug 非破壊
-            let Operand(addr, _) = self.fetch_operand(system, mode); // pcを破壊してしまい太郎
-            self.pc = inst_pc + 1; // 復旧させとくか...
-            let arg = system.read_u8(addr, true); // 非破壊読み出し
-
-            format!("{:04X} {:02X} {:02X} {:02X} {:?} {:<9?}\t${:04X}=#{:04X}\tA:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} CYC:{} SL:{}", inst_pc, inst_code, op1, op2, opcode, mode, addr, arg, self.a, self.x, self.y, self.p, (self.sp & 0xff) as u8, ppu.cumulative_cpu_cyc * 3, ppu.current_line)
-        });
 
         match opcode {
             /* *************** binary op ***************  */
@@ -722,7 +790,7 @@ impl Cpu {
 
                 self.write_zero_flag(is_zero);
                 self.write_negative_flag(is_negative);
-                self.x = result;                
+                self.x = result;
                 2
             },
             Opcode::DEY => {
@@ -733,7 +801,7 @@ impl Cpu {
 
                 self.write_zero_flag(is_zero);
                 self.write_negative_flag(is_negative);
-                self.y = result;                
+                self.y = result;
                 2
             },
 
@@ -1036,10 +1104,10 @@ impl Cpu {
 
                 let is_zero     = result == 0;
                 let is_negative = (result & 0x80) == 0x80;
-                
+
                 self.write_zero_flag(is_zero);
                 self.write_negative_flag(is_negative);
-                self.x = result;                
+                self.x = result;
                 2
             },
             Opcode::TXA => {
@@ -1048,13 +1116,13 @@ impl Cpu {
 
                 self.write_zero_flag(is_zero);
                 self.write_negative_flag(is_negative);
-                self.a = self.x;                
+                self.a = self.x;
                 2
             },
             Opcode::TXS => {
                 // spの上位バイトは0x01固定
                 // txsはstatus書き換えなし
-                self.sp = (self.x as u16) | 0x0100u16; 
+                self.sp = (self.x as u16) | 0x0100u16;
                 2
             },
             Opcode::TYA => {
@@ -1190,7 +1258,7 @@ impl Cpu {
 
                 system.write_u8(addr, result, false);
                 1 + cyc
-            },            
+            },
             Opcode::DCP => {
                 // DEC->CMPっぽい
                 let (Operand(addr, cyc), arg) = self.fetch_args(system, mode);
@@ -1259,7 +1327,7 @@ impl Cpu {
                 self.a = result_and;
 
                 3 + cyc
-            },            
+            },
             Opcode::RRA => {
                 // ROR -> ADC
                 let (Operand(addr, cyc), arg) = self.fetch_args(system, mode);
@@ -1335,7 +1403,6 @@ impl Cpu {
                 self.write_negative_flag(is_negative);
                 self.a = result_eor;
 
-                debugger_print!(PrintLevel::HIDDEN, PrintFrom::CPU, format!("addr:{:04X}, arg:{:02X}, result_lsr:{:02X}, self.a:{:02X}(after) result_eor:{:02X}", addr, arg, result_lsr, self.a, result_eor));
                 3 + cyc
             },
             Opcode::SKB => {
@@ -1344,13 +1411,13 @@ impl Cpu {
                 let (Operand(_addr, cyc), _arg) = self.fetch_args(system, mode);
 
                 1 + cyc
-            },            
+            },
             Opcode::IGN => {
                 // フェッチするけど、なにもしない
                 let (Operand(_addr, cyc), _arg) = self.fetch_args(system, mode);
 
                 1 + cyc
-            },            
+            },
         }
     }
 }

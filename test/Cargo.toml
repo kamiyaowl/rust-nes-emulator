@@ -1,0 +1,16 @@
+[package]
+name = "rust-nes-emulator-test"
+version = "0.1.0"
+authors = ["K <kamiyaowl@gmail.com>"]
+edition = "2018"
+
+[lib]
+path = "src/main.rs"
+name = "rust_nes_emulator_test"
+
+[dependencies.rust-nes-emulator]
+path = "../"
+
+[dependencies]
+bmp = "0.5.0"
+image = "0.22.1"

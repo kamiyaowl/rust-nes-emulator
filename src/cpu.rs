@@ -1,79 +1,86 @@
-use super::system::System;
 use super::interface::*;
-use super::debugger::*;
+use super::system::System;
 
-pub const CPU_FREQ:         u32 = 1790000;
-pub const NMI_READ_LOWER:   u16 = 0xfffa;
-pub const NMI_READ_UPPER:   u16 = 0xfffb;
+pub const CPU_FREQ: u32 = 1790000;
+pub const NMI_READ_LOWER: u16 = 0xfffa;
+pub const NMI_READ_UPPER: u16 = 0xfffb;
 pub const RESET_READ_LOWER: u16 = 0xfffc;
 pub const RESET_READ_UPPER: u16 = 0xfffd;
-pub const IRQ_READ_LOWER:   u16 = 0xfffe;
-pub const IRQ_READ_UPPER:   u16 = 0xffff;
-pub const BRK_READ_LOWER:   u16 = 0xfffe;
-pub const BRK_READ_UPPER:   u16 = 0xffff;
+pub const IRQ_READ_LOWER: u16 = 0xfffe;
+pub const IRQ_READ_UPPER: u16 = 0xffff;
+pub const BRK_READ_LOWER: u16 = 0xfffe;
+pub const BRK_READ_UPPER: u16 = 0xffff;
 
 #[derive(PartialEq, Eq)]
 pub enum Interrupt {
-    NMI, RESET, IRQ, BRK,
+    NMI,
+    RESET,
+    IRQ,
+    BRK,
 }
 
 pub struct Cpu {
     /// Accumulator
-    pub a : u8,
+    pub a: u8,
     /// Index Register
-    pub x : u8,
+    pub x: u8,
     /// Index Register
-    pub y : u8,
+    pub y: u8,
     /// Program Counter
     pub pc: u16,
     /// Stack Pointer
     /// 上位8bitは0x1固定
-    pub sp: u16, 
+    pub sp: u16,
     /// Processor Status Register
     /// Negative, oVerflow, Reserved(1固定), Break, Decimal, Interrupt, Zero, Carry
-    pub p  : u8,
+    pub p: u8,
 }
 
 impl Default for Cpu {
     fn default() -> Self {
         Self {
-            a: 0, x: 0, y: 0, pc: 0, sp: 0, p: 0, 
+            a: 0,
+            x: 0,
+            y: 0,
+            pc: 0,
+            sp: 0,
+            p: 0,
         }
     }
 }
 
 impl EmulateControl for Cpu {
-    fn reset(&mut self){
-        self.a  = 0;
-        self.x  = 0;
-        self.y  = 0;
+    fn reset(&mut self) {
+        self.a = 0;
+        self.x = 0;
+        self.y = 0;
         self.pc = 0;
         self.sp = 0x01fd;
-        self.p  = 0x34;
+        self.p = 0x34;
     }
     fn get_dump_size() -> usize {
         0x10
     }
     fn dump(&self, read_callback: impl Fn(usize, u8)) {
         // レジスタダンプを連番で取得する(little endian)
-        read_callback( 0, self.a);
-        read_callback( 1, self.x);
-        read_callback( 2, self.y);
-        read_callback( 3, (self.pc & 0xff) as u8);
-        read_callback( 4, ((self.pc >> 8) & 0xff) as u8);
-        read_callback( 5, (self.sp & 0xff) as u8);
-        read_callback( 6, ((self.sp >> 8) & 0xff) as u8);
-        read_callback( 7, self.p);
+        read_callback(0, self.a);
+        read_callback(1, self.x);
+        read_callback(2, self.y);
+        read_callback(3, (self.pc & 0xff) as u8);
+        read_callback(4, ((self.pc >> 8) & 0xff) as u8);
+        read_callback(5, (self.sp & 0xff) as u8);
+        read_callback(6, ((self.sp >> 8) & 0xff) as u8);
+        read_callback(7, self.p);
         // 0x8~0xf padding
     }
     fn restore(&mut self, write_callback: impl Fn(usize) -> u8) {
         // store通りに復元してあげる
-        self.a  = write_callback(0);
-        self.x  = write_callback(1);
-        self.y  = write_callback(2);
+        self.a = write_callback(0);
+        self.x = write_callback(1);
+        self.y = write_callback(2);
         self.pc = (write_callback(3) as u16) | ((write_callback(4) as u16) << 8);
         self.sp = (write_callback(5) as u16) | ((write_callback(6) as u16) << 8);
-        self.p  = write_callback(7);
+        self.p = write_callback(7);
     }
 }
 
@@ -103,40 +110,30 @@ impl Cpu {
         let is_nested_interrupt = self.read_interrupt_flag();
         // RESET, NMI以外は多重割り込みを許容しない
         if is_nested_interrupt && (irq_type == Interrupt::IRQ) || (irq_type == Interrupt::BRK) {
-            debugger_print!(PrintLevel::DEBUG, PrintFrom::CPU, format!("[interrupt] skip nested interrupt"));
             return;
         }
         // 割り込み種類別の処理
         match irq_type {
-            Interrupt::NMI   => {
-                // vblankの度に出るのでちょっとうるさい
-                debugger_print!(PrintLevel::DEBUG, PrintFrom::CPU, format!("[interrupt] NMI interrupt"));
-
+            Interrupt::NMI => {
                 self.write_break_flag(false);
                 // PCのUpper, Lower, Status RegisterをStackに格納する
                 self.stack_push(system, (self.pc >> 8) as u8);
                 self.stack_push(system, (self.pc & 0xff) as u8);
                 self.stack_push(system, self.p);
                 self.write_interrupt_flag(true);
-            },
+            }
             Interrupt::RESET => {
-                debugger_print!(PrintLevel::INFO, PrintFrom::CPU, format!("[interrupt] RESET interrupt"));
-
                 self.write_interrupt_flag(true);
-            },
-            Interrupt::IRQ   => {
-                debugger_print!(PrintLevel::INFO, PrintFrom::CPU, format!("[interrupt] IRQ interrupt"));
-
+            }
+            Interrupt::IRQ => {
                 self.write_break_flag(false);
                 // PCのUpper, Lower, Status RegisterをStackに格納する
                 self.stack_push(system, (self.pc >> 8) as u8);
                 self.stack_push(system, (self.pc & 0xff) as u8);
                 self.stack_push(system, self.p);
                 self.write_interrupt_flag(true);
-            },
-            Interrupt::BRK   => {
-                debugger_print!(PrintLevel::INFO, PrintFrom::CPU, format!("[interrupt] BRK interrupt"));
-
+            }
+            Interrupt::BRK => {
                 self.write_break_flag(true);
                 self.pc = self.pc + 1;
                 // PCのUpper, Lower, Status RegisterをStackに格納する
@@ -144,28 +141,24 @@ impl Cpu {
                 self.stack_push(system, (self.pc & 0xff) as u8);
                 self.stack_push(system, self.p);
                 self.write_interrupt_flag(true);
-            },
+            }
         }
         // Program Counterの書き換え
         let lower_addr = match irq_type {
-                Interrupt::NMI   => NMI_READ_LOWER,
-                Interrupt::RESET => RESET_READ_LOWER,
-                Interrupt::IRQ   => IRQ_READ_LOWER,
-                Interrupt::BRK   => BRK_READ_LOWER,
-            };
+            Interrupt::NMI => NMI_READ_LOWER,
+            Interrupt::RESET => RESET_READ_LOWER,
+            Interrupt::IRQ => IRQ_READ_LOWER,
+            Interrupt::BRK => BRK_READ_LOWER,
+        };
         let upper_addr = match irq_type {
-                Interrupt::NMI   => NMI_READ_UPPER,
-                Interrupt::RESET => RESET_READ_UPPER,
-                Interrupt::IRQ   => IRQ_READ_UPPER,
-                Interrupt::BRK   => BRK_READ_UPPER,
-            };
-        
+            Interrupt::NMI => NMI_READ_UPPER,
+            Interrupt::RESET => RESET_READ_UPPER,
+            Interrupt::IRQ => IRQ_READ_UPPER,
+            Interrupt::BRK => BRK_READ_UPPER,
+        };
+
         let lower = system.read_u8(lower_addr, false);
         let upper = system.read_u8(upper_addr, false);
         self.pc = (lower as u16) | ((upper as u16) << 8);
-
-        debugger_print!(PrintLevel::DEBUG, PrintFrom::CPU, format!("[interrupt] jump to {:04x}", self.pc));
     }
-
 }
-

@@ -5,12 +5,13 @@
     "tasks": [
         {
             "type": "shell",
-            "label": "cargo test -- --test-threads=1",
+            "label": "rustfmt",
             "command": "cargo",
+            "options": {
+                "cwd": "${fileDirname}/../"
+            },
             "args": [
-                "test",
-                "--",
-                "--test-threads=1",
+                "fmt",
             ],
             "problemMatcher": [
                 "$rustc"
@@ -18,12 +19,43 @@
         },
         {
             "type": "shell",
-            "label": "cargo test -- --test-threads=1 --ignored",
+            "label": "test",
             "command": "cargo",
+            "options": {
+                "cwd": "${workspaceFolder}/test"
+            },
+            "args": [
+                "test",
+            ],
+            "problemMatcher": [
+                "$rustc"
+            ],
+        },
+        {
+            "type": "shell",
+            "label": "test release",
+            "command": "cargo",
+            "options": {
+                "cwd": "${workspaceFolder}/test"
+            },
+            "args": [
+                "test",
+                "--release"
+            ],
+            "problemMatcher": [
+                "$rustc"
+            ],
+        },
+        {
+            "type": "shell",
+            "label": "test ignored",
+            "command": "cargo",
+            "options": {
+                "cwd": "${workspaceFolder}/test"
+            },
             "args": [
                 "test",
                 "--",
-                "--test-threads=1",
                 "--ignored",
             ],
             "problemMatcher": [
@@ -32,13 +64,16 @@
         },
         {
             "type": "shell",
-            "label": "cargo test -- --test-threads=1 --nocapture",
+            "label": "test release ignored",
             "command": "cargo",
+            "options": {
+                "cwd": "${workspaceFolder}/test"
+            },
             "args": [
                 "test",
+                "--release",
                 "--",
-                "--test-threads=1",
-                "--nocapture",
+                "--ignored",
             ],
             "problemMatcher": [
                 "$rustc"
@@ -46,8 +81,11 @@
         },
         {
             "type": "shell",
-            "label": "cargo run",
+            "label": "run desktop",
             "command": "cargo",
+            "options": {
+                "cwd": "${workspaceFolder}/desktop"
+            },
             "args": [
                 "run",
             ],
@@ -57,8 +95,26 @@
         },
         {
             "type": "shell",
-            "label": "cargo build",
+            "label": "run desktop release",
             "command": "cargo",
+            "options": {
+                "cwd": "${workspaceFolder}/desktop"
+            },
+            "args": [
+                "run",
+                "--release",
+            ],
+            "problemMatcher": [
+                "$rustc"
+            ],
+        },
+        {
+            "type": "shell",
+            "label": "build desktop",
+            "command": "cargo",
+            "options": {
+                "cwd": "${workspaceFolder}/desktop"
+            },
             "args": [
                 "build",
             ],
@@ -68,16 +124,18 @@
         },
         {
             "type": "shell",
-            "label": "cargo run --release",
+            "label": "build desktop release",
             "command": "cargo",
+            "options": {
+                "cwd": "${workspaceFolder}/desktop"
+            },
             "args": [
-                "run",
-                "--release",
+                "build",
+                "--release"
             ],
             "problemMatcher": [
                 "$rustc"
             ],
         },
-
     ]
 }

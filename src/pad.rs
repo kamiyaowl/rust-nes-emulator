@@ -1,9 +1,15 @@
 use super::interface::*;
-use super::debugger::*;
 
 #[derive(Copy, Clone)]
 pub enum PadButton {
-    A,B,Select,Start,Up,Down,Left,Right
+    A,
+    B,
+    Select,
+    Start,
+    Up,
+    Down,
+    Left,
+    Right,
 }
 
 pub struct Pad {
@@ -24,7 +30,6 @@ impl Default for Pad {
         }
     }
 }
-
 
 impl EmulateControl for Pad {
     fn reset(&mut self) {
@@ -65,7 +70,6 @@ impl Pad {
         let data = self.button_reg.wrapping_shr(self.read_shift_index.into()) & 0x01;
         // strobeが無効であればデータを進める
         if !self.strobe_enable {
-            debugger_print!(PrintLevel::HIDDEN, PrintFrom::PAD, format!(" pad read data:{:02x} index:{}", self.button_reg, self.read_shift_index));
             self.read_shift_index = (self.read_shift_index + 1) % 8;
         }
         data
@@ -73,27 +77,27 @@ impl Pad {
     /// 押されたボタンをシフトレジスタに記録します。この関数はエミュの外側から呼ぶことを想定しています
     pub fn push_button(&mut self, button: PadButton) {
         match button {
-            PadButton::A      => self.button_reg = self.button_reg | 0x01u8,
-            PadButton::B      => self.button_reg = self.button_reg | 0x02u8,
+            PadButton::A => self.button_reg = self.button_reg | 0x01u8,
+            PadButton::B => self.button_reg = self.button_reg | 0x02u8,
             PadButton::Select => self.button_reg = self.button_reg | 0x04u8,
-            PadButton::Start  => self.button_reg = self.button_reg | 0x08u8,
-            PadButton::Up     => self.button_reg = self.button_reg | 0x10u8,
-            PadButton::Down   => self.button_reg = self.button_reg | 0x20u8,
-            PadButton::Left   => self.button_reg = self.button_reg | 0x40u8,
-            PadButton::Right  => self.button_reg = self.button_reg | 0x80u8,
+            PadButton::Start => self.button_reg = self.button_reg | 0x08u8,
+            PadButton::Up => self.button_reg = self.button_reg | 0x10u8,
+            PadButton::Down => self.button_reg = self.button_reg | 0x20u8,
+            PadButton::Left => self.button_reg = self.button_reg | 0x40u8,
+            PadButton::Right => self.button_reg = self.button_reg | 0x80u8,
         }
     }
     /// 押されたボタンをシフトレジスタに記録します。この関数はエミュの外側から呼ぶことを想定しています
     pub fn release_button(&mut self, button: PadButton) {
         match button {
-            PadButton::A      => self.button_reg = self.button_reg & (!0x01u8),
-            PadButton::B      => self.button_reg = self.button_reg & (!0x02u8),
+            PadButton::A => self.button_reg = self.button_reg & (!0x01u8),
+            PadButton::B => self.button_reg = self.button_reg & (!0x02u8),
             PadButton::Select => self.button_reg = self.button_reg & (!0x04u8),
-            PadButton::Start  => self.button_reg = self.button_reg & (!0x08u8),
-            PadButton::Up     => self.button_reg = self.button_reg & (!0x10u8),
-            PadButton::Down   => self.button_reg = self.button_reg & (!0x20u8),
-            PadButton::Left   => self.button_reg = self.button_reg & (!0x40u8),
-            PadButton::Right  => self.button_reg = self.button_reg & (!0x80u8),
+            PadButton::Start => self.button_reg = self.button_reg & (!0x08u8),
+            PadButton::Up => self.button_reg = self.button_reg & (!0x10u8),
+            PadButton::Down => self.button_reg = self.button_reg & (!0x20u8),
+            PadButton::Left => self.button_reg = self.button_reg & (!0x40u8),
+            PadButton::Right => self.button_reg = self.button_reg & (!0x80u8),
         }
     }
 }

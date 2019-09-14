@@ -1,13 +1,13 @@
 use super::system::*;
 
-pub const PPU_CTRL_OFFSET:       usize = 0x00;
-pub const PPU_MASK_OFFSET:       usize = 0x01;
-pub const PPU_STATUS_OFFSET:     usize = 0x02;
-pub const PPU_OAMADDR_OFFSET:    usize = 0x03;
-pub const PPU_OAMDATA_OFFSET:    usize = 0x04;
-pub const PPU_SCROLL_OFFSET:     usize = 0x05;
-pub const PPU_ADDR_OFFSET:       usize = 0x06;
-pub const PPU_DATA_OFFSET:       usize = 0x07;
+pub const PPU_CTRL_OFFSET: usize = 0x00;
+pub const PPU_MASK_OFFSET: usize = 0x01;
+pub const PPU_STATUS_OFFSET: usize = 0x02;
+pub const PPU_OAMADDR_OFFSET: usize = 0x03;
+pub const PPU_OAMDATA_OFFSET: usize = 0x04;
+pub const PPU_SCROLL_OFFSET: usize = 0x05;
+pub const PPU_ADDR_OFFSET: usize = 0x06;
+pub const PPU_DATA_OFFSET: usize = 0x07;
 pub const APU_IO_OAM_DMA_OFFSET: usize = 0x14;
 
 /// PPU Register Implement
@@ -26,17 +26,33 @@ impl System {
     }
     /// 8もしくは16
     pub fn read_ppu_sprite_height(&self) -> u8 {
-        if (self.ppu_reg[PPU_CTRL_OFFSET] & 0x20u8) == 0x20u8 { 16 } else { 8 }
+        if (self.ppu_reg[PPU_CTRL_OFFSET] & 0x20u8) == 0x20u8 {
+            16
+        } else {
+            8
+        }
     }
     pub fn read_ppu_bg_pattern_table_addr(&self) -> u16 {
-        if (self.ppu_reg[PPU_CTRL_OFFSET] & 0x10u8) == 0x10u8 { 0x1000u16 } else { 0x0000u16 }
+        if (self.ppu_reg[PPU_CTRL_OFFSET] & 0x10u8) == 0x10u8 {
+            0x1000u16
+        } else {
+            0x0000u16
+        }
     }
     pub fn read_ppu_sprite_pattern_table_addr(&self) -> u16 {
-        if (self.ppu_reg[PPU_CTRL_OFFSET] & 0x08u8) == 0x08u8 { 0x1000u16 } else { 0x0000u16 }
+        if (self.ppu_reg[PPU_CTRL_OFFSET] & 0x08u8) == 0x08u8 {
+            0x1000u16
+        } else {
+            0x0000u16
+        }
     }
     /// PPUのアドレスインクリメント数 0:+1, horizontal, 1:+32 vertical
     pub fn read_ppu_addr_increment(&self) -> u8 {
-        if (self.ppu_reg[PPU_CTRL_OFFSET] & 0x04u8) == 0x04u8 { 32u8 } else { 1u8 }
+        if (self.ppu_reg[PPU_CTRL_OFFSET] & 0x04u8) == 0x04u8 {
+            32u8
+        } else {
+            1u8
+        }
     }
     pub fn read_ppu_name_table_base_addr(&self) -> u16 {
         match self.ppu_reg[PPU_CTRL_OFFSET] & 0x03u8 {
@@ -140,12 +156,17 @@ impl System {
             self.written_ppu_scroll = false;
             (true, self.ppu_reg[PPU_SCROLL_OFFSET], self.ppu_scroll_y_reg)
         } else {
-            (false, self.ppu_reg[PPU_SCROLL_OFFSET], self.ppu_scroll_y_reg)
+            (
+                false,
+                self.ppu_reg[PPU_SCROLL_OFFSET],
+                self.ppu_scroll_y_reg,
+            )
         }
     }
     /*************************** 0x2006: PPUADDR ***************************/
     pub fn read_ppu_addr(&mut self) -> (bool, u16) {
-        let addr = (u16::from(self.ppu_reg[PPU_ADDR_OFFSET]) << 8) | u16::from(self.ppu_addr_lower_reg);
+        let addr =
+            (u16::from(self.ppu_reg[PPU_ADDR_OFFSET]) << 8) | u16::from(self.ppu_addr_lower_reg);
         if self.written_ppu_addr {
             self.written_ppu_addr = false;
             (true, addr)
@@ -178,13 +199,14 @@ impl System {
 
     /// PPU_DATAに読み書きをしたときのPPU_ADDR自動加算を行います
     pub fn increment_ppu_addr(&mut self) {
-        let current_addr = (u16::from(self.ppu_reg[PPU_ADDR_OFFSET]) << 8) | u16::from(self.ppu_addr_lower_reg);
+        let current_addr =
+            (u16::from(self.ppu_reg[PPU_ADDR_OFFSET]) << 8) | u16::from(self.ppu_addr_lower_reg);
         // PPU_CTRLのPPU Addr Incrementに従う
         let add_val = u16::from(self.read_ppu_addr_increment());
         let dst_addr = current_addr.wrapping_add(add_val);
         // 分解して入れておく
         self.ppu_addr_lower_reg = (dst_addr & 0xff) as u8;
-        self.ppu_reg[PPU_ADDR_OFFSET] = (dst_addr >> 8  ) as u8;
+        self.ppu_reg[PPU_ADDR_OFFSET] = (dst_addr >> 8) as u8;
     }
     /*************************** 0x4014: OAM_DMA ***************************/
     /// DMA開始が必要かどうかと、転送元アドレスを返す

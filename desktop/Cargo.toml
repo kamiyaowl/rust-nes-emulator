@@ -1,0 +1,26 @@
+[package]
+name = "rust-nes-emulator-desktop"
+version = "0.1.0"
+authors = ["K <kamiyaowl@gmail.com>"]
+edition = "2018"
+
+[lib]
+path = "src/main.rs"
+name = "rust_nes_emulator_desktop"
+
+[profile.dev]
+opt-level = 0
+
+[profile.release]
+opt-level = 3
+
+[dependencies.rust-nes-emulator]
+path = "../"
+
+[dependencies]
+bmp = "0.5.0"
+image = "0.22.1"
+gfx = "0.18.1"
+gfx_device_gl = "0.16.2"
+piston_window = "0.104.0"
+nfd = "0.0.4"
