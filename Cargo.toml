@@ -12,6 +12,7 @@ opt-level = 0
 
 [profile.release]
 opt-level = 3
+lto = true
 
 [lib]
 path = "src/lib.rs"

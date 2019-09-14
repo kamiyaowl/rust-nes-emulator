@@ -12,3 +12,6 @@ Cargo.lock
 /roms/my_dump/*.nes
 *.bmp
 *.log
+
+**/node_modules
+**/pkg

@@ -1,0 +1,15 @@
+{
+  "name": "rust-nes-emulator-wasm",
+  "version": "1.0.0",
+  "description": "NES Emulator written in Rust",
+  "scripts": {
+    "serve": "webpack-dev-server"
+  },
+  "author": "kamiyaowl",
+  "license": "MIT",
+  "dependencies": {
+    "webpack": "^4.40.2",
+    "webpack-cli": "^3.3.8",
+    "webpack-dev-server": "^3.8.0"
+  }
+}

@@ -1,22 +1,59 @@
 version: "3"
 services:
+    # build lib
+    build-lib:
+      build: .
+      volumes:
+        - ./:/work
+      command: cargo build
+    build-lib-release:
+      build: .
+      volumes:
+        - ./:/work
+      command: cargo build --release
+    # run test
     test:
       build: .
       volumes:
         - ./:/work
-      command: cd test && cargo test
+      working_dir: /work/test
+      command: cargo test
     test-release:
       build: .
       volumes:
         - ./:/work
-      command: cd test && cargo test --release
+      working_dir: /work/test
+      command: cargo test --release
+    # build desktop
     build-desktop:
       build: .
       volumes:
         - ./:/work
-      command: cd desktop && cargo build
+      working_dir: /work/desktop
+      command: cargo build
     build-desktop-release:
       build: .
       volumes:
         - ./:/work
-      command: cd desktop && cargo build --release
+      working_dir: /work/desktop
+      command: cargo build --release
+    # build wasm
+    build-wasm:
+      build: .
+      volumes:
+        - ./:/work
+      working_dir: /work/wasm
+      command: wasm-pack build
+    build-wasm-release:
+      build: .
+      volumes:
+        - ./:/work
+      working_dir: /work/wasm
+      command: wasm-pack build --release
+    # preview wasm at localhost:4444
+    serve-wasm:
+      image: nginx:latest
+      ports:
+        - "4444:80"
+      volumes:
+        - ./wasm:/usr/share/nginx/html
