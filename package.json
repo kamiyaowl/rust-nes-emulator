@@ -1,0 +1,22 @@
+{
+  "name": "rust-nes-emulator",
+  "version": "0.1.0",
+  "description": "NES Emulator written in Rust",
+  "main": "index.html",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kamiyaowl/rust-nes-emulator.git"
+  },
+  "author": "kamiyaowl",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kamiyaowl/rust-nes-emulator/issues"
+  },
+  "homepage": "https://github.com/kamiyaowl/rust-nes-emulator#readme"
+}
