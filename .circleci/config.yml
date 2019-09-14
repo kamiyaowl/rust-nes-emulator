@@ -57,16 +57,12 @@ jobs:
           command: cd desktop && cargo build --release
           when: always
       # build wasm
-    #   - run:
-    #       name: build wasm
-    #       command: cd wasm && wasm-pack build
-    #       when: always
       - run:
           name: build wasm release
           command: cd wasm && wasm-pack build --release
           when: always
-      # deploy to netlify
+      # deploy to netlify (require $NETLIFY_AUTH_TOKEN, $NETLIFY_SITE_ID)
       - run:
           name: Deploy to netlify
-          command: netlify deploy --site-id $NETLIFY_SITE_ID -p ./wasm --access-token $NETLIFY_TOKEN
+          command: netlify deploy --prod -d ./wasm
 

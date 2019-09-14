@@ -1,6 +1,6 @@
 # rust-nes-emulator
 
-[![CircleCI](https://circleci.com/gh/kamiyaowl/rust-nes-emulator.svg?style=svg)](https://circleci.com/gh/kamiyaowl/rust-nes-emulator)
+[![CircleCI](https://circleci.com/gh/kamiyaowl/rust-nes-emulator.svg?style=svg&circle-token=5863f12e124bd230551101e146947e7a49e5765f)](https://circleci.com/gh/kamiyaowl/rust-nes-emulator)
 [![Netlify Status](https://api.netlify.com/api/v1/badges/7ae6eff9-8c7a-416a-bad7-3e78b00ad95b/deploy-status)](https://app.netlify.com/sites/rust-nes-emulator/deploys)
 
 
