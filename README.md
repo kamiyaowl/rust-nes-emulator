@@ -1,6 +1,8 @@
-[![CircleCI](https://circleci.com/gh/kamiyaowl/rust-nes-emulator.svg?style=svg)](https://circleci.com/gh/kamiyaowl/rust-nes-emulator)
-
 # rust-nes-emulator
+
+[![CircleCI](https://circleci.com/gh/kamiyaowl/rust-nes-emulator.svg?style=svg)](https://circleci.com/gh/kamiyaowl/rust-nes-emulator)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/7ae6eff9-8c7a-416a-bad7-3e78b00ad95b/deploy-status)](https://app.netlify.com/sites/rust-nes-emulator/deploys)
+
 
 NES Emulator written in Rust
 

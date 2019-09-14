@@ -10,7 +10,7 @@ jobs:
           command: sudo apt install -y libgtk-3-dev nodejs npm
       - run:
           name: Install nodejs
-          command: sudo npm install -g n && sudo n 10.15.1
+          command: sudo npm install -g n && sudo n latest
       # code checkout
       - checkout
       - run: 
