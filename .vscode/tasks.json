@@ -137,5 +137,34 @@
                 "$rustc"
             ],
         },
+        {
+            "type": "shell",
+            "label": "build wasm",
+            "command": "wasm-pack",
+            "options": {
+                "cwd": "${workspaceFolder}/wasm"
+            },
+            "args": [
+                "build",
+            ],
+            "problemMatcher": [
+                "$rustc"
+            ],
+        },
+        {
+            "type": "shell",
+            "label": "build wasm release",
+            "command": "wasm-pack",
+            "options": {
+                "cwd": "${workspaceFolder}/wasm"
+            },
+            "args": [
+                "build",
+                "--release",
+            ],
+            "problemMatcher": [
+                "$rustc"
+            ],
+        },
     ]
 }
