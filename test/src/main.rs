@@ -235,7 +235,29 @@ fn test_run_hello_ppu() {
     })
 }
 
+/// nestestがすべてPassできることを確認する
 #[test]
 fn test_run_nestest() {
     run_nestest("../roms/nes-test-roms/other/nestest.nes".to_string())
+}
+
+
+/// マリオのタイトル画面が正しく表示されること
+#[test]
+#[ignore]
+fn test_run_mario_title() {
+    run_cpu_ppu("../roms/my_dump/mario.nes".to_string(), "mario_title.bmp".to_string(), 100, |_cpu, _sys, fb| {
+        // FBの結果を精査する
+        let _ = validate_framebuffer(fb, "../screenshot/mario.bmp".to_string());
+    })
+}
+
+/// マリオのデモ映像が正しく表示されること
+#[test]
+#[ignore]
+fn test_run_mario_demo() {
+    run_cpu_ppu("../roms/my_dump/mario.nes".to_string(), "mario_demo.bmp".to_string(), 1000, |_cpu, _sys, fb| {
+        // FBの結果を精査する
+        let _ = validate_framebuffer(fb, "../screenshot/mario_demo.bmp".to_string());
+    })
 }
