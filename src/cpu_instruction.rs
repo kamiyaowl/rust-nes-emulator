@@ -1,6 +1,5 @@
 use super::cpu::*;
 use super::interface::SystemBus;
-use super::ppu::Ppu; // TODO: 削除
 use super::system::System;
 
 #[derive(PartialEq, Eq, Copy, Clone, Debug)]
@@ -557,8 +556,7 @@ impl Cpu {
     /// 命令を実行します
     /// ret: cycle数
     /// http://obelisk.me.uk/6502/reference.html
-    // TODO: debug printようにppu借りる
-    pub fn step(&mut self, system: &mut System, ppu: &Ppu) -> u8 {
+    pub fn step(&mut self, system: &mut System) -> u8 {
         // 命令がおいてあるところのaddress
         let inst_pc = self.pc;
         let inst_code = self.fetch_u8(system);

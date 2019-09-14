@@ -86,20 +86,18 @@ fn validate_framebuffer(
 fn run_cpu_only(rom_path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &System)) {
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
-    let mut ppu: Ppu = Default::default();
     let mut video_sys: VideoSystem = Default::default();
 
     load_cassette(&mut cpu_sys.cassette, rom_path);
 
     cpu.reset();
     cpu_sys.reset();
-    ppu.reset();
     video_sys.reset();
     cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
 
     let mut cpu_cycle: usize = 0;
     for _i in 0..cpu_steps {
-        cpu_cycle = cpu_cycle + usize::from(cpu.step(&mut cpu_sys, &ppu));
+        cpu_cycle = cpu_cycle + usize::from(cpu.step(&mut cpu_sys));
     }
     validate(&cpu, &cpu_sys);
 }
@@ -132,7 +130,7 @@ fn run_cpu_ppu(
     for _i in 0..frame_count {
         let mut total_cycle: usize = 0;
         while total_cycle < cycle_for_draw_once {
-            let cpu_cycle = usize::from(cpu.step(&mut cpu_sys, &ppu));
+            let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
             ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
 
             total_cycle = total_cycle + cpu_cycle;
@@ -168,7 +166,7 @@ fn run_nestest(rom_path: String) {
     for i in 0..60 {
         let mut total_cycle: usize = 0;
         while total_cycle < cycle_for_draw_once {
-            let cpu_cycle = usize::from(cpu.step(&mut cpu_sys, &ppu));
+            let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
             ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
 
             total_cycle = total_cycle + cpu_cycle;

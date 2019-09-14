@@ -114,7 +114,7 @@ fn main() {
             // エミュを進める
             let mut total_cycle: usize = 0;
             while total_cycle < cycle_for_draw_once {
-                let cpu_cycle = usize::from(cpu.step(&mut cpu_sys, &ppu));
+                let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
                 ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
                 total_cycle = total_cycle + cpu_cycle;
             }

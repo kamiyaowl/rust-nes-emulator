@@ -30,27 +30,27 @@ impl System {
             APU_PULSE_2_OFFSET
         };
         // 順番に読んで値を決めるだけ
-        dst.dutyCycle = match (self.io_reg[base_offset + 0] >> 6) & 0x03 {
+        dst.duty_cycle = match (self.io_reg[base_offset + 0] >> 6) & 0x03 {
             0 => PulseDutyCycle::Duty12_5,
             1 => PulseDutyCycle::Duty25_0,
             2 => PulseDutyCycle::Duty50_0,
             3 => PulseDutyCycle::Duty75_0,
-            _ => panic!("invalid pulse dutyCycle: {}", self.io_reg[base_offset + 0]),
+            _ => panic!("invalid pulse duty_cycle: {}", self.io_reg[base_offset + 0]),
         };
         // $4000 DDLCVVVV
-        dst.isLengthCounterHalt = (self.io_reg[base_offset + 0] & 0x20) == 0x20;
-        dst.isConstantVolume = (self.io_reg[base_offset + 0] & 0x10) == 0x10;
-        dst.volume = self.io_reg[base_offset + 0] & 0x0f;
+        dst.is_length_counter_halt = (self.io_reg[base_offset + 0] & 0x20) == 0x20;
+        dst.is_constant_volume     = (self.io_reg[base_offset + 0] & 0x10) == 0x10;
+        dst.volume                 = self.io_reg[base_offset + 0] & 0x0f;
         // $4001 EPPPNSSS
-        dst.isSweepEnable = (self.io_reg[base_offset + 1] & 0x80) == 0x80;
-        dst.sweepPeriod = (self.io_reg[base_offset + 1] & 0x70) >> 4;
-        dst.isSweepNegative = (self.io_reg[base_offset + 1] & 0x04) == 0x04;
-        dst.sweepShift = self.io_reg[base_offset + 1] & 0x07;
+        dst.is_sweep_enable   = (self.io_reg[base_offset + 1] & 0x80) == 0x80;
+        dst.sweep_period      = (self.io_reg[base_offset + 1] & 0x70) >> 4;
+        dst.is_sweep_negative = (self.io_reg[base_offset + 1] & 0x04) == 0x04;
+        dst.sweep_shift       = self.io_reg[base_offset + 1] & 0x07;
         // $4002 TTTTTTTT(timer lower)
         // $4003 LLLLLTTT(timer Upper)
-        dst.timerValue = u16::from(self.io_reg[base_offset + 2])
-            | (u16::from(self.io_reg[base_offset + 3] & 0x07) << 8);
-        dst.lengthCounterLoad = (self.io_reg[base_offset + 3] & 0xf8) >> 3;
+        dst.timer_value         = u16::from(self.io_reg[base_offset + 2])
+                               | (u16::from(self.io_reg[base_offset + 3] & 0x07) << 8);
+        dst.length_counter_load = (self.io_reg[base_offset + 3] & 0xf8) >> 3;
 
         Some(dst)
     }
@@ -64,13 +64,13 @@ impl System {
 
         let mut dst = TriangleSound::default();
         // $4008 CRRRRRRRR
-        dst.isLengthCounterHalt = (self.io_reg[APU_TRIANGLE_OFFSET + 0] & 0x80) == 0x80;
-        dst.counterLoad = self.io_reg[APU_TRIANGLE_OFFSET + 0] & 0x7f;
+        dst.is_length_counter_halt = (self.io_reg[APU_TRIANGLE_OFFSET + 0] & 0x80) == 0x80;
+        dst.counter_load           =  self.io_reg[APU_TRIANGLE_OFFSET + 0] & 0x7f;
         // $400a TTTTTTTT(timer lower)
         // $400b LLLLLTTT(timer upper)
-        dst.timerValue = u16::from(self.io_reg[APU_TRIANGLE_OFFSET + 2])
-            | (u16::from(self.io_reg[APU_TRIANGLE_OFFSET + 3] & 0x07) << 8);
-        dst.lengthCounterLoad = (self.io_reg[APU_TRIANGLE_OFFSET + 3] & 0xf8) >> 3;
+        dst.timer_value = u16::from(self.io_reg[APU_TRIANGLE_OFFSET + 2])
+            |            (u16::from(self.io_reg[APU_TRIANGLE_OFFSET + 3] & 0x07) << 8);
+        dst.length_counter_load =  (self.io_reg[APU_TRIANGLE_OFFSET + 3] & 0xf8) >> 3;
 
         Some(dst)
     }
@@ -83,14 +83,14 @@ impl System {
         }
         let mut dst = NoiseSound::default();
         // $400c --LCVVVV
-        dst.isLengthCounterHalt = (self.io_reg[APU_NOISE_OFFSET + 0] & 0x20) == 0x20;
-        dst.isConstantVolume = (self.io_reg[APU_NOISE_OFFSET + 0] & 0x10) == 0x10;
-        dst.volume = self.io_reg[APU_NOISE_OFFSET + 0] & 0x0f;
+        dst.is_length_counter_halt = (self.io_reg[APU_NOISE_OFFSET + 0] & 0x20) == 0x20;
+        dst.is_constant_volume     = (self.io_reg[APU_NOISE_OFFSET + 0] & 0x10) == 0x10;
+        dst.volume                 =  self.io_reg[APU_NOISE_OFFSET + 0] & 0x0f;
         // $400E L---PPPP
-        dst.isNoiseTypeLoop = (self.io_reg[APU_NOISE_OFFSET + 2] & 0x80) == 0x80;
-        dst.noisePeriod = self.io_reg[APU_NOISE_OFFSET + 2] & 0x0f;
+        dst.is_noise_type_loop = (self.io_reg[APU_NOISE_OFFSET + 2] & 0x80) == 0x80;
+        dst.noise_period       =  self.io_reg[APU_NOISE_OFFSET + 2] & 0x0f;
         // $400F LLLLL---
-        dst.lengthCounterLoad = (self.io_reg[APU_NOISE_OFFSET + 3] & 0xf8) >> 3;
+        dst.length_counter_load = (self.io_reg[APU_NOISE_OFFSET + 3] & 0xf8) >> 3;
 
         Some(dst)
     }
@@ -103,15 +103,15 @@ impl System {
         }
         let mut dst = DmcSound::default();
         // $4010 IL--RRRR
-        dst.isIrqEnable = (self.io_reg[APU_DMC_OFFSET + 0] & 0x80) == 0x80;
-        dst.isLoopEnable = (self.io_reg[APU_DMC_OFFSET + 0] & 0x40) == 0x40;
-        dst.frequency = self.io_reg[APU_DMC_OFFSET + 0] & 0x0f;
+        dst.is_irq_enable  = (self.io_reg[APU_DMC_OFFSET + 0] & 0x80) == 0x80;
+        dst.is_loop_enable = (self.io_reg[APU_DMC_OFFSET + 0] & 0x40) == 0x40;
+        dst.frequency      =  self.io_reg[APU_DMC_OFFSET + 0] & 0x0f;
         // $4011 -DDDDDDD
-        dst.loadCounter = self.io_reg[APU_DMC_OFFSET + 1] & 0x7f;
+        dst.load_counter  = self.io_reg[APU_DMC_OFFSET + 1] & 0x7f;
         // $4012 Sample Address
-        dst.loadCounter = self.io_reg[APU_DMC_OFFSET + 2];
+        dst.sample_addr   = self.io_reg[APU_DMC_OFFSET + 2];
         // $4013 Sample Length
-        dst.loadCounter = self.io_reg[APU_DMC_OFFSET + 3];
+        dst.sample_length = self.io_reg[APU_DMC_OFFSET + 3];
 
         Some(dst)
     }

@@ -23,6 +23,9 @@ jobs:
           name: build
           command: cargo build
       - run:
+          name: build desktop
+          command: cd desktop && cargo build
+      - run:
           name: test
           command: cd test && cargo test
           when: always
@@ -30,6 +33,10 @@ jobs:
       - run:
           name: build release
           command: cargo build --release
+          when: always
+      - run:
+          name: build desktop release
+          command: cd desktop && cargo build --release
           when: always
       - run:
           name: test release
