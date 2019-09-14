@@ -1,19 +1,18 @@
 [package]
-name = "rust-nes-emulator"
+name = "rust-nes-emulator-desktop"
 version = "0.1.0"
 authors = ["K <kamiyaowl@gmail.com>"]
 edition = "2018"
 
-[features]
-default = []
-
 [lib]
-path = "src/lib.rs"
-name = "rust_nes_emulator"
+path = "src/main.rs"
+name = "rust_nes_emulator_desktop"
+
+[dependencies.rust-nes-emulator]
+path = "../"
 
 [dependencies]
-lazy_static = "1.4.0"
-bmp = "*"
+bmp = "0.5.0"
 image = "0.22.1"
 gfx = "0.18.1"
 gfx_device_gl = "0.16.2"
