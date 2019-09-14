@@ -14,4 +14,3 @@ Cargo.lock
 *.log
 
 **/node_modules
-**/pkg
