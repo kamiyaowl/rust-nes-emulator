@@ -1,44 +1,64 @@
-# refer to https://www.ncaq.net/2019/03/08/21/12/35/
 version: 2
 jobs:
   build:
     docker:
       - image: circleci/rust
     steps:
+      # build dependencies
       - run:
-          name: Install Dependencies
-          command: sudo apt install -y libgtk-3-dev
+          name: Install apt dependencies
+          command: sudo apt install -y libgtk-3-dev nodejs npm
+      - run:
+          name: Install nodejs
+          command: sudo npm install -g n && sudo n 10.15.1
+      # code checkout
       - checkout
       - run: 
           name: Pull Submodule
           command: git submodule init && git submodule update --remote
+      # install rustup and tools
       - run:
           name: rustup version
           command: rustup --version
       - run:
           name: rustup component add
           command: rustup component add clippy rustfmt
-      # debug build and test
+      - run:
+          name: cargo install
+          command: cargo install wasm-pack
+      # build lib
       - run:
           name: build
           command: cargo build
+          when: always
       - run:
-          name: build desktop
-          command: cd desktop && cargo build
+          name: build release
+          command: cargo build --release
+          when: always
+      # run test
       - run:
           name: test
           command: cd test && cargo test
           when: always
-      # release build and test
       - run:
-          name: build release
-          command: cargo build --release
+          name: test release
+          command: cd test && cargo test --release
+          when: always
+      # build desktop
+      - run:
+          name: build desktop
+          command: cd desktop && cargo build
           when: always
       - run:
           name: build desktop release
           command: cd desktop && cargo build --release
           when: always
+      # build wasm
       - run:
-          name: test release
-          command: cd test && cargo test --release
+          name: build wasm
+          command: cd wasm && wasm-pack build
+          when: always
+      - run:
+          name: build wasm release
+          command: cd wasm && wasm-pack build --release
           when: always
