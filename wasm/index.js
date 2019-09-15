@@ -11,6 +11,12 @@ async function main() {
     const v = buf[emu.get_fb_ptr()];
     console.log(v);
 
+    const app = new Vue({
+        el: '#app',
+        data: {
+            message: "asdf",
+        }
+    });
 }
 
 main();
