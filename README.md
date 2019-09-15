@@ -10,6 +10,10 @@ NES Emulator written in Rust
 | - | - |
 | ![mario-gif](https://user-images.githubusercontent.com/4300987/64512802-1bc8bd00-d322-11e9-8a70-26df62bb5ee1.gif) | ![donkey-gif](https://user-images.githubusercontent.com/4300987/64512801-1bc8bd00-d322-11e9-9e6c-0a149fb05c1b.gif) |
 
+| Mario Bros. |
+| - | - |
+| ![mariobros-gif](https://user-images.githubusercontent.com/4300987/64917495-06dda500-d7cc-11e9-9037-f5f8bd7de061.gif) |
+
 ---
 
 
@@ -61,6 +65,10 @@ $ docker-compose run build-wasm-webpage
 ### Donkey Kong
 
 ![donkey](https://raw.githubusercontent.com/kamiyaowl/rust-nes-emulator/master/screenshot/donkey.bmp)
+
+### Donkey Kong
+
+![mariobros](https://raw.githubusercontent.com/kamiyaowl/rust-nes-emulator/master/screenshot/mariobros.bmp)
 
 ### nestest (unofficial opcode)
 
