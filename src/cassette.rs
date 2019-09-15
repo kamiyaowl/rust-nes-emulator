@@ -26,6 +26,7 @@ pub enum NameTableMirror {
 }
 /// Cassete and mapper implement
 /// https://wiki.nesdev.com/w/index.php/List_of_mappers
+#[derive(Clone)]
 pub struct Cassette {
     // Mapperの種類
     pub mapper: Mapper,
@@ -214,14 +215,5 @@ impl EmulateControl for Cassette {
         self.prg_rom = [0; PRG_ROM_MAX_SIZE];
         self.chr_rom = [0; CHR_ROM_MAX_SIZE];
         self.battery_packed_ram = [0; BATTERY_PACKED_RAM_MAX_SIZE];
-    }
-    fn get_dump_size() -> usize {
-        unimplemented!();
-    }
-    fn dump(&self, _read_callback: impl Fn(usize, u8)) {
-        unimplemented!();
-    }
-    fn restore(&mut self, _write_callback: impl Fn(usize) -> u8) {
-        unimplemented!();
     }
 }

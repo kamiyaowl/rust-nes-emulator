@@ -151,6 +151,7 @@ impl Default for DmcSound {
     }
 }
 
+#[derive(Clone)]
 pub struct Apu {
     /// Frame Sequencer、CPUサイクルに連動して加算 11bit
     pub frame_seq_counter: u16,

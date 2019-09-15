@@ -179,6 +179,7 @@ impl LineStatus {
     }
 }
 
+#[derive(Clone)]
 pub struct Ppu {
     /// Object Attribute Memoryの実態
     pub oam: [u8; OAM_SIZE],
@@ -243,16 +244,6 @@ impl EmulateControl for Ppu {
         self.is_dma_running = false;
         self.dma_cpu_src_addr = 0;
         self.dma_oam_dst_addr = 0;
-    }
-    fn get_dump_size() -> usize {
-        unimplemented!();
-    }
-    fn dump(&self, _read_callback: impl Fn(usize, u8)) {
-        unimplemented!();
-    }
-    fn restore(&mut self, _write_callback: impl Fn(usize) -> u8) {
-        // TODO: #14
-        unimplemented!();
     }
 }
 

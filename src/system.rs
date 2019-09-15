@@ -15,6 +15,7 @@ pub const APU_IO_REG_BASE_ADDR: u16 = 0x4000;
 pub const CASSETTE_BASE_ADDR: u16 = 0x4020;
 
 /// Memory Access Dispatcher
+#[derive(Clone)]
 pub struct System {
     /// 0x0000 - 0x07ff: WRAM
     /// 0x0800 - 0x1f7ff: WRAM  Mirror x3
@@ -97,17 +98,6 @@ impl EmulateControl for System {
         self.ppu_is_second_write = false;
         self.ppu_scroll_y_reg = 0;
         self.ppu_addr_lower_reg = 0;
-    }
-    fn get_dump_size() -> usize {
-        0x4020
-    }
-    fn dump(&self, _read_callback: impl Fn(usize, u8)) {
-        // TODO: #14 破壊読み出しのあるレジスタも強引に値を持ってくる
-        unimplemented!();
-    }
-    fn restore(&mut self, _write_callback: impl Fn(usize) -> u8) {
-        // TODO: #14
-        unimplemented!();
     }
 }
 

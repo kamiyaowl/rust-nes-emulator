@@ -19,6 +19,7 @@ pub enum Interrupt {
     BRK,
 }
 
+#[derive(Clone)]
 pub struct Cpu {
     /// Accumulator
     pub a: u8,
@@ -57,30 +58,6 @@ impl EmulateControl for Cpu {
         self.pc = 0;
         self.sp = 0x01fd;
         self.p = 0x34;
-    }
-    fn get_dump_size() -> usize {
-        0x10
-    }
-    fn dump(&self, read_callback: impl Fn(usize, u8)) {
-        // レジスタダンプを連番で取得する(little endian)
-        read_callback(0, self.a);
-        read_callback(1, self.x);
-        read_callback(2, self.y);
-        read_callback(3, (self.pc & 0xff) as u8);
-        read_callback(4, ((self.pc >> 8) & 0xff) as u8);
-        read_callback(5, (self.sp & 0xff) as u8);
-        read_callback(6, ((self.sp >> 8) & 0xff) as u8);
-        read_callback(7, self.p);
-        // 0x8~0xf padding
-    }
-    fn restore(&mut self, write_callback: impl Fn(usize) -> u8) {
-        // store通りに復元してあげる
-        self.a = write_callback(0);
-        self.x = write_callback(1);
-        self.y = write_callback(2);
-        self.pc = (write_callback(3) as u16) | ((write_callback(4) as u16) << 8);
-        self.sp = (write_callback(5) as u16) | ((write_callback(6) as u16) << 8);
-        self.p = write_callback(7);
     }
 }
 

@@ -17,6 +17,7 @@ pub const PALETTE_ENTRY_SIZE: u16 = 0x04;
 pub const PALETTE_BG_OFFSET: u16 = 0x00;
 pub const PALETTE_SPRITE_OFFSET: u16 = 0x10;
 
+#[derive(Clone)]
 pub struct VideoSystem {
     // 0x0000 - 0x1fff
     // pattern table 0/1
@@ -46,16 +47,6 @@ impl EmulateControl for VideoSystem {
     fn reset(&mut self) {
         self.nametables = [[0; NAME_TABLE_SIZE]; NUM_OF_NAME_TABLE];
         self.palette = [0; PALETTE_SIZE];
-    }
-    fn get_dump_size() -> usize {
-        unimplemented!();
-    }
-    fn dump(&self, _read_callback: impl Fn(usize, u8)) {
-        unimplemented!();
-    }
-    fn restore(&mut self, _write_callback: impl Fn(usize) -> u8) {
-        // TODO: #14
-        unimplemented!();
     }
 }
 

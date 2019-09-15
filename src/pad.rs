@@ -12,6 +12,7 @@ pub enum PadButton {
     Right,
 }
 
+#[derive(Clone)]
 pub struct Pad {
     /// 現在のボタン入力状態
     /// エミュのコントローラとの親和性が悪くなるのでreadで揮発させない
@@ -36,19 +37,6 @@ impl EmulateControl for Pad {
         self.button_reg = 0;
         self.read_shift_index = 0;
         self.strobe_enable = false;
-    }
-    fn get_dump_size() -> usize {
-        0x4
-    }
-    fn dump(&self, read_callback: impl Fn(usize, u8)) {
-        read_callback(0, self.button_reg);
-        read_callback(1, self.read_shift_index);
-        read_callback(2, if self.strobe_enable { 1 } else { 0 });
-    }
-    fn restore(&mut self, write_callback: impl Fn(usize) -> u8) {
-        self.button_reg = write_callback(0); // もしかしたらクリアしたほうがsnapshot復元の場合はいいかも
-        self.read_shift_index = write_callback(1);
-        self.strobe_enable = write_callback(2) == 0x1;
     }
 }
 
