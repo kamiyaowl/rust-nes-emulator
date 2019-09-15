@@ -20,9 +20,4 @@
     max-height:  100vh;
     width:  calc(100vh * 256 / 240);
     height: calc(100vw * 240 / 256);
-    
-    /* test */
-    background-color: #ffc;
-    border: 10px solid #000;
-    box-sizing: border-box;
 }
