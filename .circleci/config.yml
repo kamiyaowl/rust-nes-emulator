@@ -29,6 +29,20 @@ jobs:
       - run:
           name: cargo install
           command: cargo install wasm-pack
+      # deploy to netlify (require $NETLIFY_AUTH_TOKEN, $NETLIFY_SITE_ID)
+      # netlifyがpush時の強制デプロイのやめ方がわからないので毎回やっておく
+      - run:
+          name: build wasm release
+          command: cd wasm && wasm-pack build --release
+          when: always
+      - run:
+          name: npm install && build
+          command: cd wasm && npm install && npm run build
+          when: always
+      - run:
+          name: Deploy to netlify
+          command: netlify deploy --prod -d ./wasm/dist
+          when: always
       # build lib
       - run:
           name: build
@@ -56,16 +70,4 @@ jobs:
           name: build desktop release
           command: cd desktop && cargo build --release
           when: always
-      # build wasm
-      - run:
-          name: build wasm release
-          command: cd wasm && wasm-pack build --release
-          when: always
-      # deploy to netlify (require $NETLIFY_AUTH_TOKEN, $NETLIFY_SITE_ID)
-      - run:
-          name: npm install && build
-          command: cd wasm && npm install && npm run build
-      - run:
-          name: Deploy to netlify
-          command: netlify deploy --prod -d ./wasm/dist
 

@@ -49,7 +49,7 @@ pub const SPRITE_LARGE_HEIGHT: usize = 16;
 #[derive(Copy, Clone)]
 pub struct Position(pub u8, pub u8);
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 /// R,G,B
 pub struct Color(pub u8, pub u8, pub u8);
 impl Color {
@@ -61,6 +61,9 @@ impl Color {
         let index = src & 0x3f;
         let table: [Color; 0x40] = include!("ppu_palette_table.rs");
         table[index as usize]
+    }
+    pub fn is_black(&self) -> bool {
+        self.0 == 0x0 && self.1 == 0x0 && self.2 == 0x0
     }
 }
 
@@ -372,37 +375,38 @@ impl Ppu {
                 u16::from(bg_palette_offset); // palette内の色選択
 
             // BG左端8pixel clipも考慮してBGデータ作る
-            let is_bg_clipping = system.read_ppu_is_clip_bg_leftend() && (pixel_x < 8);
-            let is_tranparent = (bg_palette_addr & 0x03) == 0x00; // 背景色が選択された場合はここで処理してしまう
+            let is_bg_clipping   = system.read_ppu_is_clip_bg_leftend() && (pixel_x < 8);
+            let is_bg_tranparent = (bg_palette_addr & 0x03) == 0x00; // 背景色が選択された場合はここで処理してしまう
             let bg_palette_data: Option<u8> =
-                if is_bg_clipping || !system.read_ppu_is_write_bg() || is_tranparent {
+                if is_bg_clipping || !system.read_ppu_is_write_bg() || is_bg_tranparent {
                     None
                 } else {
                     Some(video_system.read_u8(&mut system.cassette, bg_palette_addr))
                 };
 
-            // 最初に背景色で埋める(もしかしたらBGのアドレスをPaletteだけ変えないとだめかも)
-            let transparent_color = Color::from(video_system.read_u8(
+            // 透明色
+            let mut draw_color = Color::from(video_system.read_u8(
                 &mut system.cassette,
                 PALETTE_TABLE_BASE_ADDR + PALETTE_BG_OFFSET,
             ));
-            fb[pixel_y][pixel_x][0] = transparent_color.0;
-            fb[pixel_y][pixel_x][1] = transparent_color.1;
-            fb[pixel_y][pixel_x][2] = transparent_color.2;
-
+            
             // 前後関係考慮して書き込む
-            for palette_data in &[
-                sprite_palette_data_back,
-                bg_palette_data,
+            'select_color: for palette_data in &[
                 sprite_palette_data_front,
+                bg_palette_data,
+                sprite_palette_data_back,
             ] {
+                // 透明色判定をしていたら事前にNoneされている
                 if let Some(color_index) = palette_data {
                     let c = Color::from(*color_index);
-                    fb[pixel_y][pixel_x][0] = c.0;
-                    fb[pixel_y][pixel_x][1] = c.1;
-                    fb[pixel_y][pixel_x][2] = c.2;
+                    draw_color = c;
+                    break 'select_color;
                 }
             }
+            // データをFBに反映
+            fb[pixel_y][pixel_x][0] = draw_color.0;
+            fb[pixel_y][pixel_x][1] = draw_color.1;
+            fb[pixel_y][pixel_x][2] = draw_color.2;
 
             // モノクロ出力対応(とりあえず総加平均...)
             if system.read_is_monochrome() {
