@@ -40,6 +40,7 @@
   <body>
     <div id="app">
       <el-menu
+        v-if="navbarVisible"
         mode="horizontal"
         background-color="#545c64"
         text-color="#fff"
@@ -52,35 +53,23 @@
           >
             <i class="fab fa-github fa-2x" aria-hidden="true"></i></a
         ></el-menu-item>
-        <el-menu-item index="2"
-          ><a
-            href="https://github.com/kamiyaowl/rust-nes-emulator"
-            target="_blank"
-            >rust-nes-emulator</a
-          ></el-menu-item
-        >
-        <el-menu-item @click="load" index="3">Load ROM</el-menu-item>
+        <el-menu-item @click="load" index="3">Load</el-menu-item>
         <el-menu-item @click="reset" index="4">Reset</el-menu-item>
         <el-menu-item @click="keyconfigVisible = true" index="5"
-          >Keyboard</el-menu-item
+          >KeyConfig</el-menu-item
         >
       </el-menu>
-      {{ message }}
+
+      <canvas id="fb" width="256" height="240"></canvas>
+      <el-button id="toggle-button" @click="navbarVisible = !navbarVisible" type="info" icon="el-icon-more" size="mini" circle></el-button>
 
       <el-dialog
         title="Keyboard Configureation"
         :visible.sync="keyconfigVisible"
       >
         <el-table :data="keyconfig">
-          <el-table-column
-            property="key"
-            label="Key"
-            width="150"
-          ></el-table-column>
-          <el-table-column
-            property="description"
-            label="Description"
-          ></el-table-column>
+          <el-table-column property="key" label="Key"></el-table-column>
+          <el-table-column property="info" label="Info"></el-table-column>
         </el-table>
       </el-dialog>
     </div>
