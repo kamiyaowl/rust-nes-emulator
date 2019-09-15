@@ -166,5 +166,35 @@
                 "$rustc"
             ],
         },
+        {
+            "type": "shell",
+            "label": "npm run serve(wasm)",
+            "command": "npm",
+            "options": {
+                "cwd": "${workspaceFolder}/wasm"
+            },
+            "args": [
+                "run",
+                "serve",
+            ],
+            "problemMatcher": [
+                "$jshint"
+            ],
+        },
+        {
+            "type": "shell",
+            "label": "npm run build(wasm)",
+            "command": "npm",
+            "options": {
+                "cwd": "${workspaceFolder}/wasm"
+            },
+            "args": [
+                "run",
+                "build",
+            ],
+            "problemMatcher": [
+                "$jshint"
+            ],
+        },
     ]
 }

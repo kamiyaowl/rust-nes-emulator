@@ -5,7 +5,7 @@ authors = ["K <kamiyaowl@gmail.com>"]
 edition = "2018"
 
 [lib]
-path = "src/main.rs"
+path = "src/lib.rs"
 name = "rust_nes_emulator_wasm"
 crate-type = ["cdylib"]
 
