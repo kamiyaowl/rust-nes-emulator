@@ -86,6 +86,14 @@ async function main() {
         // start emulate
         emu.reset();
         isEmulateEnable = true;
+        // test
+        emu.step_line();
+        emu.step_line();
+        emu.step_line();
+        emu.step_line();
+        emu.step_line();
+        emu.step_line();
+        draw();
       },
       reset() {
         isEmulateEnable = false;
