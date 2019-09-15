@@ -1,16 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <link rel="stylesheet" type="text/css" href="index.css">
-    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=UA-135070516-4"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+
+      gtag("config", "UA-135070516-4");
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>rust-nes-emulator-wasm</title>
-</head>
-<body>
+    <meta name="description" content="NES Emulator written in Rust" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/element-ui/2.0.0/theme-chalk/index.css"
+    />
+    <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+      integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" type="text/css" href="index.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/element-ui/2.0.0/index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/element-ui/2.0.0/locale/ja.js"></script>
+  </head>
+  <body>
     <div id="app">
-        {{message}}
+      <el-menu
+        mode="horizontal"
+        background-color="#545c64"
+        text-color="#fff"
+        active-text-color="#ffd04b"
+      >
+        <el-menu-item index="1"
+          ><a
+            href="https://github.com/kamiyaowl/rust-nes-emulator"
+            target="_blank"
+          >
+            <i class="fab fa-github fa-2x" aria-hidden="true"></i></a
+        ></el-menu-item>
+        <el-menu-item index="2"
+          ><a
+            href="https://github.com/kamiyaowl/rust-nes-emulator"
+            target="_blank"
+            >rust-nes-emulator</a
+          ></el-menu-item
+        >
+        <el-menu-item @click="load" index="3">Load ROM</el-menu-item>
+        <el-menu-item @click="reset" index="4">Reset</el-menu-item>
+        <el-menu-item @click="keyconfigVisible = true" index="5"
+          >Keyboard</el-menu-item
+        >
+      </el-menu>
+      {{ message }}
+
+      <el-dialog
+        title="Keyboard Configureation"
+        :visible.sync="keyconfigVisible"
+      >
+        <el-table :data="keyconfig">
+          <el-table-column
+            property="key"
+            label="Key"
+            width="150"
+          ></el-table-column>
+          <el-table-column
+            property="description"
+            label="Description"
+          ></el-table-column>
+        </el-table>
+      </el-dialog>
     </div>
-</body>
+  </body>
 </html>

@@ -11,11 +11,29 @@ async function main() {
     const v = buf[emu.get_fb_ptr()];
     console.log(v);
 
+    ELEMENT.locale("ja", ELEMENT.lang.ja);
     const app = new Vue({
         el: '#app',
         data: {
             message: "asdf",
-        }
+            keyconfigVisible: false,
+            keyconfig: [
+                { key: "A", description: "Cross-Key Left" },
+                { key: "W", description: "Cross-Key Up" },
+                { key: "S", description: "Cross-Key Down" },
+                { key: "D", description: "Cross-Key Right" },
+                { key: "J", description: "Button A" },
+                { key: "K", description: "Button B" },
+                { key: "U", description: "Button Select" },
+                { key: "I", description: "Button Start" },
+                { key: "R", description: "[emulator] Reset" },
+                { key: "O", description: "[emulator] Select ROM" },
+            ],
+        },
+        methods: {
+            load() {},
+            reset() {},
+        },
     });
 }
 
