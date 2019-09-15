@@ -43,17 +43,34 @@ async function main() {
         if (e.target.files.length == 0) return;
         const reader = new FileReader();
         reader.onload = file => {
-            console.log(file);
-            // read success dialog
+          const arrayBuf = file.target.result;
+          const src = new Uint8Array(arrayBuf);
+          // cassette load
+          if (!emu.load(src)) {
+            // error notify
             const h = this.$createElement;
             this.$notify({
-              title: "Load ROM Success",
-              message: h("i", { style: "color: teal" }, e.target.files[0].name),
+              title: "Load ROM Error"
             });
+            return;
+          }
+          // read success notify
+          const h = this.$createElement;
+          this.$notify({
+            title: "Load ROM Success",
+            message: h("i", { style: "color: teal" }, e.target.files[0].name)
+          });
         };
-        reader.readAsDataURL(e.target.files[0]);
+        reader.readAsArrayBuffer(e.target.files[0]);
       },
-      reset() {}
+      reset() {
+        emu.reset();
+        // notify
+        const h = this.$createElement;
+        this.$notify({
+          title: "Emulator Reset"
+        });
+      }
     }
   });
 }
