@@ -34,7 +34,7 @@ async function main() {
     }
     ctx.putImageData(imageData, 0, 0);
   }
-  
+
   emu.reset();
   draw();
   let isEmulateEnable = false;
@@ -81,19 +81,20 @@ async function main() {
             title: "Load ROM Success",
             message: h("i", { style: "color: teal" }, e.target.files[0].name)
           });
+          // start emulate
+          emu.reset();
+          isEmulateEnable = true;
+          // test
+          emu.step_line();
+          emu.step_line();
+          emu.step_line();
+          emu.step_line();
+          emu.step_line();
+          emu.step_line();
+          draw();
         };
+        // あとはcallbackで
         reader.readAsArrayBuffer(e.target.files[0]);
-        // start emulate
-        emu.reset();
-        isEmulateEnable = true;
-        // test
-        emu.step_line();
-        emu.step_line();
-        emu.step_line();
-        emu.step_line();
-        emu.step_line();
-        emu.step_line();
-        draw();
       },
       reset() {
         isEmulateEnable = false;
