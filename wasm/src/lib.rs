@@ -94,16 +94,22 @@ impl WasmEmulator {
     /// `data` - nesファイルのバイナリ
     pub fn load(&mut self, binary: &[u8]) -> bool {
         console_log!("WasmEmulator::load()");
-        self.reset();
-        self.cpu_sys.cassette.from_ines_binary(|addr: usize| binary[addr])
+        let success = self.cpu_sys.cassette.from_ines_binary(|addr: usize| binary[addr]);
+        if success {
+            self.reset();
+        }
+        success
     }
     /// 描画領域1面分更新します
+    /// TODO: APU対応で1lineごとにする
     pub fn step_line(&mut self) {
-        console_log!("WasmEmulator::step_line()");
+        // console_log!("WasmEmulator::step_line()");
         let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT + 1);
         let mut total_cycle: usize = 0;
         while total_cycle < cycle_for_draw_once {
-            console_log!("cpu_step");
+            // for debug
+            // console_log!("a:{:02X} x:{:02X} y:{:02X} pc:{:04X} sp:{:02X} p:{:02X} ", self.cpu.a, self.cpu.x, self.cpu.y, self.cpu.pc, self.cpu.sp, self.cpu.p);
+
             let cpu_cycle = usize::from(self.cpu.step(&mut self.cpu_sys));
             self.ppu.step(cpu_cycle, &mut self.cpu, &mut self.cpu_sys, &mut self.video_sys, &mut self.fb);
             total_cycle = total_cycle + cpu_cycle;
