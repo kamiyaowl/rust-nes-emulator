@@ -1,200 +1,165 @@
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558 
-    // for the documentation about the tasks.json format
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "type": "shell",
-            "label": "rustfmt",
-            "command": "cargo",
-            "options": {
-                "cwd": "${fileDirname}/../"
-            },
-            "args": [
-                "fmt",
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-        },
-        {
-            "type": "shell",
-            "label": "test",
-            "command": "cargo",
-            "options": {
-                "cwd": "${workspaceFolder}/test"
-            },
-            "args": [
-                "test",
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-        },
-        {
-            "type": "shell",
-            "label": "test release",
-            "command": "cargo",
-            "options": {
-                "cwd": "${workspaceFolder}/test"
-            },
-            "args": [
-                "test",
-                "--release"
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-        },
-        {
-            "type": "shell",
-            "label": "test ignored",
-            "command": "cargo",
-            "options": {
-                "cwd": "${workspaceFolder}/test"
-            },
-            "args": [
-                "test",
-                "--",
-                "--ignored",
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-        },
-        {
-            "type": "shell",
-            "label": "test release ignored",
-            "command": "cargo",
-            "options": {
-                "cwd": "${workspaceFolder}/test"
-            },
-            "args": [
-                "test",
-                "--release",
-                "--",
-                "--ignored",
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-        },
-        {
-            "type": "shell",
-            "label": "run desktop",
-            "command": "cargo",
-            "options": {
-                "cwd": "${workspaceFolder}/desktop"
-            },
-            "args": [
-                "run",
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-        },
-        {
-            "type": "shell",
-            "label": "run desktop release",
-            "command": "cargo",
-            "options": {
-                "cwd": "${workspaceFolder}/desktop"
-            },
-            "args": [
-                "run",
-                "--release",
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-        },
-        {
-            "type": "shell",
-            "label": "build desktop",
-            "command": "cargo",
-            "options": {
-                "cwd": "${workspaceFolder}/desktop"
-            },
-            "args": [
-                "build",
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-        },
-        {
-            "type": "shell",
-            "label": "build desktop release",
-            "command": "cargo",
-            "options": {
-                "cwd": "${workspaceFolder}/desktop"
-            },
-            "args": [
-                "build",
-                "--release"
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-        },
-        {
-            "type": "shell",
-            "label": "build wasm",
-            "command": "wasm-pack",
-            "options": {
-                "cwd": "${workspaceFolder}/wasm"
-            },
-            "args": [
-                "build",
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-        },
-        {
-            "type": "shell",
-            "label": "build wasm release",
-            "command": "wasm-pack",
-            "options": {
-                "cwd": "${workspaceFolder}/wasm"
-            },
-            "args": [
-                "build",
-                "--release",
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-        },
-        {
-            "type": "shell",
-            "label": "npm run serve(wasm)",
-            "command": "npm",
-            "options": {
-                "cwd": "${workspaceFolder}/wasm"
-            },
-            "args": [
-                "run",
-                "serve",
-            ],
-            "problemMatcher": [
-                "$jshint"
-            ],
-        },
-        {
-            "type": "shell",
-            "label": "npm run build(wasm)",
-            "command": "npm",
-            "options": {
-                "cwd": "${workspaceFolder}/wasm"
-            },
-            "args": [
-                "run",
-                "build",
-            ],
-            "problemMatcher": [
-                "$jshint"
-            ],
-        },
-    ]
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "shell",
+      "label": "rustfmt",
+      "command": "cargo",
+      "options": {
+        "cwd": "${fileDirname}/../"
+      },
+      "args": ["fmt"],
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "type": "shell",
+      "label": "test",
+      "command": "cargo",
+      "options": {
+        "cwd": "${workspaceFolder}/test"
+      },
+      "args": ["test"],
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "type": "shell",
+      "label": "test release",
+      "command": "cargo",
+      "options": {
+        "cwd": "${workspaceFolder}/test"
+      },
+      "args": ["test", "--release"],
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "type": "shell",
+      "label": "test ignored",
+      "command": "cargo",
+      "options": {
+        "cwd": "${workspaceFolder}/test"
+      },
+      "args": ["test", "--", "--ignored"],
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "type": "shell",
+      "label": "test release ignored",
+      "command": "cargo",
+      "options": {
+        "cwd": "${workspaceFolder}/test"
+      },
+      "args": ["test", "--release", "--", "--ignored"],
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "type": "shell",
+      "label": "run desktop",
+      "command": "cargo",
+      "options": {
+        "cwd": "${workspaceFolder}/desktop"
+      },
+      "args": ["run"],
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "type": "shell",
+      "label": "run desktop release",
+      "command": "cargo",
+      "options": {
+        "cwd": "${workspaceFolder}/desktop"
+      },
+      "args": ["run", "--release"],
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "type": "shell",
+      "label": "build desktop",
+      "command": "cargo",
+      "options": {
+        "cwd": "${workspaceFolder}/desktop"
+      },
+      "args": ["build"],
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "type": "shell",
+      "label": "build desktop release",
+      "command": "cargo",
+      "options": {
+        "cwd": "${workspaceFolder}/desktop"
+      },
+      "args": ["build", "--release"],
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "type": "shell",
+      "label": "build wasm",
+      "command": "wasm-pack",
+      "options": {
+        "cwd": "${workspaceFolder}/wasm"
+      },
+      "args": ["build"],
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "type": "shell",
+      "label": "build wasm release",
+      "command": "wasm-pack",
+      "options": {
+        "cwd": "${workspaceFolder}/wasm"
+      },
+      "args": ["build", "--release"],
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "type": "shell",
+      "label": "npm run serve(wasm)",
+      "command": "npm",
+      "options": {
+        "cwd": "${workspaceFolder}/wasm"
+      },
+      "args": ["run", "serve"],
+      "problemMatcher": ["$jshint"]
+    },
+    {
+      "type": "shell",
+      "label": "npm run build(wasm)",
+      "command": "npm",
+      "options": {
+        "cwd": "${workspaceFolder}/wasm"
+      },
+      "args": ["run", "build"],
+      "problemMatcher": ["$jshint"]
+    },
+    {
+      "label": "run embedded: openocd server with reset_run",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/embedded"
+      },
+      "command": "cargo build && openocd -f openocd.cfg -c reset_run",
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "run embedded: openocd server with flash_program",
+      "type": "shell",
+      "options": {
+        "cwd": "${workspaceFolder}/embedded"
+      },
+      "command": "cargo build && openocd -f openocd.cfg -c \"flash_program target/thumbv7em-none-eabihf/debug/rust-nes-emulator-embedded\"",
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "type": "shell",
+      "label": "build embedded",
+      "command": "cargo",
+      "options": {
+        "cwd": "${workspaceFolder}/embedded"
+      },
+      "args": ["build"],
+      "problemMatcher": ["$rustc"]
+    }
+  ]
 }

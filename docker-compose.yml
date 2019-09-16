@@ -57,3 +57,16 @@ services:
         - ./:/work
       working_dir: /work/wasm
       command: npm run build
+    # build embedded
+    build-embedded:
+      build: .
+      volumes:
+        - ./:/work
+      working_dir: /work/embedded
+      command: cargo build
+    build-embedded-release:
+      build: .
+      volumes:
+        - ./:/work
+      working_dir: /work/embedded
+      command: cargo build --release

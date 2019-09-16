@@ -62,6 +62,27 @@ $ docker-compose run build-wasm-release
 $ docker-compose run build-wasm-webpage
 ```
 
+
+---
+
+### Embedded for stm32f769
+
+Work in Progress...
+
+#### Build and Write
+
+```shell
+$ cd embedded
+$ cargo build --release
+$ openocd -f openocd.cfg -c "flash_program target/thumbv7em-none-eabihf/release/rust-nes-emulator-embedded"
+```
+
+#### Build on Docker
+
+```shell
+$ docker-compose run build-embedded-release
+```
+
 ---
 
 ## Screenshot (Operation checked)

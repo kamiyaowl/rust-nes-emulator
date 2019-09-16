@@ -27,6 +27,9 @@ jobs:
           name: rustup component add
           command: rustup component add clippy rustfmt
       - run:
+          name: rustup target add
+          command: rustup target add thumbv6m-none-eabi thumbv7m-none-eabi thumbv7em-none-eabi thumbv7em-none-eabihf
+      - run:
           name: cargo install
           command: cargo install wasm-pack
       # deploy to netlify (require $NETLIFY_AUTH_TOKEN, $NETLIFY_SITE_ID)
@@ -69,5 +72,14 @@ jobs:
       - run:
           name: build desktop release
           command: cd desktop && cargo build --release
+          when: always
+      # build embedded
+      - run:
+          name: build embedded
+          command: cd embedded && cargo build
+          when: always
+      - run:
+          name: build embedded release
+          command: cd embedded && cargo build --release
           when: always
 

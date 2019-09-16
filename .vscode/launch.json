@@ -21,6 +21,17 @@
             "cwd": "${workspaceFolder}/desktop",
             "preLaunchTask": "build desktop",
             "program": "${workspaceFolder}/desktop/target/debug/rust-nes-emulator-desktop.exe",
-        }
-    ]
+        },
+        { 
+            "name": "Debug 'rust_nes_emulator_embedded'",
+            "type": "cppdbg",
+            "request": "launch",
+            "cwd": "${workspaceRoot}/embedded",
+            "program": "${workspaceFolder}/embedded/target/thumbv7em-none-eabihf/debug/rust-nes-emulator-embedded",
+            "MIMode": "gdb",
+            "stopAtEntry": false,
+            "miDebuggerPath": "C:/Program Files (x86)/GNU Tools ARM Embedded/8 2019-q3-update/bin/arm-none-eabi-gdb.exe",
+            "miDebuggerServerAddress": ":3333",
+        },
+    ],
 }
