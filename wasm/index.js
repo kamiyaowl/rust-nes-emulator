@@ -184,9 +184,11 @@ async function main() {
         }
       },
       press_key(key) {
+        console.log("press", key);
         press_key(key);
       },
       release_key(key) {
+        console.log("release", key);
         release_key(key);
       }
     },

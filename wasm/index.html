@@ -103,6 +103,8 @@
           id="gamepad-left-button"
           @mousedown.native="press_key('a')"
           @mouseup.native="release_key('a')"
+          @touchstart.native="press_key('a')"
+          @touchend.native="release_key('a')"
           icon="el-icon-arrow-left"
           type="info"
         ></el-button>
@@ -110,6 +112,8 @@
           id="gamepad-up-button"
           @mousedown.native="press_key('w')"
           @mouseup.native="release_key('w')"
+          @touchstart.native="press_key('w')"
+          @touchend.native="release_key('w')"
           icon="el-icon-arrow-up"
           type="info"
         ></el-button>
@@ -117,6 +121,8 @@
           id="gamepad-down-button"
           @mousedown.native="press_key('s')"
           @mouseup.native="release_key('s')"
+          @touchstart.native="press_key('s')"
+          @touchend.native="release_key('s')"
           icon="el-icon-arrow-down"
           type="info"
         ></el-button>
@@ -124,6 +130,8 @@
           id="gamepad-right-button"
           @mousedown.native="press_key('d')"
           @mouseup.native="release_key('d')"
+          @touchstart.native="press_key('d')"
+          @touchend.native="release_key('d')"
           icon="el-icon-arrow-right"
           type="info"
         ></el-button>
@@ -131,26 +139,38 @@
           id="gamepad-select-button"
           @mousedown.native="press_key('u')"
           @mouseup.native="release_key('u')"
+          @touchstart.native="press_key('u')"
+          @touchend.native="release_key('u')"
           type="info"
-        >select</el-button>
+          >select</el-button
+        >
         <el-button
           id="gamepad-start-button"
           @mousedown.native="press_key('i')"
           @mouseup.native="release_key('i')"
+          @touchstart.native="press_key('i')"
+          @touchend.native="release_key('i')"
           type="info"
-        >start</el-button>
+          >start</el-button
+        >
         <el-button
           id="gamepad-b-button"
           @mousedown.native="press_key('k')"
           @mouseup.native="release_key('k')"
+          @touchstart.native="press_key('k')"
+          @touchend.native="release_key('k')"
           type="info"
-        >B</el-button>
+          >B</el-button
+        >
         <el-button
           id="gamepad-a-button"
           @mousedown.native="press_key('j')"
           @mouseup.native="release_key('j')"
+          @touchstart.native="press_key('j')"
+          @touchend.native="release_key('j')"
           type="info"
-        >A</el-button>
+          >A</el-button
+        >
       </div>
 
       <!-- 画面表示本体様 -->
