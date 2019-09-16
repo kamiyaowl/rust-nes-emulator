@@ -39,6 +39,15 @@
   </head>
   <body>
     <div id="app">
+      <!-- Navbar -->
+      <el-button
+        id="toggle-navbar-button"
+        @click="navbarVisible = !navbarVisible"
+        type="info"
+        icon="el-icon-more"
+        size="mini"
+        circle
+      ></el-button>
       <el-menu
         v-if="navbarVisible"
         mode="horizontal"
@@ -62,16 +71,7 @@
         >
       </el-menu>
 
-      <el-button
-        id="toggle-button"
-        @click="navbarVisible = !navbarVisible"
-        type="info"
-        icon="el-icon-more"
-        size="mini"
-        circle
-      ></el-button>
-      <canvas id="fb" width="256" height="240"></canvas>
-
+      <!-- Dialog -->
       <el-dialog title="Load ROM" :visible.sync="loadRomVisible">
         <div>
           <span>Use File API. Will not be uploaded</span>
@@ -88,6 +88,65 @@
           <el-table-column property="info" label="Info"></el-table-column>
         </el-table>
       </el-dialog>
+
+      <!-- GamePad Button -->
+      <el-button
+        id="toggle-gamepad-button"
+        @click="gamepadVisible = !gamepadVisible"
+        type="info"
+        icon="el-icon-more"
+        size="mini"
+        circle
+      ></el-button>
+      <div id="gamepad-container" v-if="gamepadVisible">
+        <el-button
+          id="gamepad-left-button"
+          @click="press_key('a')"
+          icon="el-icon-arrow-left"
+          type="info"
+        ></el-button>
+        <el-button
+          id="gamepad-up-button"
+          @click="press_key('w')"
+          icon="el-icon-arrow-up"
+          type="info"
+        ></el-button>
+        <el-button
+          id="gamepad-down-button"
+          @click="press_key('s')"
+          icon="el-icon-arrow-down"
+          type="info"
+        ></el-button>
+        <el-button
+          id="gamepad-right-button"
+          @click="press_key('d')"
+          icon="el-icon-arrow-right"
+          type="info"
+        ></el-button>
+        <el-button
+          id="gamepad-select-button"
+          @click="press_key('u')"
+          type="info"
+        >select</el-button>
+        <el-button
+          id="gamepad-start-button"
+          @click="press_key('i')"
+          type="info"
+        >start</el-button>
+        <el-button
+          id="gamepad-b-button"
+          @click="press_key('k')"
+          type="info"
+        >B</el-button>
+        <el-button
+          id="gamepad-a-button"
+          @click="press_key('j')"
+          type="info"
+        >A</el-button>
+      </div>
+
+      <!-- 画面表示本体様 -->
+      <canvas id="fb" width="256" height="240"></canvas>
     </div>
   </body>
 </html>

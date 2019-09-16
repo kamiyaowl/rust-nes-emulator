@@ -60,6 +60,67 @@ async function main() {
   emulate_loop();
   draw_loop();
 
+  function release_key(key) {
+    if (isEmulateEnable) {
+      switch (key) {
+        case "j":
+          emu.update_key(KeyEvent.ReleaseA);
+          break;
+        case "k":
+          emu.update_key(KeyEvent.ReleaseB);
+          break;
+        case "u":
+          emu.update_key(KeyEvent.ReleaseSelect);
+          break;
+        case "i":
+          emu.update_key(KeyEvent.ReleaseStart);
+          break;
+        case "w":
+          emu.update_key(KeyEvent.ReleaseUp);
+          break;
+        case "s":
+          emu.update_key(KeyEvent.ReleaseDown);
+          break;
+        case "a":
+          emu.update_key(KeyEvent.ReleaseLeft);
+          break;
+        case "d":
+          emu.update_key(KeyEvent.ReleaseRight);
+          break;
+      }
+    }
+  }
+  function press_key(key) {
+    if (isEmulateEnable) {
+      switch (key) {
+        case "j":
+          emu.update_key(KeyEvent.PressA);
+          break;
+        case "k":
+          emu.update_key(KeyEvent.PressB);
+          break;
+        case "u":
+          emu.update_key(KeyEvent.PressSelect);
+          break;
+        case "i":
+          emu.update_key(KeyEvent.PressStart);
+          break;
+        case "w":
+          emu.update_key(KeyEvent.PressUp);
+          break;
+        case "s":
+          emu.update_key(KeyEvent.PressDown);
+          break;
+        case "a":
+          emu.update_key(KeyEvent.PressLeft);
+          break;
+        case "d":
+          emu.update_key(KeyEvent.PressRight);
+          break;
+      }
+    }
+  }
+
   ELEMENT.locale("ja", ELEMENT.lang.ja);
   const app = new Vue({
     el: "#app",
@@ -67,6 +128,7 @@ async function main() {
       navbarVisible: true,
       loadRomVisible: false,
       keyconfigVisible: false,
+      gamepadVisible: true,
       keyconfig: [
         { key: "A", info: "Left" },
         { key: "W", info: "Up" },
@@ -120,68 +182,20 @@ async function main() {
           // start
           isEmulateEnable = true;
         }
+      },
+      press_key(key) {
+        press_key(key);
+      },
+      release_key(key) {
+        release_key(key);
       }
     },
     mounted() {
       window.addEventListener("keyup", e => {
-        if (isEmulateEnable) {
-          switch (e.key) {
-            case "j":
-              emu.update_key(KeyEvent.ReleaseA);
-              break;
-            case "k":
-              emu.update_key(KeyEvent.ReleaseB);
-              break;
-            case "u":
-              emu.update_key(KeyEvent.ReleaseSelect);
-              break;
-            case "i":
-              emu.update_key(KeyEvent.ReleaseStart);
-              break;
-            case "w":
-              emu.update_key(KeyEvent.ReleaseUp);
-              break;
-            case "s":
-              emu.update_key(KeyEvent.ReleaseDown);
-              break;
-            case "a":
-              emu.update_key(KeyEvent.ReleaseLeft);
-              break;
-            case "d":
-              emu.update_key(KeyEvent.ReleaseRight);
-              break;
-          }
-        }
+        release_key(e.key);
       });
       window.addEventListener("keydown", e => {
-        if (isEmulateEnable) {
-          switch (e.key) {
-            case "j":
-              emu.update_key(KeyEvent.PressA);
-              break;
-            case "k":
-              emu.update_key(KeyEvent.PressB);
-              break;
-            case "u":
-              emu.update_key(KeyEvent.PressSelect);
-              break;
-            case "i":
-              emu.update_key(KeyEvent.PressStart);
-              break;
-            case "w":
-              emu.update_key(KeyEvent.PressUp);
-              break;
-            case "s":
-              emu.update_key(KeyEvent.PressDown);
-              break;
-            case "a":
-              emu.update_key(KeyEvent.PressLeft);
-              break;
-            case "d":
-              emu.update_key(KeyEvent.PressRight);
-              break;
-          }
-        }
+        press_key(e.key);
       });
     }
   });
