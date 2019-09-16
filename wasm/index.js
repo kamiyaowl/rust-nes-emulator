@@ -14,6 +14,7 @@ async function main() {
   const SCREEN_HEIGHT = get_screen_height();
   const NUM_OF_COLORS = get_num_of_colors(); // rust上での扱い、imageDataはalphaもある
   const emu = new WasmEmulator();
+  emu.reset();
   const rustBuf = new Uint8Array(memory.buffer);
   const fbBasePtr = emu.get_fb_ptr();
 
@@ -35,9 +36,28 @@ async function main() {
     ctx.putImageData(imageData, 0, 0);
   }
 
-  emu.reset();
-  draw();
+  // FPS制御とか
+  const emulateFps = 60;
+  const drawFps = 30;
   let isEmulateEnable = false;
+
+  function emulate_loop() {
+    setTimeout(() => {
+      requestAnimationFrame(emulate_loop);
+      if (isEmulateEnable) {
+        emu.step_line();
+      }
+    }, 1000.0 / emulateFps);
+  }
+  function draw_loop() {
+    setTimeout(() => {
+      requestAnimationFrame(draw_loop);
+      draw();
+    }, 1000.0 / drawFps);
+  }
+
+  emulate_loop();
+  draw_loop();
 
   ELEMENT.locale("ja", ELEMENT.lang.ja);
   const app = new Vue({
@@ -69,7 +89,6 @@ async function main() {
           // cassette load
           if (!emu.load(src)) {
             // error notify
-            const h = this.$createElement;
             this.$notify({
               title: "Load ROM Error"
             });
@@ -100,7 +119,6 @@ async function main() {
         isEmulateEnable = false;
         emu.reset();
         // notify
-        const h = this.$createElement;
         this.$notify({
           title: "Emulator Reset"
         });
