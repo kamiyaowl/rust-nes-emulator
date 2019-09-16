@@ -123,8 +123,8 @@ $ docker-compose run build-wasm-webpage
   - [ ] Noise
   - [ ] DMC
 - [ ] Emulation feature
-    - [ ] Snapshot
-    - [ ] Restore
+    - [x] Snapshot
+    - [x] Restore
     - [ ] ROM Selection Bootloader
     
 ## Test ROMs

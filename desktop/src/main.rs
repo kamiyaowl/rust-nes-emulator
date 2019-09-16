@@ -54,6 +54,12 @@ fn save_framebuffer(
 fn main() {
     let rom_path = "../roms/my_dump/mario.nes".to_string();
     let rom_exists = std::path::Path::new(&rom_path).is_file();
+    // snapshot
+    let mut ss_cpu: Cpu = Default::default();
+    let mut ss_cpu_sys: System = Default::default();
+    let mut ss_ppu: Ppu = Default::default();
+    let mut ss_video_sys: VideoSystem = Default::default();
+
 
     // emu
     let mut cpu: Cpu = Default::default();
@@ -219,6 +225,20 @@ fn main() {
                         }
                         _ => {}
                     }
+                },
+                Key::C => {
+                    // Snapshot Save
+                    ss_cpu       = cpu.clone();
+                    ss_cpu_sys   = cpu_sys.clone();
+                    ss_ppu       = ppu.clone();
+                    ss_video_sys = video_sys.clone();
+                }, 
+                Key::Z => {
+                    // Snapshot Restore
+                    cpu       = ss_cpu.clone();
+                    cpu_sys   = ss_cpu_sys.clone();
+                    ppu       = ss_ppu.clone();
+                    video_sys = ss_video_sys.clone();
                 }
                 _ => {}
             }
