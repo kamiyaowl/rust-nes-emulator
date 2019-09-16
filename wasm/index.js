@@ -4,6 +4,7 @@ async function main() {
   );
   const {
     WasmEmulator,
+    KeyEvent,
     get_screen_width,
     get_screen_height,
     get_num_of_colors
@@ -103,28 +104,85 @@ async function main() {
           // start emulate
           emu.reset();
           isEmulateEnable = true;
-          // test
-          emu.step_line();
-          emu.step_line();
-          emu.step_line();
-          emu.step_line();
-          emu.step_line();
-          emu.step_line();
-          draw();
         };
         // あとはcallbackで
         reader.readAsArrayBuffer(e.target.files[0]);
       },
       reset() {
-        isEmulateEnable = false;
-        emu.reset();
-        // notify
-        this.$notify({
-          title: "Emulator Reset"
-        });
-        // start
-        isEmulateEnable = true;
+        // emulate start時のみ
+        if (isEmulateEnable) {
+          isEmulateEnable = false;
+          emu.reset();
+          // notify
+          this.$notify({
+            title: "Emulator Reset"
+          });
+          // start
+          isEmulateEnable = true;
+        }
       }
+    },
+    mounted() {
+      window.addEventListener("keyup", e => {
+        if (isEmulateEnable) {
+          switch (e.key) {
+            case "j":
+              emu.update_key(KeyEvent.ReleaseA);
+              break;
+            case "k":
+              emu.update_key(KeyEvent.ReleaseB);
+              break;
+            case "u":
+              emu.update_key(KeyEvent.ReleaseSelect);
+              break;
+            case "i":
+              emu.update_key(KeyEvent.ReleaseStart);
+              break;
+            case "w":
+              emu.update_key(KeyEvent.ReleaseUp);
+              break;
+            case "s":
+              emu.update_key(KeyEvent.ReleaseDown);
+              break;
+            case "a":
+              emu.update_key(KeyEvent.ReleaseLeft);
+              break;
+            case "d":
+              emu.update_key(KeyEvent.ReleaseRight);
+              break;
+          }
+        }
+      });
+      window.addEventListener("keydown", e => {
+        if (isEmulateEnable) {
+          switch (e.key) {
+            case "j":
+              emu.update_key(KeyEvent.PressA);
+              break;
+            case "k":
+              emu.update_key(KeyEvent.PressB);
+              break;
+            case "u":
+              emu.update_key(KeyEvent.PressSelect);
+              break;
+            case "i":
+              emu.update_key(KeyEvent.PressStart);
+              break;
+            case "w":
+              emu.update_key(KeyEvent.PressUp);
+              break;
+            case "s":
+              emu.update_key(KeyEvent.PressDown);
+              break;
+            case "a":
+              emu.update_key(KeyEvent.PressLeft);
+              break;
+            case "d":
+              emu.update_key(KeyEvent.PressRight);
+              break;
+          }
+        }
+      });
     }
   });
 }
