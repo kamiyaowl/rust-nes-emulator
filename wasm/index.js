@@ -44,12 +44,12 @@ async function main() {
 
   // Animation Frame Firedには依存せずに実行する
   function emulate_loop() {
-    const start = new Date().getMilliseconds();
+    const start = new Date().getTime();
     if (isEmulateEnable) {
       emu.step_line();
-      draw();
     }
-    const diffTime = emulateInterval - ((new Date().getMilliseconds()) - start);
+    const elapsed = ((new Date().getTime()) - start);
+    const diffTime = emulateInterval - elapsed;
     // めちゃはやだったら待たせるし、間に合ってなければ即
     const sleepTime = diffTime < 0 ? 0 : diffTime;
     setTimeout(emulate_loop, sleepTime);
@@ -57,11 +57,12 @@ async function main() {
   // Animation Frame Firedに同期してcanvasだけ書き換える
   function draw_loop() {
     if (isEmulateEnable) {
+      draw();
     }
     requestAnimationFrame(draw_loop);
   }
   emulate_loop();
-  // draw_loop();
+  draw_loop();
 
   function release_key(key) {
     if (isEmulateEnable) {
