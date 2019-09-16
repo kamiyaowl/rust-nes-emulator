@@ -39,26 +39,29 @@ async function main() {
 
   // FPS制御とか
   const emulateFps = 60;
-  const drawFps = 30;
+  const emulateInterval = 1000.0 / emulateFps;
   let isEmulateEnable = false;
 
+  // Animation Frame Firedには依存せずに実行する
   function emulate_loop() {
-    setTimeout(() => {
-      requestAnimationFrame(emulate_loop);
-      if (isEmulateEnable) {
-        emu.step_line();
-      }
-    }, 1000.0 / emulateFps);
-  }
-  function draw_loop() {
-    setTimeout(() => {
-      requestAnimationFrame(draw_loop);
+    const start = new Date().getMilliseconds();
+    if (isEmulateEnable) {
+      emu.step_line();
       draw();
-    }, 1000.0 / drawFps);
+    }
+    const diffTime = emulateInterval - ((new Date().getMilliseconds()) - start);
+    // めちゃはやだったら待たせるし、間に合ってなければ即
+    const sleepTime = diffTime < 0 ? 0 : diffTime;
+    setTimeout(emulate_loop, sleepTime);
   }
-
+  // Animation Frame Firedに同期してcanvasだけ書き換える
+  function draw_loop() {
+    if (isEmulateEnable) {
+    }
+    requestAnimationFrame(draw_loop);
+  }
   emulate_loop();
-  draw_loop();
+  // draw_loop();
 
   function release_key(key) {
     if (isEmulateEnable) {
