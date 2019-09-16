@@ -2,8 +2,8 @@ extern crate wasm_bindgen;
 use wasm_bindgen::prelude::*;
 
 extern crate rust_nes_emulator;
-use rust_nes_emulator::*;
 use rust_nes_emulator::interface::*;
+use rust_nes_emulator::*;
 
 #[wasm_bindgen]
 extern "C" {
@@ -43,6 +43,27 @@ pub fn get_num_of_colors() -> usize {
 }
 
 #[wasm_bindgen]
+#[derive(PartialEq,Eq,Copy,Clone,Debug)]
+pub enum KeyEvent {
+    PressA,
+    PressB,
+    PressSelect,
+    PressStart,
+    PressUp,
+    PressDown,
+    PressLeft,
+    PressRight,
+    ReleaseA,
+    ReleaseB,
+    ReleaseSelect,
+    ReleaseStart,
+    ReleaseUp,
+    ReleaseDown,
+    ReleaseLeft,
+    ReleaseRight,
+}
+
+#[wasm_bindgen]
 pub struct WasmEmulator {
     fb: [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT],
     cpu: Cpu,
@@ -50,6 +71,7 @@ pub struct WasmEmulator {
     ppu: Ppu,
     video_sys: VideoSystem,
 }
+
 impl Default for WasmEmulator {
     fn default() -> Self {
         Self {
@@ -94,7 +116,10 @@ impl WasmEmulator {
     /// `data` - nesファイルのバイナリ
     pub fn load(&mut self, binary: &[u8]) -> bool {
         console_log!("WasmEmulator::load()");
-        let success = self.cpu_sys.cassette.from_ines_binary(|addr: usize| binary[addr]);
+        let success = self
+            .cpu_sys
+            .cassette
+            .from_ines_binary(|addr: usize| binary[addr]);
         if success {
             self.reset();
         }
@@ -111,9 +136,37 @@ impl WasmEmulator {
             // console_log!("a:{:02X} x:{:02X} y:{:02X} pc:{:04X} sp:{:02X} p:{:02X} ", self.cpu.a, self.cpu.x, self.cpu.y, self.cpu.pc, self.cpu.sp, self.cpu.p);
 
             let cpu_cycle = usize::from(self.cpu.step(&mut self.cpu_sys));
-            self.ppu.step(cpu_cycle, &mut self.cpu, &mut self.cpu_sys, &mut self.video_sys, &mut self.fb);
+            self.ppu.step(
+                cpu_cycle,
+                &mut self.cpu,
+                &mut self.cpu_sys,
+                &mut self.video_sys,
+                &mut self.fb,
+            );
             total_cycle = total_cycle + cpu_cycle;
             // TODO: apu対応(1面分更新だとタイミング的に厳しいかも #8)
+        }
+    }
+    /// キー入力します
+    pub fn update_key(&mut self, key: KeyEvent) {
+        match key {
+            KeyEvent::PressA      => self.cpu_sys.pad1.push_button(PadButton::A),
+            KeyEvent::PressB      => self.cpu_sys.pad1.push_button(PadButton::B),
+            KeyEvent::PressSelect => self.cpu_sys.pad1.push_button(PadButton::Select),
+            KeyEvent::PressStart  => self.cpu_sys.pad1.push_button(PadButton::Start),
+            KeyEvent::PressUp     => self.cpu_sys.pad1.push_button(PadButton::Up),
+            KeyEvent::PressDown   => self.cpu_sys.pad1.push_button(PadButton::Down),
+            KeyEvent::PressLeft   => self.cpu_sys.pad1.push_button(PadButton::Left),
+            KeyEvent::PressRight  => self.cpu_sys.pad1.push_button(PadButton::Right),
+
+            KeyEvent::ReleaseA      => self.cpu_sys.pad1.release_button(PadButton::A),
+            KeyEvent::ReleaseB      => self.cpu_sys.pad1.release_button(PadButton::B),
+            KeyEvent::ReleaseSelect => self.cpu_sys.pad1.release_button(PadButton::Select),
+            KeyEvent::ReleaseStart  => self.cpu_sys.pad1.release_button(PadButton::Start),
+            KeyEvent::ReleaseUp     => self.cpu_sys.pad1.release_button(PadButton::Up),
+            KeyEvent::ReleaseDown   => self.cpu_sys.pad1.release_button(PadButton::Down),
+            KeyEvent::ReleaseLeft   => self.cpu_sys.pad1.release_button(PadButton::Left),
+            KeyEvent::ReleaseRight  => self.cpu_sys.pad1.release_button(PadButton::Right),
         }
     }
 }
