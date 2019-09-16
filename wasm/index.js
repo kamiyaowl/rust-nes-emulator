@@ -128,7 +128,7 @@ async function main() {
       navbarVisible: true,
       loadRomVisible: false,
       keyconfigVisible: false,
-      gamepadVisible: true,
+      gamepadVisible: false,
       keyconfig: [
         { key: "A", info: "Left" },
         { key: "W", info: "Up" },
