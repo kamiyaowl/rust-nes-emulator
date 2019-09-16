@@ -66,7 +66,7 @@ $ docker-compose run build-wasm-webpage
 
 ![donkey](https://raw.githubusercontent.com/kamiyaowl/rust-nes-emulator/master/screenshot/donkey.bmp)
 
-### Donkey Kong
+### Mario Bros.
 
 ![mariobros](https://raw.githubusercontent.com/kamiyaowl/rust-nes-emulator/master/screenshot/mariobros.bmp)
 
