@@ -101,46 +101,54 @@
       <div id="gamepad-container" v-if="gamepadVisible">
         <el-button
           id="gamepad-left-button"
-          @click="press_key('a')"
+          @mousedown.native="press_key('a')"
+          @mouseup.native="release_key('a')"
           icon="el-icon-arrow-left"
           type="info"
         ></el-button>
         <el-button
           id="gamepad-up-button"
-          @click="press_key('w')"
+          @mousedown.native="press_key('w')"
+          @mouseup.native="release_key('w')"
           icon="el-icon-arrow-up"
           type="info"
         ></el-button>
         <el-button
           id="gamepad-down-button"
-          @click="press_key('s')"
+          @mousedown.native="press_key('s')"
+          @mouseup.native="release_key('s')"
           icon="el-icon-arrow-down"
           type="info"
         ></el-button>
         <el-button
           id="gamepad-right-button"
-          @click="press_key('d')"
+          @mousedown.native="press_key('d')"
+          @mouseup.native="release_key('d')"
           icon="el-icon-arrow-right"
           type="info"
         ></el-button>
         <el-button
           id="gamepad-select-button"
-          @click="press_key('u')"
+          @mousedown.native="press_key('u')"
+          @mouseup.native="release_key('u')"
           type="info"
         >select</el-button>
         <el-button
           id="gamepad-start-button"
-          @click="press_key('i')"
+          @mousedown.native="press_key('i')"
+          @mouseup.native="release_key('i')"
           type="info"
         >start</el-button>
         <el-button
           id="gamepad-b-button"
-          @click="press_key('k')"
+          @mousedown.native="press_key('k')"
+          @mouseup.native="release_key('k')"
           type="info"
         >B</el-button>
         <el-button
           id="gamepad-a-button"
-          @click="press_key('j')"
+          @mousedown.native="press_key('j')"
+          @mouseup.native="release_key('j')"
           type="info"
         >A</el-button>
       </div>
