@@ -10,9 +10,9 @@ NES Emulator written in Rust
 | - | - |
 | ![mario-gif](https://user-images.githubusercontent.com/4300987/64512802-1bc8bd00-d322-11e9-8a70-26df62bb5ee1.gif) | ![donkey-gif](https://user-images.githubusercontent.com/4300987/64512801-1bc8bd00-d322-11e9-9e6c-0a149fb05c1b.gif) |
 
-| Mario Bros. | - |
+| Mario Bros. | Hello, World! |
 | - | - |
-| ![mariobros-gif](https://user-images.githubusercontent.com/4300987/64917495-06dda500-d7cc-11e9-9037-f5f8bd7de061.gif) | - |
+| ![mariobros-gif](https://user-images.githubusercontent.com/4300987/64917495-06dda500-d7cc-11e9-9037-f5f8bd7de061.gif) | ![hello](https://raw.githubusercontent.com/kamiyaowl/rust-nes-emulator/master/screenshot/hello.bmp) |
 
 ---
 
@@ -23,7 +23,9 @@ rustc 1.37.0 required
 
 ### Desktop Application
 
-![desktop](https://raw.githubusercontent.com/kamiyaowl/rust-nes-emulator/master/screenshot/desktop.png)
+High Performance.
+
+![desktop](https://github.com/kamiyaowl/rust-nes-emulator/blob/master/screenshot/desktop.PNG?raw=true)
 
 ```shell
 $ cd desktop
@@ -36,11 +38,15 @@ $ cargo run --release
 $ docker-compose run build-desktop-release
 ```
 
+---
+
 ### WebAssembly Application
 
-![wasm](https://raw.githubusercontent.com/kamiyaowl/rust-nes-emulator/master/screenshot/wasm.png)
+![wasm](https://raw.githubusercontent.com/kamiyaowl/rust-nes-emulator/master/screenshot/wasm.PNG?raw=true)
 
 [Playgound: rust-nes-emulator.netlify.com](https://rust-nes-emulator.netlify.com/)
+
+#### Build locally
 
 ```shell
 $ cd wasm
