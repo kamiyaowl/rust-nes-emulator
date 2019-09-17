@@ -10,8 +10,21 @@ extern crate panic_halt; // you can put a breakpoint on `rust_begin_unwind` to c
 use cortex_m_rt::entry;
 use stm32f7::stm32f7x9;
 
+extern crate rust_nes_emulator;
+
+use rust_nes_emulator::interface::*;
+use rust_nes_emulator::*;
+
 #[entry]
 fn main() -> ! {
+    // SDカードが読めるまでは...
+    let rom = include_bytes!("../../roms/other/hello.nes");
+
+    let mut cpu: Cpu = Default::default();
+    let mut cpu_sys: System = Default::default();
+    let mut ppu: Ppu = Default::default();
+    let mut video_sys: VideoSystem = Default::default();
+
     let peripherals = stm32f7x9::Peripherals::take().unwrap();
 
     // LD0: RED   : PJ13
