@@ -15,6 +15,26 @@
     },
     {
       "type": "shell",
+      "label": "build lib",
+      "command": "cargo",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "args": ["build"],
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "type": "shell",
+      "label": "build lib release",
+      "command": "cargo",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "args": ["build", "--release"],
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "type": "shell",
       "label": "test",
       "command": "cargo",
       "options": {
