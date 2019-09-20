@@ -244,7 +244,6 @@ fn test_run_hello_ppu() {
             assert_eq!(0x34, cpu.p);
             // FBの結果を精査する
             let _ = validate_framebuffer(fb, "../screenshot/hello.bmp".to_string());
-            unimplemented!();
         },
     )
 }
