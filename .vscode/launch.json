@@ -48,6 +48,22 @@
                 "monitor arm semihosting enable",
             ],
             "preLaunchTask": "build embedded"
+        },
+        {
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "request": "launch",
+            "name": "Debug Release 'rust_nes_emulator_embedded' :cortex-debug",
+            "cwd": "${workspaceRoot}/embedded",
+            "executable": "${workspaceFolder}/embedded/target/thumbv7em-none-eabihf/release/rust-nes-emulator-embedded",
+            "configFiles": [
+                "${workspaceFolder}/embedded/openocd.cfg",
+            ],
+            "gdbTarget": "arm-none-eabi-gdb",
+            "preLaunchCommands": [
+                "monitor arm semihosting enable",
+            ],
+            "preLaunchTask": "build embedded release"
         }
     ],
 }

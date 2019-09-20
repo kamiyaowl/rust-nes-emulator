@@ -7,7 +7,6 @@ extern crate panic_halt; // you can put a breakpoint on `rust_begin_unwind` to c
 // extern crate panic_itm; // logs messages over ITM; requires ITM support
 // extern crate panic_semihosting; // logs messages to the host stderr; requires a debugger
 
-
 use cortex_m;
 use cortex_m_rt;
 use cortex_m_semihosting::{hprintln, hprint};
@@ -49,7 +48,6 @@ fn main() -> ! {
     let mut cpu_sys: System = Default::default();
     let mut ppu: Ppu = Default::default();
     let mut video_sys: VideoSystem = Default::default();
-    // let mut fb = [[[0; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
 
     let peripherals = stm32f7x9::Peripherals::take().unwrap();
 
@@ -65,29 +63,42 @@ fn main() -> ! {
         peripherals.GPIOJ.moder.write(|w| unsafe { w.bits((0x1 << (13*2)) | (0x1 << ( 5*2))) });
         // Output Data Reg: ODR15[0]...ODR1[0], ODR0[0]
     });
+    hprintln!("peripherals initialize.").unwrap();
 
-    // if !cpu_sys.cassette.from_ines_binary(|addr: usize| rom[addr]) {
-    //     loop {
-    //         hprintln!("rom read error").unwrap();
-    //     }
-    // }
+    if !cpu_sys.cassette.from_ines_binary(|addr: usize| rom[addr]) {
+        loop {
+            hprintln!("rom read error").unwrap();
+        }
+    }
+    hprintln!("read ines binary success.").unwrap();
 
-    // let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT + 1);
-    // let frame_count = 2;
-    // for _i in 0..frame_count {
-    //     let mut total_cycle: usize = 0;
-    //     while total_cycle < cycle_for_draw_once {
-    //         let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
-    //         ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
+    // @todo unsafeはかっこよく解決して
+    unsafe {
+        FRAME_BUFFER = [[[0; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
+    }
+    hprintln!("frame buffer initialize success.").unwrap();
 
-    //         total_cycle = total_cycle + cpu_cycle;
-    //     }
-    // }
-    // print_framebuffer(&fb);
+    let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT + 1);
+    let frame_count = 1;
+    for _i in 0..frame_count {
+        let mut total_cycle: usize = 0;
+        while total_cycle < cycle_for_draw_once {
+            let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
+            unsafe {
+                ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut FRAME_BUFFER);
+            }
+
+            total_cycle = total_cycle + cpu_cycle;
+        }
+    }
 
     let mut counter: u32 = 0;
     loop {
         hprintln!("### rust-nes-emulator-embedded {} ###", counter).unwrap();
+        unsafe {
+            // めちゃくちゃ遅いので別の手段を用意したほうが良い
+            print_framebuffer(&FRAME_BUFFER);
+        }
 
         counter = counter + 1;
         peripherals.GPIOJ.odr.write(|w| unsafe { w.bits((0x1 << 13) | (0x1 << 5)) });
