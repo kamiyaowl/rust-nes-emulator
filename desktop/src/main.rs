@@ -1,7 +1,5 @@
 extern crate rust_nes_emulator;
-
-use rust_nes_emulator::interface::*;
-use rust_nes_emulator::*;
+use rust_nes_emulator::prelude::*;
 
 // for read ines file
 use std::fs::File;

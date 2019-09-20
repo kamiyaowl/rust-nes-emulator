@@ -10,8 +10,41 @@
       "options": {
         "cwd": "${fileDirname}/../"
       },
-      "args": ["fmt"],
-      "problemMatcher": ["$rustc"]
+      "args": [
+        "fmt"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ]
+    },
+    {
+      "type": "shell",
+      "label": "build lib",
+      "command": "cargo",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "args": [
+        "build"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ]
+    },
+    {
+      "type": "shell",
+      "label": "build lib release",
+      "command": "cargo",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "args": [
+        "build",
+        "--release"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ]
     },
     {
       "type": "shell",
@@ -20,8 +53,12 @@
       "options": {
         "cwd": "${workspaceFolder}/test"
       },
-      "args": ["test"],
-      "problemMatcher": ["$rustc"]
+      "args": [
+        "test"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ]
     },
     {
       "type": "shell",
@@ -30,8 +67,13 @@
       "options": {
         "cwd": "${workspaceFolder}/test"
       },
-      "args": ["test", "--release"],
-      "problemMatcher": ["$rustc"]
+      "args": [
+        "test",
+        "--release"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ]
     },
     {
       "type": "shell",
@@ -40,8 +82,14 @@
       "options": {
         "cwd": "${workspaceFolder}/test"
       },
-      "args": ["test", "--", "--ignored"],
-      "problemMatcher": ["$rustc"]
+      "args": [
+        "test",
+        "--",
+        "--ignored"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ]
     },
     {
       "type": "shell",
@@ -50,8 +98,15 @@
       "options": {
         "cwd": "${workspaceFolder}/test"
       },
-      "args": ["test", "--release", "--", "--ignored"],
-      "problemMatcher": ["$rustc"]
+      "args": [
+        "test",
+        "--release",
+        "--",
+        "--ignored"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ]
     },
     {
       "type": "shell",
@@ -60,8 +115,12 @@
       "options": {
         "cwd": "${workspaceFolder}/desktop"
       },
-      "args": ["run"],
-      "problemMatcher": ["$rustc"]
+      "args": [
+        "run"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ]
     },
     {
       "type": "shell",
@@ -70,8 +129,13 @@
       "options": {
         "cwd": "${workspaceFolder}/desktop"
       },
-      "args": ["run", "--release"],
-      "problemMatcher": ["$rustc"]
+      "args": [
+        "run",
+        "--release"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ]
     },
     {
       "type": "shell",
@@ -80,8 +144,12 @@
       "options": {
         "cwd": "${workspaceFolder}/desktop"
       },
-      "args": ["build"],
-      "problemMatcher": ["$rustc"]
+      "args": [
+        "build"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ]
     },
     {
       "type": "shell",
@@ -90,8 +158,13 @@
       "options": {
         "cwd": "${workspaceFolder}/desktop"
       },
-      "args": ["build", "--release"],
-      "problemMatcher": ["$rustc"]
+      "args": [
+        "build",
+        "--release"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ]
     },
     {
       "type": "shell",
@@ -100,8 +173,12 @@
       "options": {
         "cwd": "${workspaceFolder}/wasm"
       },
-      "args": ["build"],
-      "problemMatcher": ["$rustc"]
+      "args": [
+        "build"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ]
     },
     {
       "type": "shell",
@@ -110,8 +187,13 @@
       "options": {
         "cwd": "${workspaceFolder}/wasm"
       },
-      "args": ["build", "--release"],
-      "problemMatcher": ["$rustc"]
+      "args": [
+        "build",
+        "--release"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ]
     },
     {
       "type": "shell",
@@ -120,8 +202,13 @@
       "options": {
         "cwd": "${workspaceFolder}/wasm"
       },
-      "args": ["run", "serve"],
-      "problemMatcher": ["$jshint"]
+      "args": [
+        "run",
+        "serve"
+      ],
+      "problemMatcher": [
+        "$jshint"
+      ]
     },
     {
       "type": "shell",
@@ -130,8 +217,13 @@
       "options": {
         "cwd": "${workspaceFolder}/wasm"
       },
-      "args": ["run", "build"],
-      "problemMatcher": ["$jshint"]
+      "args": [
+        "run",
+        "build"
+      ],
+      "problemMatcher": [
+        "$jshint"
+      ]
     },
     {
       "label": "run embedded: openocd server with reset_run",
@@ -140,7 +232,9 @@
         "cwd": "${workspaceFolder}/embedded"
       },
       "command": "cargo build && openocd -f openocd.cfg -c reset_run",
-      "problemMatcher": ["$rustc"]
+      "problemMatcher": [
+        "$rustc"
+      ]
     },
     {
       "label": "run embedded: openocd server with flash_program",
@@ -149,7 +243,9 @@
         "cwd": "${workspaceFolder}/embedded"
       },
       "command": "cargo build && openocd -f openocd.cfg -c \"flash_program target/thumbv7em-none-eabihf/debug/rust-nes-emulator-embedded\"",
-      "problemMatcher": ["$rustc"]
+      "problemMatcher": [
+        "$rustc"
+      ]
     },
     {
       "type": "shell",
@@ -158,8 +254,33 @@
       "options": {
         "cwd": "${workspaceFolder}/embedded"
       },
-      "args": ["build"],
-      "problemMatcher": ["$rustc"]
+      "args": [
+        "build"
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ]
+    },
+    {
+      "type": "shell",
+      "label": "objdump embedded",
+      "command": "cargo",
+      "options": {
+        "cwd": "${workspaceFolder}/embedded"
+      },
+      "args": [
+        "objdump",
+        "--bin",
+        "rust-nes-emulator-embedded",
+        "--",
+        "-d",
+        "-h",
+        "-f",
+      ],
+      "dependsOn": [
+        "build embedded"
+      ],
+      "problemMatcher": []
     }
   ]
 }

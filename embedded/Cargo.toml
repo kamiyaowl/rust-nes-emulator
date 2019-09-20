@@ -4,6 +4,9 @@ version = "0.1.0"
 authors = ["K <kamiyaowl@gmail.com>"]
 edition = "2018"
 
+[dependencies.rust-nes-emulator]
+path = "../"
+
 [dependencies]
 cortex-m = "0.6.0"
 cortex-m-rt = "0.6.8"
