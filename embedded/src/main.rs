@@ -36,17 +36,19 @@ fn print_framebuffer(fb: &[[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_S
     }
 }
 
+static mut FRAME_BUFFER: [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT] = [[[0; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
+
 #[entry]
 fn main() -> ! {
-    // hprintln!("### rust-nes-emulator-embedded ###").unwrap();
+    hprintln!("### rust-nes-emulator-embedded ###").unwrap();
 
     // SDカードが読めるまでは...
-    // let rom = include_bytes!("../../roms/other/hello.nes");
+    let rom = include_bytes!("../../roms/other/hello.nes");
 
-    // let mut cpu: Cpu = Default::default();
-    // let mut cpu_sys: System = Default::default();
-    // let mut ppu: Ppu = Default::default();
-    // let mut video_sys: VideoSystem = Default::default();
+    let mut cpu: Cpu = Default::default();
+    let mut cpu_sys: System = Default::default();
+    let mut ppu: Ppu = Default::default();
+    let mut video_sys: VideoSystem = Default::default();
     // let mut fb = [[[0; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
 
     let peripherals = stm32f7x9::Peripherals::take().unwrap();
