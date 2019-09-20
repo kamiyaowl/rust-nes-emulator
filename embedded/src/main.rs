@@ -18,7 +18,7 @@ use rust_nes_emulator::*;
 #[entry]
 fn main() -> ! {
     // SDカードが読めるまでは...
-    let rom = include_bytes!("../../roms/other/hello.nes");
+    // let rom = include_bytes!("../../roms/other/hello.nes");
 
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();

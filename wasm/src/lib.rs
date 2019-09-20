@@ -2,8 +2,7 @@ extern crate wasm_bindgen;
 use wasm_bindgen::prelude::*;
 
 extern crate rust_nes_emulator;
-use rust_nes_emulator::interface::*;
-use rust_nes_emulator::*;
+use rust_nes_emulator::prelude::*;
 
 #[wasm_bindgen]
 extern "C" {
