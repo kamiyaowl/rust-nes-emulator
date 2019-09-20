@@ -23,15 +23,31 @@
             "program": "${workspaceFolder}/desktop/target/debug/rust-nes-emulator-desktop.exe",
         },
         { 
-            "name": "Debug 'rust_nes_emulator_embedded'",
+            "name": "Debug 'rust_nes_emulator_embedded' :cppdbg",
             "type": "cppdbg",
             "request": "launch",
             "cwd": "${workspaceRoot}/embedded",
             "program": "${workspaceFolder}/embedded/target/thumbv7em-none-eabihf/debug/rust-nes-emulator-embedded",
             "MIMode": "gdb",
-            "stopAtEntry": false,
+            "stopAtEntry": true,
             "miDebuggerPath": "C:/Program Files (x86)/GNU Tools ARM Embedded/8 2019-q3-update/bin/arm-none-eabi-gdb.exe",
             "miDebuggerServerAddress": ":3333",
         },
+        {
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "request": "launch",
+            "name": "Debug 'rust_nes_emulator_embedded' :cortex-debug",
+            "cwd": "${workspaceRoot}/embedded",
+            "executable": "${workspaceFolder}/embedded/target/thumbv7em-none-eabihf/debug/rust-nes-emulator-embedded",
+            "configFiles": [
+                "${workspaceFolder}/embedded/openocd.cfg",
+            ],
+            "gdbTarget": "arm-none-eabi-gdb",
+            "preLaunchCommands": [
+                "monitor arm semihosting enable",
+            ],
+            "preLaunchTask": "build embedded"
+        }
     ],
 }

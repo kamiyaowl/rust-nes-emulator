@@ -263,6 +263,21 @@
     },
     {
       "type": "shell",
+      "label": "build embedded release",
+      "command": "cargo",
+      "options": {
+        "cwd": "${workspaceFolder}/embedded"
+      },
+      "args": [
+        "build",
+        "--release",
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ]
+    },
+    {
+      "type": "shell",
       "label": "objdump embedded",
       "command": "cargo",
       "options": {
