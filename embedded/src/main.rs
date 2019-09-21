@@ -78,6 +78,14 @@ fn main() -> ! {
     }
     hprintln!("frame buffer initialize success.").unwrap();
 
+    cpu.reset();
+    cpu_sys.reset();
+    ppu.reset();
+    video_sys.reset();
+    cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
+    hprintln!("emulator reset success.").unwrap();
+
+
     let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT + 1);
     let frame_count = 1;
     for _i in 0..frame_count {
@@ -91,6 +99,13 @@ fn main() -> ! {
             total_cycle = total_cycle + cpu_cycle;
         }
     }
+    hprintln!("cpu.pc:{:04x}", cpu.pc).unwrap();
+    hprintln!("cpu.sp:{:04x}", cpu.sp).unwrap();
+    hprintln!("cpu.a:{:02x}", cpu.a).unwrap();
+    hprintln!("cpu.x:{:02x}", cpu.x).unwrap();
+    hprintln!("cpu.y:{:02x}", cpu.y).unwrap();
+    hprintln!("cpu.p:{:02x}", cpu.p).unwrap();
+
 
     let mut counter: u32 = 0;
     loop {
