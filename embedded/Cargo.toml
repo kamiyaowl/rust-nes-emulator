@@ -7,6 +7,10 @@ edition = "2018"
 [dependencies.rust-nes-emulator]
 path = "../"
 
+[build-dependencies]
+cbindgen = "0.9.1"
+
+
 [dependencies]
 
 [lib]
