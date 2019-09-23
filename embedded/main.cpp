@@ -63,7 +63,7 @@ int main()
 
     /* Emulator Test */
     EmbeddedEmulator_init();
-    if (EmbeddedEmulator_load() == false) {
+    if (EmbeddedEmulator_load()) {
         BSP_LCD_DisplayStringAt(20, 220, (uint8_t *)"Emulator ROM Load  : OK", LEFT_MODE);
     } else {
         BSP_LCD_DisplayStringAt(20, 220, (uint8_t *)"Emulator ROM Load  : FAILED", LEFT_MODE);
