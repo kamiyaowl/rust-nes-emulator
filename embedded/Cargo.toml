@@ -25,7 +25,8 @@ lto = true
 debug = true
 
 [profile.release]
-opt-level = 2
+opt-level = 3
+debug_assertions= "no"
 panic = "abort"
 lto = true
 debug = true

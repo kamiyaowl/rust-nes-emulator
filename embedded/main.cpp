@@ -35,12 +35,12 @@ int main()
     BSP_LCD_Init();
     BSP_LCD_LayerDefaultInit(0, LCD_FB_START_ADDRESS);
     BSP_LCD_Clear(LCD_COLOR_WHITE);
-    BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
+    BSP_LCD_SetTextColor(LCD_COLOR_BLACK);
     BSP_LCD_FillRect(0, 0, BSP_LCD_GetXSize(), 40);
     BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
-    BSP_LCD_SetBackColor(LCD_COLOR_BLUE);
+    BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
     BSP_LCD_SetFont(&Font24);
-    BSP_LCD_DisplayStringAt(0, 0, (uint8_t *)"kamiyaowl/rust-nes-emulator", CENTER_MODE);
+    BSP_LCD_DisplayStringAt(0, 5, (uint8_t *)"kamiyaowl/rust-nes-emulator", CENTER_MODE);
     BSP_SD_Init();
 
     /* SDRAM device configuration */
@@ -74,7 +74,7 @@ int main()
     
     for (uint32_t counter = 0 ; ; ++counter ) {
         EmbeddedEmulator_update_screen(&fb);
-        print_framebuffer(150, 0, 2);
+        print_framebuffer(150, 10, 2);
 
         sprintf(msg, "%d", counter);
         BSP_LCD_DisplayStringAt(5, 5, (uint8_t *)msg, LEFT_MODE);
