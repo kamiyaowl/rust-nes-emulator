@@ -289,7 +289,7 @@ C_FLAGS += -funsigned-char
 C_FLAGS += -MMD
 C_FLAGS += -fno-delete-null-pointer-checks
 C_FLAGS += -fomit-frame-pointer
-C_FLAGS += -Os
+C_FLAGS += -O3
 C_FLAGS += -g1
 C_FLAGS += -DMBED_TRAP_ERRORS_ENABLED=1
 C_FLAGS += -mcpu=cortex-m7
@@ -367,7 +367,7 @@ CXX_FLAGS += -funsigned-char
 CXX_FLAGS += -MMD
 CXX_FLAGS += -fno-delete-null-pointer-checks
 CXX_FLAGS += -fomit-frame-pointer
-CXX_FLAGS += -Os
+CXX_FLAGS += -O3
 CXX_FLAGS += -g1
 CXX_FLAGS += -DMBED_TRAP_ERRORS_ENABLED=1
 CXX_FLAGS += -mcpu=cortex-m7
@@ -425,7 +425,7 @@ ASM_FLAGS += -funsigned-char
 ASM_FLAGS += -MMD
 ASM_FLAGS += -fno-delete-null-pointer-checks
 ASM_FLAGS += -fomit-frame-pointer
-ASM_FLAGS += -Os
+ASM_FLAGS += -O3
 ASM_FLAGS += -g1
 ASM_FLAGS += -DMBED_TRAP_ERRORS_ENABLED=1
 ASM_FLAGS += -mcpu=cortex-m7

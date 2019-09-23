@@ -8,8 +8,8 @@
 
 #include "rust_nes_emulator_embedded.h"
 
-TS_StateTypeDef  TS_State = {0};
 
+// typedef uint8_t (*FrameBuffer_t)[EMBEDDED_EMULATOR_VISIBLE_SCREEN_HEIGHT][EMBEDDED_EMULATOR_VISIBLE_SCREEN_WIDTH][EMBEDDED_EMULATOR_NUM_OF_COLOR];
 uint8_t fb[EMBEDDED_EMULATOR_VISIBLE_SCREEN_HEIGHT][EMBEDDED_EMULATOR_VISIBLE_SCREEN_WIDTH][EMBEDDED_EMULATOR_NUM_OF_COLOR];
 
 // TODO: DMAにしたい
@@ -69,20 +69,24 @@ int main()
     sprintf(msg, "Core Clock: %d Hz", SystemCoreClock );
     BSP_LCD_DisplayStringAt(20, 190, (uint8_t *)msg, LEFT_MODE);
 
-    wait_ms(5000);
+    wait_ms(3000);
     BSP_LCD_Clear(LCD_COLOR_BLACK);
     
     for (uint32_t counter = 0 ; ; ++counter ) {
         EmbeddedEmulator_update_screen(&fb);
         print_framebuffer(150, 0, 2);
 
+        sprintf(msg, "%d", counter);
+        BSP_LCD_DisplayStringAt(5, 5, (uint8_t *)msg, LEFT_MODE);
+
         /* Touchscreen test */
-        BSP_TS_GetState(&TS_State);
-        if(TS_State.touchDetected) {
-            const uint16_t x1 = TS_State.touchX[0];
-            const uint16_t y1 = TS_State.touchY[0];
-            BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
-            BSP_LCD_FillCircle(x1, y1, 10);
-        }
+        // TS_StateTypeDef  TS_State = {0};
+        // BSP_TS_GetState(&TS_State);
+        // if(TS_State.touchDetected) {
+        //     const uint16_t x1 = TS_State.touchX[0];
+        //     const uint16_t y1 = TS_State.touchY[0];
+        //     BSP_LCD_SetTextColor(LCD_COLOR_BLUE);
+        //     BSP_LCD_FillCircle(x1, y1, 10);
+        // }
     }
 }
