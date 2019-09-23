@@ -15,7 +15,7 @@ void print_framebuffer() {
 
     for(uint32_t j = 0 ; j < EMBEDDED_EMULATOR_VISIBLE_SCREEN_HEIGHT ; ++j) {
         for(uint32_t i = 0 ; i < EMBEDDED_EMULATOR_VISIBLE_SCREEN_WIDTH ; ++i) {
-            if ((fb[j][i][0] == 0) && (fb[j][i][0] == 0) && (fb[j][i][0] == 0)) {
+            if ((fb[j][i][0] == 0) && (fb[j][i][1] == 0) && (fb[j][i][2] == 0)) {
                 std::cout << ".";
             } else {
                 std::cout << "#";

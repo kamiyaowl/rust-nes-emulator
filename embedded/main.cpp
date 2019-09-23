@@ -17,6 +17,21 @@ uint32_t sdram_aRxBuffer[BUFFER_SIZE];
 
 uint8_t fb[EMBEDDED_EMULATOR_VISIBLE_SCREEN_HEIGHT][EMBEDDED_EMULATOR_VISIBLE_SCREEN_WIDTH][EMBEDDED_EMULATOR_NUM_OF_COLOR];
 
+// TODO: DMAにしたい
+void print_framebuffer(uint32_t offset_x, uint32_t offset_y, uint32_t scale) {
+    for(uint32_t j = 0 ; j < EMBEDDED_EMULATOR_VISIBLE_SCREEN_HEIGHT ; ++j) {
+        for(uint32_t i = 0 ; i < EMBEDDED_EMULATOR_VISIBLE_SCREEN_WIDTH ; ++i) {
+            const uint32_t argb = (0xff << 24) | (fb[j][i][0] << 16) | (fb[j][i][1] << 8) | (fb[j][i][2] << 0);
+
+            for (uint32_t iter = 0 ; iter < scale ; ++iter) {
+                const uint32_t x = offset_x + (i * scale) + iter;
+                const uint32_t y = offset_y + (j * scale) + iter;
+                BSP_LCD_DrawPixel(x, y, argb);
+            }
+        }
+    }
+}
+
 int main()
 {
     printf("\n\n SDRAM EXAMPLE FOR DISCO-F769NI START:\n");
@@ -69,8 +84,14 @@ int main()
         BSP_LCD_DisplayStringAt(20, 220, (uint8_t *)"Emulator ROM Load  : FAILED", LEFT_MODE);
     }
 
-    while (1) {
+    BSP_LCD_Clear(LCD_COLOR_BLACK);
+    
+    for (uint32_t counter = 0 ; ; ++counter ) {
         EmbeddedEmulator_update_screen(&fb);
+        // 描画やりまくると遅いので間引く
+        if (counter & 0x100) {
+            print_framebuffer(150, 0, 2);
+        }
     }
 }
 

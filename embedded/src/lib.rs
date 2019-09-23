@@ -85,7 +85,8 @@ pub unsafe extern fn EmbeddedEmulator_reset() {
 /// `data` - nesファイルのバイナリ
 #[no_mangle]
 pub unsafe extern fn EmbeddedEmulator_load() -> bool {
-    let binary = include_bytes!("../../roms/other/hello.nes");
+    // let binary = include_bytes!("../../roms/other/hello.nes");
+    let binary = include_bytes!("../../roms/my_dump/mario.nes");
 
     if let Some(ref mut emu) = EMULATOR {
         let success = emu
