@@ -16,3 +16,5 @@ Cargo.lock
 **/node_modules
 **/dist
 *.txt
+
+**/*.out
