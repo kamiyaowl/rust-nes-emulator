@@ -3,6 +3,8 @@
 #include "stm32f769i_discovery_lcd.h"
 #include "stm32f769i_discovery_sdram.h"
 
+#include "rust_nes_emulator_embedded.h"
+
 static void Fill_Buffer(uint32_t *pBuffer, uint32_t uwBufferLenght, uint32_t uwOffset);
 static uint8_t Buffercmp(uint32_t* pBuffer1, uint32_t* pBuffer2, uint16_t BufferLength);
 
@@ -12,6 +14,8 @@ static uint8_t Buffercmp(uint32_t* pBuffer1, uint32_t* pBuffer2, uint16_t Buffer
 
 uint32_t sdram_aTxBuffer[BUFFER_SIZE];
 uint32_t sdram_aRxBuffer[BUFFER_SIZE];
+
+uint8_t fb[EMBEDDED_EMULATOR_VISIBLE_SCREEN_HEIGHT][EMBEDDED_EMULATOR_VISIBLE_SCREEN_WIDTH][EMBEDDED_EMULATOR_NUM_OF_COLOR];
 
 int main()
 {
@@ -57,8 +61,16 @@ int main()
         BSP_LCD_DisplayStringAt(20, 190, (uint8_t *)"SDRAM Test  : OK", LEFT_MODE);
     }
 
-    while (1) {
+    /* Emulator Test */
+    EmbeddedEmulator_init();
+    if (EmbeddedEmulator_load() == false) {
+        BSP_LCD_DisplayStringAt(20, 220, (uint8_t *)"Emulator ROM Load  : OK", LEFT_MODE);
+    } else {
+        BSP_LCD_DisplayStringAt(20, 220, (uint8_t *)"Emulator ROM Load  : FAILED", LEFT_MODE);
+    }
 
+    while (1) {
+        EmbeddedEmulator_update_screen(&fb);
     }
 }
 

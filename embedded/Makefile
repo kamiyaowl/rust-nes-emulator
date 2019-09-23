@@ -39,7 +39,7 @@ VPATH = ..
 ###############################################################################
 # Project settings
 
-PROJECT := DISCO-F769NI_SDRAM_demo
+PROJECT := rust-nes-emulator-for-DISCO-F769NI
 
 
 # Project settings
@@ -207,8 +207,8 @@ INCLUDE_PATHS += -I../mbed/drivers
 INCLUDE_PATHS += -I../mbed/hal
 INCLUDE_PATHS += -I../mbed/platform
 
-LIBRARY_PATHS := -L../mbed/TARGET_DISCO_F769NI/TOOLCHAIN_GCC_ARM 
-LIBRARIES := -lmbed 
+LIBRARY_PATHS := -L../mbed/TARGET_DISCO_F769NI/TOOLCHAIN_GCC_ARM -L../target/thumbv7em-none-eabi/release/
+LIBRARIES := -lmbed -lrust_nes_emulator_embedded
 LINKER_SCRIPT ?= ../mbed/TARGET_DISCO_F769NI/TOOLCHAIN_GCC_ARM/STM32F769xI.ld
 
 # Objects and Paths

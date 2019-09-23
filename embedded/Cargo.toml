@@ -16,7 +16,7 @@ cbindgen = "0.9.1"
 [lib]
 path = "src/lib.rs"
 name = "rust_nes_emulator_embedded"
-crate-type = ["cdylib"]
+crate-type = ["staticlib"]
 
 [profile.dev]
 opt-level = 2
