@@ -89,7 +89,7 @@ int main()
     for (uint32_t counter = 0 ; ; ++counter ) {
         EmbeddedEmulator_update_screen(&fb);
         // 描画やりまくると遅いので間引く
-        if (counter & 0x100) {
+        if (counter & 0x04) {
             print_framebuffer(150, 0, 2);
         }
     }

@@ -67,21 +67,11 @@ $ docker-compose run build-wasm-webpage
 
 ### Embedded for stm32f769
 
+![embedded](https://raw.githubusercontent.com/kamiyaowl/rust-nes-emulator/master/screenshot/embedded.jpg)
+
+[STM32F769I-DISCO - STMicroelectronics](https://www.st.com/ja/evaluation-tools/32f769idiscovery.html)
+
 Work in Progress...
-
-#### Build and Write
-
-```shell
-$ cd embedded
-$ cargo build --release
-$ openocd -f openocd.cfg -c "flash_program target/thumbv7em-none-eabihf/release/rust-nes-emulator-embedded"
-```
-
-#### Build on Docker
-
-```shell
-$ docker-compose run build-embedded-release
-```
 
 ---
 
