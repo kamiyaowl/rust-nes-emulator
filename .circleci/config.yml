@@ -27,11 +27,14 @@ jobs:
           name: rustup component add
           command: rustup component add clippy rustfmt
       - run:
+          name: rustup install nightly
+          command: rustup install nightly
+      - run:
           name: rustup target add
           command: rustup target add thumbv6m-none-eabi thumbv7m-none-eabi thumbv7em-none-eabi thumbv7em-none-eabihf
       - run:
-          name: rustup install nightly
-          command: rustup install nightly
+          name: rustup target add nightly
+          command: rustup run nightly rustup target add thumbv6m-none-eabi thumbv7m-none-eabi thumbv7em-none-eabi thumbv7em-none-eabihf
       - run:
           name: cargo install
           command: cargo install wasm-pack

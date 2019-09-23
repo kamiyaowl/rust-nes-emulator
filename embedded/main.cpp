@@ -60,12 +60,16 @@ int main()
     /* Emulator Test */
     EmbeddedEmulator_init();
     if (EmbeddedEmulator_load()) {
-        BSP_LCD_DisplayStringAt(20, 220, (uint8_t *)"Emulator ROM Load  : OK", LEFT_MODE);
+        BSP_LCD_DisplayStringAt(20, 160, (uint8_t *)"Emulator ROM Load  : OK", LEFT_MODE);
     } else {
-        BSP_LCD_DisplayStringAt(20, 220, (uint8_t *)"Emulator ROM Load  : FAILED", LEFT_MODE);
+        BSP_LCD_DisplayStringAt(20, 160, (uint8_t *)"Emulator ROM Load  : FAILED", LEFT_MODE);
     }
 
-    wait_ms(1000);
+    char msg[32];
+    sprintf(msg, "Core Clock: %d Hz", SystemCoreClock );
+    BSP_LCD_DisplayStringAt(20, 190, (uint8_t *)msg, LEFT_MODE);
+
+    wait_ms(5000);
     BSP_LCD_Clear(LCD_COLOR_BLACK);
     
     for (uint32_t counter = 0 ; ; ++counter ) {
