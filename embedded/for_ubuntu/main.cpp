@@ -1,5 +1,6 @@
 // test for FFI
 // g++ -o main.out main.cpp ../target/debug/librust_nes_emulator_embedded.so
+// ../.cargo/configでビルドターゲットをarm向けにしてると死ぬ
 
 #include <iostream>
 #include <cstdint>
