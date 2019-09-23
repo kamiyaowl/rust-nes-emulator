@@ -48,6 +48,17 @@ $ docker-compose run build-desktop-release
 
 #### Build locally
 
+##### environment(for ubuntu)
+
+```shell
+$ sudo apt install nodejs npm
+$ sudo npm install -g n
+$ sudo n 10.15.1
+$ cargo install wasm-pack
+```
+
+##### build
+
 ```shell
 $ cd wasm
 $ wasm-pack build --release
@@ -72,6 +83,31 @@ $ docker-compose run build-wasm-webpage
 [STM32F769I-DISCO - STMicroelectronics](https://www.st.com/ja/evaluation-tools/32f769idiscovery.html)
 
 Work in Progress...
+
+#### Build locally
+
+##### environment(for ubuntu)
+
+```shell
+$ rustup install nightly
+$ rustup run nightly rustup target add thumbv6m-none-eabi thumbv7m-none-eabi thumbv7em-none-eabi thumbv7em-none-eabihf
+$ sudo apt install gcc-arm-none-eabi gcc g++
+```
+
+##### build
+
+```shell
+$ cd embedded
+$ rustup run nightly cargo build --release
+$ make clean && make
+```
+
+#### Build on Docker
+
+```shell
+$ docker-compose run build-embedded-lib
+$ docker-compose run build-mbed
+```
 
 ---
 

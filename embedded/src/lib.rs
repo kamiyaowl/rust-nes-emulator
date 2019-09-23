@@ -7,12 +7,12 @@ use core::panic::PanicInfo;
 #[panic_handler]
 #[no_mangle]
 pub fn panic(_info: &PanicInfo) -> ! {
-	unsafe { intrinsics::abort() }
+    unsafe { intrinsics::abort() }
 }
 
 #[lang = "eh_personality"]
 #[no_mangle]
-pub extern fn rust_eh_personality() {}
+pub extern "C" fn rust_eh_personality() {}
 
 extern crate rust_nes_emulator;
 use rust_nes_emulator::prelude::*;
@@ -62,16 +62,15 @@ impl Default for EmbeddedEmulator {
     }
 }
 
-
 #[no_mangle]
-pub unsafe extern fn EmbeddedEmulator_init() {
+pub unsafe extern "C" fn EmbeddedEmulator_init() {
     EMULATOR = Some(EmbeddedEmulator::default());
 }
 
 /// エミュレータをリセットします
 /// カセットの中身はリセットしないので実機のリセット相当の処理です
 #[no_mangle]
-pub unsafe extern fn EmbeddedEmulator_reset() {
+pub unsafe extern "C" fn EmbeddedEmulator_reset() {
     if let Some(ref mut emu) = EMULATOR {
         emu.cpu.reset();
         emu.cpu_sys.reset();
@@ -84,7 +83,7 @@ pub unsafe extern fn EmbeddedEmulator_reset() {
 /// .nesファイルを読み込みます
 /// `data` - nesファイルのバイナリ
 #[no_mangle]
-pub unsafe extern fn EmbeddedEmulator_load() -> bool {
+pub unsafe extern "C" fn EmbeddedEmulator_load() -> bool {
     // let binary = include_bytes!("../../roms/other/hello.nes");
     let binary = include_bytes!("../../roms/my_dump/mario.nes");
 
@@ -104,7 +103,7 @@ pub unsafe extern fn EmbeddedEmulator_load() -> bool {
 
 /// 描画領域1面分更新します
 #[no_mangle]
-pub unsafe extern fn EmbeddedEmulator_update_screen(
+pub unsafe extern "C" fn EmbeddedEmulator_update_screen(
     fb: &mut [[[u8; EMBEDDED_EMULATOR_NUM_OF_COLOR]; EMBEDDED_EMULATOR_VISIBLE_SCREEN_WIDTH];
              EMBEDDED_EMULATOR_VISIBLE_SCREEN_HEIGHT],
 ) {
@@ -127,7 +126,7 @@ pub unsafe extern fn EmbeddedEmulator_update_screen(
 
 /// キー入力します
 #[no_mangle]
-pub unsafe extern fn EmbeddedEmulator_update_key(key: KeyEvent) {
+pub unsafe extern "C" fn EmbeddedEmulator_update_key(key: KeyEvent) {
     if let Some(ref mut emu) = EMULATOR {
         match key {
             KeyEvent::PressA => emu.cpu_sys.pad1.push_button(PadButton::A),

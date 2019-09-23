@@ -7,7 +7,7 @@ jobs:
       # build dependencies
       - run:
           name: Install apt dependencies
-          command: sudo apt install -y libgtk-3-dev nodejs npm
+          command: sudo apt install -y libgtk-3-dev nodejs npm gcc g++ gcc-arm-none-eabi
       - run:
           name: Install nodejs
           command: sudo npm install -g n && sudo n latest
@@ -29,6 +29,9 @@ jobs:
       - run:
           name: rustup target add
           command: rustup target add thumbv6m-none-eabi thumbv7m-none-eabi thumbv7em-none-eabi thumbv7em-none-eabihf
+      - run:
+          name: rustup install nightly
+          command: rustup install nightly
       - run:
           name: cargo install
           command: cargo install wasm-pack
@@ -74,12 +77,11 @@ jobs:
           command: cd desktop && cargo build --release
           when: always
       # build embedded
-    #   - run:
-    #       name: build embedded
-    #       command: cd embedded && cargo build
-    #       when: always
-    #   - run:
-    #       name: build embedded release
-    #       command: cd embedded && cargo build --release
-    #       when: always
+      - run:
+          name: build embedded release
+          command: cd embedded && rustup run nightly cargo build --release && make
+          when: always
+      - store_artifacts:
+          path: embedded/target/BUILD/rust-nes-emulator-for-DISCO-F769NI.bin
+          destination: binary-for-mbed.bin
 

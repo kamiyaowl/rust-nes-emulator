@@ -58,15 +58,15 @@ services:
       working_dir: /work/wasm
       command: npm run build
     # build embedded
-    build-embedded:
+    build-embedded-lib:
       build: .
       volumes:
         - ./:/work
       working_dir: /work/embedded
-      command: cargo build
-    build-embedded-release:
+      command: rustup run nightly cargo build --release
+    build-mbed:
       build: .
       volumes:
         - ./:/work
       working_dir: /work/embedded
-      command: cargo build --release
+      command: make
