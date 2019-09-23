@@ -6,6 +6,8 @@
 #include "stm32f769i_discovery_sd.h"
 #include "stm32f769i_discovery_audio.h"
 
+#include "core_cm7.h"
+
 #include "rust_nes_emulator_embedded.h"
 
 
@@ -29,7 +31,12 @@ void print_framebuffer(uint32_t offset_x, uint32_t offset_y, uint32_t scale) {
 
 int main()
 {
-    printf("\n\n SDRAM EXAMPLE FOR DISCO-F769NI START:\n");
+     // for performance
+    SCB_EnableDCache();
+    SCB_EnableICache();
+    __DMB();
+    
+   printf("\n\n SDRAM EXAMPLE FOR DISCO-F769NI START:\n");
 
     /* Init LCD and display example information */
     BSP_LCD_Init();
@@ -71,7 +78,7 @@ int main()
 
     wait_ms(3000);
     BSP_LCD_Clear(LCD_COLOR_BLACK);
-    
+
     for (uint32_t counter = 0 ; ; ++counter ) {
         EmbeddedEmulator_update_screen(&fb);
         print_framebuffer(150, 10, 2);
