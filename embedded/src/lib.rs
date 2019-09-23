@@ -4,15 +4,27 @@
 use core::intrinsics;
 use core::panic::PanicInfo;
 
+#[panic_handler]
+#[no_mangle]
+pub fn panic(_info: &PanicInfo) -> ! {
+	unsafe { intrinsics::abort() }
+}
+
+#[lang = "eh_personality"]
+#[no_mangle]
+pub extern fn rust_eh_personality() {}
+
 extern crate rust_nes_emulator;
 use rust_nes_emulator::prelude::*;
 
-#[no_mangle]
-pub extern fn hello() -> u32 {
-    0xaa995566
-}
+pub const EMBEDDED_EMULATOR_NUM_OF_COLOR: usize = 3;
+pub const EMBEDDED_EMULATOR_VISIBLE_SCREEN_WIDTH: usize = 256;
+pub const EMBEDDED_EMULATOR_VISIBLE_SCREEN_HEIGHT: usize = 240;
 
-#[derive(PartialEq,Eq,Copy,Clone,Debug)]
+// 泣く泣くの策、structをそのままcに公開できなかったので
+static mut EMULATOR: Option<EmbeddedEmulator> = None;
+
+#[repr(u8)]
 pub enum KeyEvent {
     PressA,
     PressB,
@@ -50,78 +62,90 @@ impl Default for EmbeddedEmulator {
     }
 }
 
-impl EmbeddedEmulator {
-    pub fn new() -> EmbeddedEmulator {
-        EmbeddedEmulator::default()
+
+#[no_mangle]
+pub unsafe extern fn EmbeddedEmulator_init() {
+    EMULATOR = Some(EmbeddedEmulator::default());
+}
+
+/// エミュレータをリセットします
+/// カセットの中身はリセットしないので実機のリセット相当の処理です
+#[no_mangle]
+pub unsafe extern fn EmbeddedEmulator_reset() {
+    if let Some(ref mut emu) = EMULATOR {
+        emu.cpu.reset();
+        emu.cpu_sys.reset();
+        emu.ppu.reset();
+        emu.video_sys.reset();
+        emu.cpu.interrupt(&mut emu.cpu_sys, Interrupt::RESET);
     }
-    /// エミュレータをリセットします
-    /// カセットの中身はリセットしないので実機のリセット相当の処理です
-    pub fn reset(&mut self) {
-        self.cpu.reset();
-        self.cpu_sys.reset();
-        self.ppu.reset();
-        self.video_sys.reset();
-        self.cpu.interrupt(&mut self.cpu_sys, Interrupt::RESET);
-    }
-    /// .nesファイルを読み込みます
-    /// `data` - nesファイルのバイナリ
-    pub fn load(&mut self, binary: &[u8]) -> bool {
-        let success = self
+}
+
+/// .nesファイルを読み込みます
+/// `data` - nesファイルのバイナリ
+#[no_mangle]
+pub unsafe extern fn EmbeddedEmulator_load() -> bool {
+    let binary = include_bytes!("../../roms/other/hello.nes");
+
+    if let Some(ref mut emu) = EMULATOR {
+        let success = emu
             .cpu_sys
             .cassette
             .from_ines_binary(|addr: usize| binary[addr]);
         if success {
-            self.reset();
+            EmbeddedEmulator_reset();
         }
         success
+    } else {
+        false
     }
-    /// 描画領域1面分更新します
-    pub fn update_frame(&mut self, fb: &mut [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT]) {
+}
+
+/// 描画領域1面分更新します
+#[no_mangle]
+pub unsafe extern fn EmbeddedEmulator_update_screen(
+    fb: &mut [[[u8; EMBEDDED_EMULATOR_NUM_OF_COLOR]; EMBEDDED_EMULATOR_VISIBLE_SCREEN_WIDTH];
+             EMBEDDED_EMULATOR_VISIBLE_SCREEN_HEIGHT],
+) {
+    if let Some(ref mut emu) = EMULATOR {
         let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT + 1);
         let mut total_cycle: usize = 0;
         while total_cycle < cycle_for_draw_once {
-            let cpu_cycle = usize::from(self.cpu.step(&mut self.cpu_sys));
-            self.ppu.step(
+            let cpu_cycle = usize::from(emu.cpu.step(&mut emu.cpu_sys));
+            emu.ppu.step(
                 cpu_cycle,
-                &mut self.cpu,
-                &mut self.cpu_sys,
-                &mut self.video_sys,
+                &mut emu.cpu,
+                &mut emu.cpu_sys,
+                &mut emu.video_sys,
                 fb,
             );
             total_cycle = total_cycle + cpu_cycle;
         }
     }
-    /// キー入力します
-    pub fn update_key(&mut self, key: KeyEvent) {
-        match key {
-            KeyEvent::PressA      => self.cpu_sys.pad1.push_button(PadButton::A),
-            KeyEvent::PressB      => self.cpu_sys.pad1.push_button(PadButton::B),
-            KeyEvent::PressSelect => self.cpu_sys.pad1.push_button(PadButton::Select),
-            KeyEvent::PressStart  => self.cpu_sys.pad1.push_button(PadButton::Start),
-            KeyEvent::PressUp     => self.cpu_sys.pad1.push_button(PadButton::Up),
-            KeyEvent::PressDown   => self.cpu_sys.pad1.push_button(PadButton::Down),
-            KeyEvent::PressLeft   => self.cpu_sys.pad1.push_button(PadButton::Left),
-            KeyEvent::PressRight  => self.cpu_sys.pad1.push_button(PadButton::Right),
+}
 
-            KeyEvent::ReleaseA      => self.cpu_sys.pad1.release_button(PadButton::A),
-            KeyEvent::ReleaseB      => self.cpu_sys.pad1.release_button(PadButton::B),
-            KeyEvent::ReleaseSelect => self.cpu_sys.pad1.release_button(PadButton::Select),
-            KeyEvent::ReleaseStart  => self.cpu_sys.pad1.release_button(PadButton::Start),
-            KeyEvent::ReleaseUp     => self.cpu_sys.pad1.release_button(PadButton::Up),
-            KeyEvent::ReleaseDown   => self.cpu_sys.pad1.release_button(PadButton::Down),
-            KeyEvent::ReleaseLeft   => self.cpu_sys.pad1.release_button(PadButton::Left),
-            KeyEvent::ReleaseRight  => self.cpu_sys.pad1.release_button(PadButton::Right),
+/// キー入力します
+#[no_mangle]
+pub unsafe extern fn EmbeddedEmulator_update_key(key: KeyEvent) {
+    if let Some(ref mut emu) = EMULATOR {
+        match key {
+            KeyEvent::PressA => emu.cpu_sys.pad1.push_button(PadButton::A),
+            KeyEvent::PressB => emu.cpu_sys.pad1.push_button(PadButton::B),
+            KeyEvent::PressSelect => emu.cpu_sys.pad1.push_button(PadButton::Select),
+            KeyEvent::PressStart => emu.cpu_sys.pad1.push_button(PadButton::Start),
+            KeyEvent::PressUp => emu.cpu_sys.pad1.push_button(PadButton::Up),
+            KeyEvent::PressDown => emu.cpu_sys.pad1.push_button(PadButton::Down),
+            KeyEvent::PressLeft => emu.cpu_sys.pad1.push_button(PadButton::Left),
+            KeyEvent::PressRight => emu.cpu_sys.pad1.push_button(PadButton::Right),
+
+            KeyEvent::ReleaseA => emu.cpu_sys.pad1.release_button(PadButton::A),
+            KeyEvent::ReleaseB => emu.cpu_sys.pad1.release_button(PadButton::B),
+            KeyEvent::ReleaseSelect => emu.cpu_sys.pad1.release_button(PadButton::Select),
+            KeyEvent::ReleaseStart => emu.cpu_sys.pad1.release_button(PadButton::Start),
+            KeyEvent::ReleaseUp => emu.cpu_sys.pad1.release_button(PadButton::Up),
+            KeyEvent::ReleaseDown => emu.cpu_sys.pad1.release_button(PadButton::Down),
+            KeyEvent::ReleaseLeft => emu.cpu_sys.pad1.release_button(PadButton::Left),
+            KeyEvent::ReleaseRight => emu.cpu_sys.pad1.release_button(PadButton::Right),
         }
     }
 }
-
-
-#[panic_handler]
-#[no_mangle]
-pub fn panic(_info: &PanicInfo) -> ! {
-	unsafe { intrinsics::abort() }
-}
-
-#[lang = "eh_personality"]
-#[no_mangle]
-pub extern "C" fn rust_eh_personality() {}
