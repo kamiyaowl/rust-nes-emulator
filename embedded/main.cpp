@@ -1,4 +1,6 @@
 #include "mbed.h"
+
+// for peripheral
 #include "stm32f769i_discovery.h"
 #include "stm32f769i_discovery_lcd.h"
 #include "stm32f769i_discovery_sdram.h"
@@ -6,8 +8,11 @@
 #include "stm32f769i_discovery_sd.h"
 #include "stm32f769i_discovery_audio.h"
 
+// for system
+#include "stm32f7xx_hal_flash.h"
 #include "core_cm7.h"
 
+// for emulator
 #include "rust_nes_emulator_embedded.h"
 
 
@@ -32,6 +37,8 @@ void print_framebuffer(uint32_t offset_x, uint32_t offset_y, uint32_t scale) {
 int main()
 {
      // for performance
+    __HAL_FLASH_ART_ENABLE();
+    __HAL_FLASH_PREFETCH_BUFFER_ENABLE();
     SCB_EnableDCache();
     SCB_EnableICache();
     __DMB();
