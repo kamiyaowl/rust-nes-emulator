@@ -1,5 +1,16 @@
+#![no_std]
+#![feature(lang_items, core_intrinsics)]
+
+use core::intrinsics;
+use core::panic::PanicInfo;
+
 extern crate rust_nes_emulator;
 use rust_nes_emulator::prelude::*;
+
+#[no_mangle]
+pub extern fn hello() -> u32 {
+    0xaa995566
+}
 
 #[derive(PartialEq,Eq,Copy,Clone,Debug)]
 pub enum KeyEvent {
@@ -103,3 +114,14 @@ impl EmbeddedEmulator {
         }
     }
 }
+
+
+#[panic_handler]
+#[no_mangle]
+pub fn panic(_info: &PanicInfo) -> ! {
+	unsafe { intrinsics::abort() }
+}
+
+#[lang = "eh_personality"]
+#[no_mangle]
+pub extern "C" fn rust_eh_personality() {}

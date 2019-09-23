@@ -8,28 +8,21 @@ edition = "2018"
 path = "../"
 
 [dependencies]
-cortex-m = "0.6.0"
-cortex-m-rt = "0.6.8"
-cortex-m-semihosting = "0.3.3"
-panic-halt = "0.2.0"
 
-# Uncomment for the panic example.
-# panic-itm = "0.4.1"
+[lib]
+path = "src/lib.rs"
+name = "rust_nes_emulator_embedded"
+crate-type = ["staticlib", "cdylib"]
 
-# Uncomment for the allocator example.
-# alloc-cortex-m = "0.3.5"
-
-[dependencies.stm32f7]
-version = "0.8.0"
-features = ["stm32f7x9", "rt"]
-
-# this lets you use `cargo fix`!
-[[bin]]
-name = "rust-nes-emulator-embedded"
-test = false
-bench = false
+[profile.dev]
+opt-level = 2
+panic = "abort"
+lto = true
+debug = true
 
 [profile.release]
-codegen-units = 1 # better optimizations
-debug = true # symbols are nice and they don't increase the size on Flash
-lto = true # better optimizations
+opt-level = 2
+panic = "abort"
+lto = true
+debug = true
+

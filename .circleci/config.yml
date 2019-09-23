@@ -74,12 +74,12 @@ jobs:
           command: cd desktop && cargo build --release
           when: always
       # build embedded
-      - run:
-          name: build embedded
-          command: cd embedded && cargo build
-          when: always
-      - run:
-          name: build embedded release
-          command: cd embedded && cargo build --release
-          when: always
+    #   - run:
+    #       name: build embedded
+    #       command: cd embedded && cargo build
+    #       when: always
+    #   - run:
+    #       name: build embedded release
+    #       command: cd embedded && cargo build --release
+    #       when: always
 
