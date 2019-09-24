@@ -19,7 +19,7 @@ NES Emulator written in Rust
 
 ## Let's Play
 
-rustc 1.37.0 required
+rustc 1.39.0-nightly required (for embedded optimization...)
 
 ### Desktop Application
 

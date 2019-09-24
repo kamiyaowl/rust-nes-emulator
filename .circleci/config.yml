@@ -21,20 +21,20 @@ jobs:
           command: git submodule init && git submodule update --remote
       # install rustup and tools
       - run:
+          name: rustup install nightly
+          command: rustup install nightly && rustup  default nightly
+      - run:
           name: rustup version
           command: rustup --version
       - run:
           name: rustup component add
           command: rustup component add clippy rustfmt
       - run:
-          name: rustup install nightly
-          command: rustup install nightly
-      - run:
           name: rustup target add
           command: rustup target add thumbv6m-none-eabi thumbv7m-none-eabi thumbv7em-none-eabi thumbv7em-none-eabihf
       - run:
           name: rustup target add nightly
-          command: rustup run nightly rustup target add thumbv6m-none-eabi thumbv7m-none-eabi thumbv7em-none-eabi thumbv7em-none-eabihf
+          command: rustup target add thumbv6m-none-eabi thumbv7m-none-eabi thumbv7em-none-eabi thumbv7em-none-eabihf
       - run:
           name: cargo install
           command: cargo install wasm-pack
@@ -73,7 +73,7 @@ jobs:
       # run bench
       - run:
           name: bench
-          command: cd test && rustup run nightly cargo bench  --features "bench"
+          command: cd test && cargo bench  --features "bench"
           when: always
       # build desktop
       - run:
@@ -87,7 +87,7 @@ jobs:
       # build embedded
       - run:
           name: build embedded release
-          command: cd embedded && rustup run nightly cargo build --release && make
+          command: cd embedded && cargo build --release && make
           when: always
       - store_artifacts:
           path: embedded/target/BUILD/rust-nes-emulator-for-DISCO-F769NI.bin
