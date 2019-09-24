@@ -297,8 +297,15 @@ impl Ppu {
         video_system: &mut VideoSystem,
         fb: &mut [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT],
     ) {
+        // ループ内で何度も呼び出すとパフォーマンスが下がる
         let nametable_base_addr = system.read_ppu_name_table_base_addr();
         let pattern_table_addr = system.read_ppu_bg_pattern_table_addr();
+        let is_clip_bg_leftend = system.read_ppu_is_clip_bg_leftend();
+        let is_write_bg = system.read_ppu_is_write_bg();
+        let master_bg_color = Color::from(video_system.read_u8(
+            &mut system.cassette,
+            PALETTE_TABLE_BASE_ADDR + PALETTE_BG_OFFSET,
+        ));
 
         let raw_y = self.current_line + u16::from(self.current_scroll_y);
         let offset_y = raw_y & 0x07; // tile換算でのy位置から、実pixelのズレ(0~7)
@@ -367,20 +374,17 @@ impl Ppu {
                 u16::from(bg_palette_offset); // palette内の色選択
 
             // BG左端8pixel clipも考慮してBGデータ作る
-            let is_bg_clipping = system.read_ppu_is_clip_bg_leftend() && (pixel_x < 8);
+            let is_bg_clipping = is_clip_bg_leftend && (pixel_x < 8);
             let is_bg_tranparent = (bg_palette_addr & 0x03) == 0x00; // 背景色が選択された場合はここで処理してしまう
-            let bg_palette_data: Option<u8> =
-                if is_bg_clipping || !system.read_ppu_is_write_bg() || is_bg_tranparent {
-                    None
-                } else {
-                    Some(video_system.read_u8(&mut system.cassette, bg_palette_addr))
-                };
+            let bg_palette_data: Option<u8> = if is_bg_clipping || !is_write_bg || is_bg_tranparent
+            {
+                None
+            } else {
+                Some(video_system.read_u8(&mut system.cassette, bg_palette_addr))
+            };
 
             // 透明色
-            let mut draw_color = Color::from(video_system.read_u8(
-                &mut system.cassette,
-                PALETTE_TABLE_BASE_ADDR + PALETTE_BG_OFFSET,
-            ));
+            let mut draw_color = master_bg_color;
 
             // 前後関係考慮して書き込む
             'select_color: for palette_data in &[
