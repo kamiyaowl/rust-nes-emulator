@@ -39,17 +39,17 @@ impl System {
         };
         // $4000 DDLCVVVV
         dst.is_length_counter_halt = (self.io_reg[base_offset + 0] & 0x20) == 0x20;
-        dst.is_constant_volume     = (self.io_reg[base_offset + 0] & 0x10) == 0x10;
-        dst.volume                 = self.io_reg[base_offset + 0] & 0x0f;
+        dst.is_constant_volume = (self.io_reg[base_offset + 0] & 0x10) == 0x10;
+        dst.volume = self.io_reg[base_offset + 0] & 0x0f;
         // $4001 EPPPNSSS
-        dst.is_sweep_enable   = (self.io_reg[base_offset + 1] & 0x80) == 0x80;
-        dst.sweep_period      = (self.io_reg[base_offset + 1] & 0x70) >> 4;
+        dst.is_sweep_enable = (self.io_reg[base_offset + 1] & 0x80) == 0x80;
+        dst.sweep_period = (self.io_reg[base_offset + 1] & 0x70) >> 4;
         dst.is_sweep_negative = (self.io_reg[base_offset + 1] & 0x04) == 0x04;
-        dst.sweep_shift       = self.io_reg[base_offset + 1] & 0x07;
+        dst.sweep_shift = self.io_reg[base_offset + 1] & 0x07;
         // $4002 TTTTTTTT(timer lower)
         // $4003 LLLLLTTT(timer Upper)
-        dst.timer_value         = u16::from(self.io_reg[base_offset + 2])
-                               | (u16::from(self.io_reg[base_offset + 3] & 0x07) << 8);
+        dst.timer_value = u16::from(self.io_reg[base_offset + 2])
+            | (u16::from(self.io_reg[base_offset + 3] & 0x07) << 8);
         dst.length_counter_load = (self.io_reg[base_offset + 3] & 0xf8) >> 3;
 
         Some(dst)
@@ -65,12 +65,12 @@ impl System {
         let mut dst = TriangleSound::default();
         // $4008 CRRRRRRRR
         dst.is_length_counter_halt = (self.io_reg[APU_TRIANGLE_OFFSET + 0] & 0x80) == 0x80;
-        dst.counter_load           =  self.io_reg[APU_TRIANGLE_OFFSET + 0] & 0x7f;
+        dst.counter_load = self.io_reg[APU_TRIANGLE_OFFSET + 0] & 0x7f;
         // $400a TTTTTTTT(timer lower)
         // $400b LLLLLTTT(timer upper)
         dst.timer_value = u16::from(self.io_reg[APU_TRIANGLE_OFFSET + 2])
-            |            (u16::from(self.io_reg[APU_TRIANGLE_OFFSET + 3] & 0x07) << 8);
-        dst.length_counter_load =  (self.io_reg[APU_TRIANGLE_OFFSET + 3] & 0xf8) >> 3;
+            | (u16::from(self.io_reg[APU_TRIANGLE_OFFSET + 3] & 0x07) << 8);
+        dst.length_counter_load = (self.io_reg[APU_TRIANGLE_OFFSET + 3] & 0xf8) >> 3;
 
         Some(dst)
     }
@@ -84,11 +84,11 @@ impl System {
         let mut dst = NoiseSound::default();
         // $400c --LCVVVV
         dst.is_length_counter_halt = (self.io_reg[APU_NOISE_OFFSET + 0] & 0x20) == 0x20;
-        dst.is_constant_volume     = (self.io_reg[APU_NOISE_OFFSET + 0] & 0x10) == 0x10;
-        dst.volume                 =  self.io_reg[APU_NOISE_OFFSET + 0] & 0x0f;
+        dst.is_constant_volume = (self.io_reg[APU_NOISE_OFFSET + 0] & 0x10) == 0x10;
+        dst.volume = self.io_reg[APU_NOISE_OFFSET + 0] & 0x0f;
         // $400E L---PPPP
         dst.is_noise_type_loop = (self.io_reg[APU_NOISE_OFFSET + 2] & 0x80) == 0x80;
-        dst.noise_period       =  self.io_reg[APU_NOISE_OFFSET + 2] & 0x0f;
+        dst.noise_period = self.io_reg[APU_NOISE_OFFSET + 2] & 0x0f;
         // $400F LLLLL---
         dst.length_counter_load = (self.io_reg[APU_NOISE_OFFSET + 3] & 0xf8) >> 3;
 
@@ -103,13 +103,13 @@ impl System {
         }
         let mut dst = DmcSound::default();
         // $4010 IL--RRRR
-        dst.is_irq_enable  = (self.io_reg[APU_DMC_OFFSET + 0] & 0x80) == 0x80;
+        dst.is_irq_enable = (self.io_reg[APU_DMC_OFFSET + 0] & 0x80) == 0x80;
         dst.is_loop_enable = (self.io_reg[APU_DMC_OFFSET + 0] & 0x40) == 0x40;
-        dst.frequency      =  self.io_reg[APU_DMC_OFFSET + 0] & 0x0f;
+        dst.frequency = self.io_reg[APU_DMC_OFFSET + 0] & 0x0f;
         // $4011 -DDDDDDD
-        dst.load_counter  = self.io_reg[APU_DMC_OFFSET + 1] & 0x7f;
+        dst.load_counter = self.io_reg[APU_DMC_OFFSET + 1] & 0x7f;
         // $4012 Sample Address
-        dst.sample_addr   = self.io_reg[APU_DMC_OFFSET + 2];
+        dst.sample_addr = self.io_reg[APU_DMC_OFFSET + 2];
         // $4013 Sample Length
         dst.sample_length = self.io_reg[APU_DMC_OFFSET + 3];
 

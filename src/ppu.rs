@@ -297,9 +297,13 @@ impl Ppu {
         video_system: &mut VideoSystem,
         fb: &mut [[[u8; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT],
     ) {
-        let offset_y = (self.current_line + u16::from(self.current_scroll_y)) % PIXEL_PER_TILE; // tile換算でのy位置から、実pixelのズレ
-        let tile_base_y = (self.current_line + u16::from(self.current_scroll_y)) / PIXEL_PER_TILE; // オフセットなしのtile換算での現在位置
-                                                                                                   // scroll regはtile換算でずらす
+        let nametable_base_addr = system.read_ppu_name_table_base_addr();
+        let pattern_table_addr = system.read_ppu_bg_pattern_table_addr();
+
+        let raw_y = self.current_line + u16::from(self.current_scroll_y);
+        let offset_y = raw_y & 0x07; // tile換算でのy位置から、実pixelのズレ(0~7)
+        let tile_base_y = raw_y >> 3; // オフセットなしのtile換算での現在位置
+                                      // scroll regはtile換算でずらす
         let tile_global_y = tile_base_y % (SCREEN_TILE_HEIGHT * 2); // tile換算でのy絶対座標
         let tile_local_y = tile_global_y % SCREEN_TILE_HEIGHT; // 1 tile内での絶対座標
                                                                // 4面ある内、下側に差し掛かっていたらfalse
@@ -313,28 +317,25 @@ impl Ppu {
                 self.get_sprite_draw_data(system, video_system, pixel_x, pixel_y);
 
             // BG(Nametable): 座標に該当するNametableと属性テーブルからデータを取得する
-            let offset_x = ((pixel_x as u16) + u16::from(self.current_scroll_x)) % PIXEL_PER_TILE;
-            let tile_base_x =
-                ((pixel_x as u16) + u16::from(self.current_scroll_x)) / PIXEL_PER_TILE;
+            let offset_x = ((pixel_x as u16) + u16::from(self.current_scroll_x)) & 0x07;
+            let tile_base_x = ((pixel_x as u16) + u16::from(self.current_scroll_x)) >> 3;
             // scroll regはtile換算でずらす
             let tile_global_x = tile_base_x % (SCREEN_TILE_WIDTH * 2); // 4tile換算でのx絶対座標
             let tile_local_x = tile_global_x % SCREEN_TILE_WIDTH; // 1 tile内での絶対座標
             let is_nametable_position_left = tile_global_x < SCREEN_TILE_WIDTH; // 4面ある内、右側にある場合false
 
             // 4面あるうちのどれかがわかるので、該当する面のベースアドレスを返します
-            let target_nametable_base_addr = system.read_ppu_name_table_base_addr() +                     // NameTable ベースアドレス(0x2000, 0x2400, 0x2800, 0x2c00)
+            let target_nametable_base_addr = nametable_base_addr +
                 (if is_nametable_position_left { 0x0000 } else { 0x0400 }) + // 左右面の広域offset
                 (if is_nametable_position_top  { 0x0000 } else { 0x0800 }); // 上下面の広域offset
 
             // attribute tableはNametableの後32byteにいるのでアドレス計算して読み出す。縦横4*4tileで1attrになっている
             // scroll対応のためにoffset計算はglobal位置を使っている（もしかしたら1Nametableでクリッピングがいるかも)
             let attribute_base_addr = target_nametable_base_addr + ATTRIBUTE_TABLE_OFFSET; // 23c0, 27c0, 2bc0, 2fc0のどれか
-            let attribute_x_offset =
-                (tile_global_x / BG_NUM_OF_TILE_PER_ATTRIBUTE_TABLE_ENTRY) % ATTRIBUTE_TABLE_WIDTH;
-            let attribute_y_offset = tile_global_y / BG_NUM_OF_TILE_PER_ATTRIBUTE_TABLE_ENTRY;
-            let attribute_addr = attribute_base_addr +                          // base addr
-                (attribute_y_offset * ATTRIBUTE_TABLE_WIDTH) + // y offset
-                attribute_x_offset; // x offset
+            let attribute_x_offset = (tile_global_x >> 2) & 0x7;
+            let attribute_y_offset = tile_global_y >> 2;
+            let attribute_addr =
+                attribute_base_addr + (attribute_y_offset << 3) + attribute_x_offset;
 
             // attribute読み出し, BGパレット選択に使う。4*4の位置で使うパレット情報を変える
             let raw_attribute = video_system.read_u8(&mut system.cassette, attribute_addr);
@@ -346,13 +347,11 @@ impl Ppu {
             };
 
             // Nametableからtile_id読み出し->pattern tableからデータ構築
-            let nametable_addr =
-                target_nametable_base_addr + (tile_local_y * SCREEN_TILE_WIDTH) + tile_local_x;
+            let nametable_addr = target_nametable_base_addr + (tile_local_y << 5) + tile_local_x;
             let bg_tile_id = u16::from(video_system.read_u8(&mut system.cassette, nametable_addr));
 
             // pattern_table 1entryは16byte, 0行目だったら0,8番目のデータを使えば良い
-            let bg_pattern_table_base_addr =
-                system.read_ppu_bg_pattern_table_addr() + (bg_tile_id * PATTERN_TABLE_ENTRY_BYTE);
+            let bg_pattern_table_base_addr = pattern_table_addr + (bg_tile_id << 4);
             let bg_pattern_table_addr_lower = bg_pattern_table_base_addr + offset_y;
             let bg_pattern_table_addr_upper = bg_pattern_table_addr_lower + 8;
             let bg_data_lower =
@@ -368,7 +367,7 @@ impl Ppu {
                 u16::from(bg_palette_offset); // palette内の色選択
 
             // BG左端8pixel clipも考慮してBGデータ作る
-            let is_bg_clipping   = system.read_ppu_is_clip_bg_leftend() && (pixel_x < 8);
+            let is_bg_clipping = system.read_ppu_is_clip_bg_leftend() && (pixel_x < 8);
             let is_bg_tranparent = (bg_palette_addr & 0x03) == 0x00; // 背景色が選択された場合はここで処理してしまう
             let bg_palette_data: Option<u8> =
                 if is_bg_clipping || !system.read_ppu_is_write_bg() || is_bg_tranparent {
@@ -382,7 +381,7 @@ impl Ppu {
                 &mut system.cassette,
                 PALETTE_TABLE_BASE_ADDR + PALETTE_BG_OFFSET,
             ));
-            
+
             // 前後関係考慮して書き込む
             'select_color: for palette_data in &[
                 sprite_palette_data_front,
@@ -431,8 +430,8 @@ impl Ppu {
         // Spriteを探索する (y位置的に描画しなければならないSpriteは事前に読み込み済)
         let mut sprite_palette_data_back: Option<u8> = None; // 背面
         let mut sprite_palette_data_front: Option<u8> = None; // 全面
-        'draw_sprite: for sprite_index in 0..SPRITE_TEMP_SIZE {
-            if let Some(sprite) = self.sprite_temps[sprite_index] {
+        'draw_sprite: for &s in self.sprite_temps.iter() {
+            if let Some(sprite) = s {
                 // めんどいのでusizeにしておく
                 let sprite_x = usize::from(sprite.x);
                 let sprite_y = usize::from(sprite.y);

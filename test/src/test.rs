@@ -299,6 +299,7 @@ mod bench {
     /// Hello, World表示にかかる時間計測
     #[bench]
     fn bench_hello(b: &mut Bencher) {
+        // let rom_path = "../roms/my_dump/mario.nes".to_string();
         let rom_path = "../roms/other/hello.nes".to_string();
         
         let mut cpu: Cpu = Default::default();

@@ -158,7 +158,9 @@ pub struct Apu {
 }
 impl Default for Apu {
     fn default() -> Self {
-        Self { frame_seq_counter: 0 }
+        Self {
+            frame_seq_counter: 0,
+        }
     }
 }
 
