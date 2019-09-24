@@ -87,13 +87,11 @@ fn validate_framebuffer(
 fn run_cpu_only(rom_path: String, cpu_steps: usize, validate: impl Fn(&Cpu, &System)) {
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
-    let mut video_sys: VideoSystem = Default::default();
 
     load_cassette(&mut cpu_sys.cassette, rom_path);
 
     cpu.reset();
     cpu_sys.reset();
-    video_sys.reset();
     cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
 
     let mut cpu_cycle: usize = 0;
@@ -114,14 +112,12 @@ fn run_cpu_ppu(
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
     let mut ppu: Ppu = Default::default();
-    let mut video_sys: VideoSystem = Default::default();
 
     load_cassette(&mut cpu_sys.cassette, rom_path);
 
     cpu.reset();
     cpu_sys.reset();
     ppu.reset();
-    video_sys.reset();
     cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
 
     let mut fb = [[[0; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
@@ -131,7 +127,9 @@ fn run_cpu_ppu(
         let mut total_cycle: usize = 0;
         while total_cycle < CYCLE_PER_DRAW_FRAME {
             let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
-            ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
+            if let Some(interrupt) = ppu.step(cpu_cycle, &mut cpu_sys, &mut fb) {
+                cpu.interrupt(&mut cpu_sys, interrupt);
+            }
 
             total_cycle = total_cycle + cpu_cycle;
         }
@@ -149,14 +147,12 @@ fn run_nestest(rom_path: String) {
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
     let mut ppu: Ppu = Default::default();
-    let mut video_sys: VideoSystem = Default::default();
 
     load_cassette(&mut cpu_sys.cassette, rom_path);
 
     cpu.reset();
     cpu_sys.reset();
     ppu.reset();
-    video_sys.reset();
     cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
 
     let mut fb = [[[0; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
@@ -166,7 +162,9 @@ fn run_nestest(rom_path: String) {
         let mut total_cycle: usize = 0;
         while total_cycle < CYCLE_PER_DRAW_FRAME {
             let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
-            ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
+            if let Some(interrupt) = ppu.step(cpu_cycle, &mut cpu_sys, &mut fb) {
+                cpu.interrupt(&mut cpu_sys, interrupt);
+            }
 
             total_cycle = total_cycle + cpu_cycle;
         }
@@ -301,18 +299,16 @@ mod bench {
     fn bench_hello(b: &mut Bencher) {
         // let rom_path = "../roms/my_dump/mario.nes".to_string();
         let rom_path = "../roms/other/hello.nes".to_string();
-        
+
         let mut cpu: Cpu = Default::default();
         let mut cpu_sys: System = Default::default();
         let mut ppu: Ppu = Default::default();
-        let mut video_sys: VideoSystem = Default::default();
 
         load_cassette(&mut cpu_sys.cassette, rom_path);
 
         cpu.reset();
         cpu_sys.reset();
         ppu.reset();
-        video_sys.reset();
         cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
 
         let mut fb = [[[0; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
@@ -322,7 +318,9 @@ mod bench {
                 let mut total_cycle: usize = 0;
                 while total_cycle < CYCLE_PER_DRAW_FRAME {
                     let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
-                    ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
+                    if let Some(interrupt) = ppu.step(cpu_cycle, &mut cpu_sys, &mut fb) {
+                        cpu.interrupt(&mut cpu_sys, interrupt);
+                    }
 
                     total_cycle = total_cycle + cpu_cycle;
                 }

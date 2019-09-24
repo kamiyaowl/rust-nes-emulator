@@ -48,7 +48,6 @@ pub struct EmbeddedEmulator {
     pub cpu: Cpu,
     pub cpu_sys: System,
     pub ppu: Ppu,
-    pub video_sys: VideoSystem,
 }
 
 impl Default for EmbeddedEmulator {
@@ -57,7 +56,6 @@ impl Default for EmbeddedEmulator {
             cpu: Cpu::default(),
             cpu_sys: System::default(),
             ppu: Ppu::default(),
-            video_sys: VideoSystem::default(),
         }
     }
 }
@@ -75,7 +73,6 @@ pub unsafe extern "C" fn EmbeddedEmulator_reset() {
         emu.cpu.reset();
         emu.cpu_sys.reset();
         emu.ppu.reset();
-        emu.video_sys.reset();
         emu.cpu.interrupt(&mut emu.cpu_sys, Interrupt::RESET);
     }
 }
@@ -111,13 +108,9 @@ pub unsafe extern "C" fn EmbeddedEmulator_update_screen(
         let mut total_cycle: usize = 0;
         while total_cycle < CYCLE_PER_DRAW_FRAME {
             let cpu_cycle = usize::from(emu.cpu.step(&mut emu.cpu_sys));
-            emu.ppu.step(
-                cpu_cycle,
-                &mut emu.cpu,
-                &mut emu.cpu_sys,
-                &mut emu.video_sys,
-                fb,
-            );
+            if let Some(interrupt) = emu.ppu.step(cpu_cycle, &mut emu.cpu_sys, fb) {
+                emu.cpu.interrupt(&mut emu.cpu_sys, interrupt);
+            }
             total_cycle = total_cycle + cpu_cycle;
         }
     }

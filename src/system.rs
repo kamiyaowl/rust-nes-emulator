@@ -1,6 +1,7 @@
 use super::cassette::*;
 use super::interface::*;
 use super::pad::*;
+use super::video_system::*;
 
 pub const WRAM_SIZE: usize = 0x0800;
 pub const PPU_REG_SIZE: usize = 0x0008;
@@ -34,6 +35,9 @@ pub struct System {
     ///  0xc000 - 0xffff: PRG-ROM fixed to the last bank or switchable
     pub cassette: Cassette,
 
+    /// PPUが描画に使うメモリ空間
+    pub video: VideoSystem,
+
     /// コントローラへのアクセスは以下のモジュールにやらせる
     /// 0x4016, 0x4017
     pub pad1: Pad,
@@ -63,6 +67,7 @@ impl Default for System {
             io_reg: [0; APU_IO_REG_SIZE],
 
             cassette: Default::default(),
+            video: Default::default(),
             pad1: Default::default(),
             pad2: Default::default(),
 
@@ -83,6 +88,10 @@ impl Default for System {
 
 impl EmulateControl for System {
     fn reset(&mut self) {
+        self.video.reset();
+        self.pad1.reset();
+        self.pad2.reset();
+
         self.wram = [0; WRAM_SIZE];
         self.ppu_reg = [0; PPU_REG_SIZE];
         self.io_reg = [0; APU_IO_REG_SIZE];

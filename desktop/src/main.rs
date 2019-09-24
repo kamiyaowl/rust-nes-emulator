@@ -56,14 +56,11 @@ fn main() {
     let mut ss_cpu: Cpu = Default::default();
     let mut ss_cpu_sys: System = Default::default();
     let mut ss_ppu: Ppu = Default::default();
-    let mut ss_video_sys: VideoSystem = Default::default();
-
 
     // emu
     let mut cpu: Cpu = Default::default();
     let mut cpu_sys: System = Default::default();
     let mut ppu: Ppu = Default::default();
-    let mut video_sys: VideoSystem = Default::default();
 
     if rom_exists {
         load_cassette(&mut cpu_sys.cassette, rom_path);
@@ -82,7 +79,6 @@ fn main() {
     cpu.reset();
     cpu_sys.reset();
     ppu.reset();
-    video_sys.reset();
     cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
 
     let mut fb = [[[0; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
@@ -118,7 +114,10 @@ fn main() {
             let mut total_cycle: usize = 0;
             while total_cycle < CYCLE_PER_DRAW_FRAME {
                 let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
-                ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
+                if let Some(interrupt) = ppu.step(cpu_cycle, &mut cpu_sys, &mut fb) {
+                    cpu.interrupt(&mut cpu_sys, interrupt);
+                }
+
                 total_cycle = total_cycle + cpu_cycle;
             }
             // let emulate_duration = start.elapsed();
@@ -203,7 +202,6 @@ fn main() {
                     cpu.reset();
                     cpu_sys.reset();
                     ppu.reset();
-                    video_sys.reset();
                     cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
                 }
                 Key::O => {
@@ -217,25 +215,22 @@ fn main() {
                             cpu.reset();
                             cpu_sys.reset();
                             ppu.reset();
-                            video_sys.reset();
                             cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
                         }
                         _ => {}
                     }
-                },
+                }
                 Key::C => {
                     // Snapshot Save
-                    ss_cpu       = cpu.clone();
-                    ss_cpu_sys   = cpu_sys.clone();
-                    ss_ppu       = ppu.clone();
-                    ss_video_sys = video_sys.clone();
-                }, 
+                    ss_cpu = cpu.clone();
+                    ss_cpu_sys = cpu_sys.clone();
+                    ss_ppu = ppu.clone();
+                }
                 Key::Z => {
                     // Snapshot Restore
-                    cpu       = ss_cpu.clone();
-                    cpu_sys   = ss_cpu_sys.clone();
-                    ppu       = ss_ppu.clone();
-                    video_sys = ss_video_sys.clone();
+                    cpu = ss_cpu.clone();
+                    cpu_sys = ss_cpu_sys.clone();
+                    ppu = ss_ppu.clone();
                 }
                 _ => {}
             }

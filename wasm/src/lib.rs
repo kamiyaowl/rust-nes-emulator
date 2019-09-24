@@ -42,7 +42,7 @@ pub fn get_num_of_colors() -> usize {
 }
 
 #[wasm_bindgen]
-#[derive(PartialEq,Eq,Copy,Clone,Debug)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug)]
 pub enum KeyEvent {
     PressA,
     PressB,
@@ -68,7 +68,6 @@ pub struct WasmEmulator {
     cpu: Cpu,
     cpu_sys: System,
     ppu: Ppu,
-    video_sys: VideoSystem,
 }
 
 impl Default for WasmEmulator {
@@ -78,7 +77,6 @@ impl Default for WasmEmulator {
             cpu: Cpu::default(),
             cpu_sys: System::default(),
             ppu: Ppu::default(),
-            video_sys: VideoSystem::default(),
         }
     }
 }
@@ -108,7 +106,6 @@ impl WasmEmulator {
         self.cpu.reset();
         self.cpu_sys.reset();
         self.ppu.reset();
-        self.video_sys.reset();
         self.cpu.interrupt(&mut self.cpu_sys, Interrupt::RESET);
     }
     /// .nesファイルを読み込みます
@@ -134,13 +131,9 @@ impl WasmEmulator {
             // console_log!("a:{:02X} x:{:02X} y:{:02X} pc:{:04X} sp:{:02X} p:{:02X} ", self.cpu.a, self.cpu.x, self.cpu.y, self.cpu.pc, self.cpu.sp, self.cpu.p);
 
             let cpu_cycle = usize::from(self.cpu.step(&mut self.cpu_sys));
-            self.ppu.step(
-                cpu_cycle,
-                &mut self.cpu,
-                &mut self.cpu_sys,
-                &mut self.video_sys,
-                &mut self.fb,
-            );
+            if let Some(interrupt) = self.ppu.step(cpu_cycle, &mut self.cpu_sys, &mut self.fb) {
+                self.cpu.interrupt(&mut self.cpu_sys, interrupt);
+            }
             total_cycle = total_cycle + cpu_cycle;
             // TODO: apu対応(1面分更新だとタイミング的に厳しいかも #8)
         }
@@ -148,23 +141,23 @@ impl WasmEmulator {
     /// キー入力します
     pub fn update_key(&mut self, key: KeyEvent) {
         match key {
-            KeyEvent::PressA      => self.cpu_sys.pad1.push_button(PadButton::A),
-            KeyEvent::PressB      => self.cpu_sys.pad1.push_button(PadButton::B),
+            KeyEvent::PressA => self.cpu_sys.pad1.push_button(PadButton::A),
+            KeyEvent::PressB => self.cpu_sys.pad1.push_button(PadButton::B),
             KeyEvent::PressSelect => self.cpu_sys.pad1.push_button(PadButton::Select),
-            KeyEvent::PressStart  => self.cpu_sys.pad1.push_button(PadButton::Start),
-            KeyEvent::PressUp     => self.cpu_sys.pad1.push_button(PadButton::Up),
-            KeyEvent::PressDown   => self.cpu_sys.pad1.push_button(PadButton::Down),
-            KeyEvent::PressLeft   => self.cpu_sys.pad1.push_button(PadButton::Left),
-            KeyEvent::PressRight  => self.cpu_sys.pad1.push_button(PadButton::Right),
+            KeyEvent::PressStart => self.cpu_sys.pad1.push_button(PadButton::Start),
+            KeyEvent::PressUp => self.cpu_sys.pad1.push_button(PadButton::Up),
+            KeyEvent::PressDown => self.cpu_sys.pad1.push_button(PadButton::Down),
+            KeyEvent::PressLeft => self.cpu_sys.pad1.push_button(PadButton::Left),
+            KeyEvent::PressRight => self.cpu_sys.pad1.push_button(PadButton::Right),
 
-            KeyEvent::ReleaseA      => self.cpu_sys.pad1.release_button(PadButton::A),
-            KeyEvent::ReleaseB      => self.cpu_sys.pad1.release_button(PadButton::B),
+            KeyEvent::ReleaseA => self.cpu_sys.pad1.release_button(PadButton::A),
+            KeyEvent::ReleaseB => self.cpu_sys.pad1.release_button(PadButton::B),
             KeyEvent::ReleaseSelect => self.cpu_sys.pad1.release_button(PadButton::Select),
-            KeyEvent::ReleaseStart  => self.cpu_sys.pad1.release_button(PadButton::Start),
-            KeyEvent::ReleaseUp     => self.cpu_sys.pad1.release_button(PadButton::Up),
-            KeyEvent::ReleaseDown   => self.cpu_sys.pad1.release_button(PadButton::Down),
-            KeyEvent::ReleaseLeft   => self.cpu_sys.pad1.release_button(PadButton::Left),
-            KeyEvent::ReleaseRight  => self.cpu_sys.pad1.release_button(PadButton::Right),
+            KeyEvent::ReleaseStart => self.cpu_sys.pad1.release_button(PadButton::Start),
+            KeyEvent::ReleaseUp => self.cpu_sys.pad1.release_button(PadButton::Up),
+            KeyEvent::ReleaseDown => self.cpu_sys.pad1.release_button(PadButton::Down),
+            KeyEvent::ReleaseLeft => self.cpu_sys.pad1.release_button(PadButton::Left),
+            KeyEvent::ReleaseRight => self.cpu_sys.pad1.release_button(PadButton::Right),
         }
     }
 }
