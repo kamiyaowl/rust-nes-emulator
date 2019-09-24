@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "bench", feature(test))]
+
 extern crate rust_nes_emulator;
 use rust_nes_emulator::prelude::*;
 
@@ -213,28 +215,14 @@ fn run_nestest(rom_path: String) {
     }
 }
 
-/// hello worldのromで、一通りの処理が終わって無限ループまでたどり着くことを確認する
-#[test]
-fn test_run_hello_cpu() {
-    run_cpu_only("../roms/other/hello.nes".to_string(), 175, |cpu, _sys| {
-        // 170step以降はJMPで無限ループしているはず
-        assert_eq!(0x804e, cpu.pc);
-        assert_eq!(0x01ff, cpu.sp);
-        assert_eq!(0x1e, cpu.a);
-        assert_eq!(0x0d, cpu.x);
-        assert_eq!(0x00, cpu.y);
-        assert_eq!(0x34, cpu.p);
-    })
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-/// 画面上にhello world!が正しく表示されることを確認する
-#[test]
-fn test_run_hello_ppu() {
-    run_cpu_ppu(
-        "../roms/other/hello.nes".to_string(),
-        "test_run_hello_ppu.bmp".to_string(),
-        1,
-        |cpu, _sys, fb| {
+    /// hello worldのromで、一通りの処理が終わって無限ループまでたどり着くことを確認する
+    #[test]
+    fn test_run_hello_cpu() {
+        run_cpu_only("../roms/other/hello.nes".to_string(), 175, |cpu, _sys| {
             // 170step以降はJMPで無限ループしているはず
             assert_eq!(0x804e, cpu.pc);
             assert_eq!(0x01ff, cpu.sp);
@@ -242,44 +230,105 @@ fn test_run_hello_ppu() {
             assert_eq!(0x0d, cpu.x);
             assert_eq!(0x00, cpu.y);
             assert_eq!(0x34, cpu.p);
-            // FBの結果を精査する
-            let _ = validate_framebuffer(fb, "../screenshot/hello.bmp".to_string());
-        },
-    )
+        })
+    }
+
+    /// 画面上にhello world!が正しく表示されることを確認する
+    #[test]
+    fn test_run_hello_ppu() {
+        run_cpu_ppu(
+            "../roms/other/hello.nes".to_string(),
+            "test_run_hello_ppu.bmp".to_string(),
+            1,
+            |cpu, _sys, fb| {
+                // 170step以降はJMPで無限ループしているはず
+                assert_eq!(0x804e, cpu.pc);
+                assert_eq!(0x01ff, cpu.sp);
+                assert_eq!(0x1e, cpu.a);
+                assert_eq!(0x0d, cpu.x);
+                assert_eq!(0x00, cpu.y);
+                assert_eq!(0x34, cpu.p);
+                // FBの結果を精査する
+                let _ = validate_framebuffer(fb, "../screenshot/hello.bmp".to_string());
+            },
+        )
+    }
+
+    /// nestestがすべてPassできることを確認する
+    #[test]
+    fn test_run_nestest() {
+        run_nestest("../roms/nes-test-roms/other/nestest.nes".to_string())
+    }
+
+    /// マリオのタイトル画面が正しく表示されること
+    #[test]
+    #[ignore]
+    fn test_run_mario_title() {
+        run_cpu_ppu(
+            "../roms/my_dump/mario.nes".to_string(),
+            "mario_title.bmp".to_string(),
+            100,
+            |_cpu, _sys, fb| {
+                // FBの結果を精査する
+                let _ = validate_framebuffer(fb, "../screenshot/mario.bmp".to_string());
+            },
+        )
+    }
+
+    /// マリオのデモ映像が正しく表示されること
+    #[test]
+    #[ignore]
+    fn test_run_mario_demo() {
+        run_cpu_ppu(
+            "../roms/my_dump/mario.nes".to_string(),
+            "mario_demo.bmp".to_string(),
+            1000,
+            |_cpu, _sys, fb| {
+                // FBの結果を精査する
+                let _ = validate_framebuffer(fb, "../screenshot/mario_demo.bmp".to_string());
+            },
+        )
+    }
 }
 
-/// nestestがすべてPassできることを確認する
-#[test]
-fn test_run_nestest() {
-    run_nestest("../roms/nes-test-roms/other/nestest.nes".to_string())
-}
+#[cfg(all(feature = "bench", test))]
+mod bench {
+    use super::*;
 
-/// マリオのタイトル画面が正しく表示されること
-#[test]
-#[ignore]
-fn test_run_mario_title() {
-    run_cpu_ppu(
-        "../roms/my_dump/mario.nes".to_string(),
-        "mario_title.bmp".to_string(),
-        100,
-        |_cpu, _sys, fb| {
-            // FBの結果を精査する
-            let _ = validate_framebuffer(fb, "../screenshot/mario.bmp".to_string());
-        },
-    )
-}
+    extern crate test;
+    use test::Bencher;
 
-/// マリオのデモ映像が正しく表示されること
-#[test]
-#[ignore]
-fn test_run_mario_demo() {
-    run_cpu_ppu(
-        "../roms/my_dump/mario.nes".to_string(),
-        "mario_demo.bmp".to_string(),
-        1000,
-        |_cpu, _sys, fb| {
-            // FBの結果を精査する
-            let _ = validate_framebuffer(fb, "../screenshot/mario_demo.bmp".to_string());
-        },
-    )
+    /// Hello, World表示にかかる時間計測
+    #[bench]
+    fn bench_hello(b: &mut Bencher) {
+        let rom_path = "../roms/other/hello.nes".to_string();
+        
+        let mut cpu: Cpu = Default::default();
+        let mut cpu_sys: System = Default::default();
+        let mut ppu: Ppu = Default::default();
+        let mut video_sys: VideoSystem = Default::default();
+
+        load_cassette(&mut cpu_sys.cassette, rom_path);
+
+        cpu.reset();
+        cpu_sys.reset();
+        ppu.reset();
+        video_sys.reset();
+        cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
+
+        let mut fb = [[[0; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
+
+        b.iter(|| {
+            for _ in 0..60 {
+                let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT + 1);
+                let mut total_cycle: usize = 0;
+                while total_cycle < cycle_for_draw_once {
+                    let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
+                    ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
+
+                    total_cycle = total_cycle + cpu_cycle;
+                }
+            }
+        });
+    }
 }

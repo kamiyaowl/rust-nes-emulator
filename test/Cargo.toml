@@ -8,6 +8,11 @@ edition = "2018"
 path = "src/test.rs"
 name = "rust_nes_emulator_test"
 
+[features]
+default = []
+bench = []
+
+
 [profile.dev]
 opt-level = 0
 
