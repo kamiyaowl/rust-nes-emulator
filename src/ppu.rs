@@ -45,6 +45,8 @@ pub const SPRITE_SIZE: usize = 4;
 pub const SPRITE_WIDTH: usize = 8;
 pub const SPRITE_NORMAL_HEIGHT: usize = 8;
 pub const SPRITE_LARGE_HEIGHT: usize = 16;
+/// 1frame書くのにかかるサイクル数
+pub const CYCLE_PER_DRAW_FRAME: usize = CPU_CYCLE_PER_LINE * ((RENDER_SCREEN_HEIGHT + 1) as usize);
 
 #[derive(Copy, Clone)]
 pub struct Position(pub u8, pub u8);

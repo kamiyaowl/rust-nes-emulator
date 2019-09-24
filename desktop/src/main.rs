@@ -86,7 +86,6 @@ fn main() {
     cpu.interrupt(&mut cpu_sys, Interrupt::RESET);
 
     let mut fb = [[[0; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
-    let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT);
 
     // windowの準備
     let scale = 2;
@@ -117,7 +116,7 @@ fn main() {
             // let start = Instant::now();
             // エミュを進める
             let mut total_cycle: usize = 0;
-            while total_cycle < cycle_for_draw_once {
+            while total_cycle < CYCLE_PER_DRAW_FRAME {
                 let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
                 ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
                 total_cycle = total_cycle + cpu_cycle;

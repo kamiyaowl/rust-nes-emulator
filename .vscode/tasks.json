@@ -110,6 +110,25 @@
     },
     {
       "type": "shell",
+      "label": "bench",
+      "command": "rustup",
+      "options": {
+        "cwd": "${workspaceFolder}/test"
+      },
+      "args": [
+        "run",
+        "nightly",
+        "cargo",
+        "bench",
+        "--features",
+        "\"bench\"",
+      ],
+      "problemMatcher": [
+        "$rustc"
+      ]
+    },
+    {
+      "type": "shell",
       "label": "run desktop",
       "command": "cargo",
       "options": {

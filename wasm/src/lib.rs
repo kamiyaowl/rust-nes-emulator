@@ -128,9 +128,8 @@ impl WasmEmulator {
     /// TODO: APU対応で1lineごとにする
     pub fn step_line(&mut self) {
         // console_log!("WasmEmulator::step_line()");
-        let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT + 1);
         let mut total_cycle: usize = 0;
-        while total_cycle < cycle_for_draw_once {
+        while total_cycle < CYCLE_PER_DRAW_FRAME {
             // for debug
             // console_log!("a:{:02X} x:{:02X} y:{:02X} pc:{:04X} sp:{:02X} p:{:02X} ", self.cpu.a, self.cpu.x, self.cpu.y, self.cpu.pc, self.cpu.sp, self.cpu.p);
 

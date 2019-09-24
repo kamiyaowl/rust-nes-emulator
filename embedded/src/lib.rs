@@ -108,9 +108,8 @@ pub unsafe extern "C" fn EmbeddedEmulator_update_screen(
              EMBEDDED_EMULATOR_VISIBLE_SCREEN_HEIGHT],
 ) {
     if let Some(ref mut emu) = EMULATOR {
-        let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT + 1);
         let mut total_cycle: usize = 0;
-        while total_cycle < cycle_for_draw_once {
+        while total_cycle < CYCLE_PER_DRAW_FRAME {
             let cpu_cycle = usize::from(emu.cpu.step(&mut emu.cpu_sys));
             emu.ppu.step(
                 cpu_cycle,

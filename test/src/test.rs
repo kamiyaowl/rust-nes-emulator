@@ -127,10 +127,9 @@ fn run_cpu_ppu(
     let mut fb = [[[0; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
 
     // cpuを基準にppuを動かしてあげる
-    let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT + 1);
     for _i in 0..frame_count {
         let mut total_cycle: usize = 0;
-        while total_cycle < cycle_for_draw_once {
+        while total_cycle < CYCLE_PER_DRAW_FRAME {
             let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
             ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
 
@@ -163,10 +162,9 @@ fn run_nestest(rom_path: String) {
     let mut fb = [[[0; NUM_OF_COLOR]; VISIBLE_SCREEN_WIDTH]; VISIBLE_SCREEN_HEIGHT];
 
     // cpuを基準にppuを動かしてあげる
-    let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT + 1);
     for i in 0..60 {
         let mut total_cycle: usize = 0;
-        while total_cycle < cycle_for_draw_once {
+        while total_cycle < CYCLE_PER_DRAW_FRAME {
             let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
             ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
 
@@ -320,9 +318,8 @@ mod bench {
 
         b.iter(|| {
             for _ in 0..60 {
-                let cycle_for_draw_once = CPU_CYCLE_PER_LINE * usize::from(RENDER_SCREEN_HEIGHT + 1);
                 let mut total_cycle: usize = 0;
-                while total_cycle < cycle_for_draw_once {
+                while total_cycle < CYCLE_PER_DRAW_FRAME {
                     let cpu_cycle = usize::from(cpu.step(&mut cpu_sys));
                     ppu.step(cpu_cycle, &mut cpu, &mut cpu_sys, &mut video_sys, &mut fb);
 
