@@ -5,7 +5,8 @@ authors = ["K <kamiyaowl@gmail.com>"]
 edition = "2018"
 
 [features]
-default = []
+default = [ "unsafe-opt" ]
+unsafe-opt = []
 
 [profile.dev]
 opt-level = 0

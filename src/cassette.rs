@@ -158,16 +158,16 @@ impl SystemBus for Cassette {
             debug_assert!(addr >= BATTERY_PACKED_RAM_BASE_ADDR);
 
             let index = usize::from(addr - BATTERY_PACKED_RAM_BASE_ADDR);
-            self.battery_packed_ram[index]
+            arr_read!(self.battery_packed_ram, index)
         } else {
             debug_assert!(addr >= PRG_ROM_SYSTEM_BASE_ADDR);
 
             let index = usize::from(addr - PRG_ROM_SYSTEM_BASE_ADDR);
             // ROMが16KB場合のミラーリング
             if index < self.prg_rom_bytes {
-                self.prg_rom[index]
+                arr_read!(self.prg_rom, index)
             } else {
-                self.prg_rom[index - self.prg_rom_bytes]
+                arr_read!(self.prg_rom, index - self.prg_rom_bytes)
             }
         }
     }
@@ -176,16 +176,16 @@ impl SystemBus for Cassette {
             debug_assert!(addr >= BATTERY_PACKED_RAM_BASE_ADDR);
 
             let index = usize::from(addr - BATTERY_PACKED_RAM_BASE_ADDR);
-            self.battery_packed_ram[index] = data
+            arr_write!(self.battery_packed_ram, index, data)
         } else {
             debug_assert!(addr >= PRG_ROM_SYSTEM_BASE_ADDR);
 
             let index = usize::from(addr - PRG_ROM_SYSTEM_BASE_ADDR);
             // ROMが16KB場合のミラーリング
             if index < self.prg_rom_bytes {
-                self.prg_rom[index] = data;
+                arr_write!(self.prg_rom, index, data);
             } else {
-                self.prg_rom[index - self.prg_rom_bytes] = data;
+                arr_write!(self.prg_rom, index - self.prg_rom_bytes, data);
             }
         }
     }
@@ -194,13 +194,13 @@ impl VideoBus for Cassette {
     fn read_video_u8(&mut self, addr: u16) -> u8 {
         let index = usize::from(addr);
         debug_assert!(index < CHR_ROM_MAX_SIZE);
-        self.chr_rom[index]
+        arr_read!(self.chr_rom, index)
     }
     /// CHR_RAM対応も込めて書き換え可能にしておく
     fn write_video_u8(&mut self, addr: u16, data: u8) {
         let index = usize::from(addr);
         debug_assert!(index < CHR_ROM_MAX_SIZE);
-        self.chr_rom[index] = data;
+        arr_write!(self.chr_rom, index, data);
     }
 }
 
