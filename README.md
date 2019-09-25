@@ -6,13 +6,10 @@
 
 NES Emulator written in Rust
 
-| Super Mario Bros. | Donkey Kong |
-| - | - |
-| ![mario-gif](https://user-images.githubusercontent.com/4300987/64512802-1bc8bd00-d322-11e9-8a70-26df62bb5ee1.gif) | ![donkey-gif](https://user-images.githubusercontent.com/4300987/64512801-1bc8bd00-d322-11e9-9e6c-0a149fb05c1b.gif) |
+| Super Mario Bros. | Donkey Kong | Mario Bros. |
+| - | - | - |
+| ![mario-gif](https://user-images.githubusercontent.com/4300987/64512802-1bc8bd00-d322-11e9-8a70-26df62bb5ee1.gif) | ![donkey-gif](https://user-images.githubusercontent.com/4300987/64512801-1bc8bd00-d322-11e9-9e6c-0a149fb05c1b.gif) | ![mariobros-gif](https://user-images.githubusercontent.com/4300987/64917495-06dda500-d7cc-11e9-9037-f5f8bd7de061.gif) |
 
-| Mario Bros. | Hello, World! |
-| - | - |
-| ![mariobros-gif](https://user-images.githubusercontent.com/4300987/64917495-06dda500-d7cc-11e9-9037-f5f8bd7de061.gif) | ![hello](https://raw.githubusercontent.com/kamiyaowl/rust-nes-emulator/master/screenshot/hello.bmp) |
 
 ---
 
@@ -117,7 +114,6 @@ $ docker-compose run build-mbed
 
 ![mario](https://raw.githubusercontent.com/kamiyaowl/rust-nes-emulator/master/screenshot/mario.bmp)
 
-
 ### Donkey Kong
 
 ![donkey](https://raw.githubusercontent.com/kamiyaowl/rust-nes-emulator/master/screenshot/donkey.bmp)
@@ -125,6 +121,10 @@ $ docker-compose run build-mbed
 ### Mario Bros.
 
 ![mariobros](https://raw.githubusercontent.com/kamiyaowl/rust-nes-emulator/master/screenshot/mariobros.bmp)
+
+### Ice Climber.
+
+![iceclimber](https://raw.githubusercontent.com/kamiyaowl/rust-nes-emulator/master/screenshot/iceclimber.bmp)
 
 ### nestest (unofficial opcode)
 
@@ -157,6 +157,7 @@ $ docker-compose run build-mbed
   - [x] BG
     - [x] Nametable Mirroring
     - [x] Scroll
+      - [ ] Vertical Scroll Bug(#87)
   - [x] Sprite
     - [x] 8*8
     - [x] 8*16
