@@ -169,11 +169,11 @@ impl Apu {
     /// TODO: 実装
     #[allow(dead_code)]
     fn increment_seq(&mut self, cpu_cyc: u8) {
-        self.frame_seq_counter = (self.frame_seq_counter + u16::from(cpu_cyc)) & 0x03ff; // 11bit
+        self.frame_seq_counter = (self.frame_seq_counter + u16::from(cpu_cyc)) & 0x03ff;
+        // 11bit
     }
     /// APUの処理を進めます
     pub fn step(&mut self, _cpu: &mut Cpu, _cpu_cyc: u8) {
         // TODO:がんばる
-
     }
 }

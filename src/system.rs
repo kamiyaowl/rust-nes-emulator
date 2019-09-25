@@ -115,7 +115,7 @@ impl SystemBus for System {
         if addr < PPU_REG_BASE_ADDR {
             // mirror support
             let index = usize::from(addr) % self.wram.len();
-            self.wram[index]
+            arr_read!(self.wram, index)
         } else if addr < APU_IO_REG_BASE_ADDR {
             // mirror support
             let index = usize::from(addr - PPU_REG_BASE_ADDR) % self.ppu_reg.len();
@@ -135,7 +135,7 @@ impl SystemBus for System {
                     if !is_nondestructive {
                         self.read_oam_data = true;
                     }
-                    self.ppu_reg[index]
+                    arr_read!(self.ppu_reg, index)
                 }
                 // PPU_DATA update/address incrementのためにフラグを立てる
                 // バッファが入るので1step遅れで結果が入る
@@ -143,10 +143,10 @@ impl SystemBus for System {
                     if !is_nondestructive {
                         self.read_ppu_data = true;
                     }
-                    self.ppu_reg[index]
+                    arr_read!(self.ppu_reg, index)
                 }
                 // default
-                _ => self.ppu_reg[index],
+                _ => arr_read!(self.ppu_reg, index),
             }
         } else if addr < CASSETTE_BASE_ADDR {
             let index = usize::from(addr - APU_IO_REG_BASE_ADDR);
@@ -155,10 +155,10 @@ impl SystemBus for System {
                     // TODO: APU
                     0x16 => self.pad1.read_out(), // pad1
                     0x17 => self.pad2.read_out(), // pad2
-                    _ => self.io_reg[index],
+                    _ => arr_read!(self.io_reg, index),
                 }
             } else {
-                self.io_reg[index]
+                arr_read!(self.io_reg, index)
             }
         } else {
             self.cassette.read_u8(addr, is_nondestructive)
@@ -168,7 +168,7 @@ impl SystemBus for System {
         if addr < PPU_REG_BASE_ADDR {
             // mirror support
             let index = usize::from(addr) % self.wram.len();
-            self.wram[index] = data;
+            arr_write!(self.wram, index, data);
         } else if addr < APU_IO_REG_BASE_ADDR {
             // mirror support
             let index = usize::from(addr - PPU_REG_BASE_ADDR) % self.ppu_reg.len();
@@ -178,7 +178,7 @@ impl SystemBus for System {
                     if !is_nondestructive {
                         self.written_oam_data = true
                     }
-                    self.ppu_reg[index] = data;
+                    arr_write!(self.ppu_reg, index, data);
                 }
                 // $2005 PPU_SCROLL 2回書き
                 0x05 => {
@@ -190,7 +190,7 @@ impl SystemBus for System {
                             self.written_ppu_scroll = true;
                         }
                     } else {
-                        self.ppu_reg[index] = data;
+                        arr_write!(self.ppu_reg, index, data);
                         if !is_nondestructive {
                             self.ppu_is_second_write = true;
                         }
@@ -206,7 +206,7 @@ impl SystemBus for System {
                             self.written_ppu_addr = true;
                         }
                     } else {
-                        self.ppu_reg[index] = data;
+                        arr_write!(self.ppu_reg, index, data);
                         if !is_nondestructive {
                             self.ppu_is_second_write = true;
                         }
@@ -214,7 +214,7 @@ impl SystemBus for System {
                 }
                 // $2007 PPU_DATA addr autoincrement
                 0x07 => {
-                    self.ppu_reg[index] = data;
+                    arr_write!(self.ppu_reg, index, data);
                     if !is_nondestructive {
                         // PPUに書いてもらおう
                         self.written_ppu_data = true;
@@ -222,7 +222,7 @@ impl SystemBus for System {
                 }
                 // default
                 _ => {
-                    self.ppu_reg[index] = data;
+                    arr_write!(self.ppu_reg, index, data);
                 }
             };
         } else if addr < CASSETTE_BASE_ADDR {
@@ -236,7 +236,7 @@ impl SystemBus for System {
                     _ => {}
                 }
             }
-            self.io_reg[index] = data;
+            arr_write!(self.io_reg, index, data);
         } else {
             self.cassette.write_u8(addr, data, is_nondestructive);
         }

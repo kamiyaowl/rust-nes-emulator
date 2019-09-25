@@ -121,7 +121,7 @@ impl VideoSystem {
                 0x14 => self.palette[0x04],
                 0x18 => self.palette[0x08],
                 0x1c => self.palette[0x0c],
-                _ => self.palette[index],
+                _ => arr_read!(self.palette, index),
             }
         }
     }
@@ -147,7 +147,7 @@ impl VideoSystem {
                 0x14 => self.palette[0x04] = data,
                 0x18 => self.palette[0x08] = data,
                 0x1c => self.palette[0x0c] = data,
-                _ => self.palette[index] = data,
+                _ => arr_write!(self.palette, index, data),
             };
         }
     }
