@@ -7,7 +7,7 @@ on:
     branches: [ master ]
 
 jobs:
-  build-and-publish:
+  build-desktop:
     runs-on: ubuntu-latest
     steps:
     - name: checkout
@@ -23,6 +23,13 @@ jobs:
         name: desktop-rust-nes-emulator
         path: desktop/target/release/
 
+  build-wasm:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2     
+      with:
+        submodules: true
     - name: build binary for wasm
       run: docker-compose run build-wasm-release
     - name: build page for wasm
@@ -39,6 +46,13 @@ jobs:
         publish_dir: wasm/dist/
         force_orphan: true
 
+  build-embedded:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2     
+      with:
+        submodules: true
     - name: build lib for embedded
       run: docker-compose run build-embedded-lib
     - name: build binary for embedded
