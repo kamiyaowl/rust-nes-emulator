@@ -60,6 +60,6 @@ jobs:
     - name: save build for embedded
       uses: actions/upload-artifact@v1
       with:
-        name: embedded-rust-nes-emulator
+        name: rust-nes-emulator-embedded
         path: embedded/BUILD/
 
