@@ -20,8 +20,8 @@ jobs:
     - name: save build for desktop
       uses: actions/upload-artifact@v1
       with:
-        name: desktop-rust-nes-emulator
-        path: desktop/target/release/
+        name: rust-nes-emulator-desktop
+        path: desktop/target/release/rust-nes-emulator-desktop
 
   build-wasm:
     runs-on: ubuntu-latest
@@ -37,7 +37,7 @@ jobs:
     - name: save build for wasm
       uses: actions/upload-artifact@v1
       with:
-        name: wasm-rust-nes-emulator
+        name: rust-nes-emulator-wasm
         path: wasm/dist/
     - name: deploy gh pages
       uses: peaceiris/actions-gh-pages@v3
