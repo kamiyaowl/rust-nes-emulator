@@ -2,6 +2,7 @@
 
 [![Test](https://github.com/kamiyaowl/rust-nes-emulator/workflows/Test/badge.svg)](https://github.com/kamiyaowl/rust-nes-emulator/actions?query=workflow%3ATest)
 [![Deploy](https://github.com/kamiyaowl/rust-nes-emulator/workflows/Deploy/badge.svg)](https://github.com/kamiyaowl/rust-nes-emulator/actions?query=workflow%3ADeploy)
+[![Build for Windows](https://github.com/kamiyaowl/rust-nes-emulator/workflows/Build%20for%20Windows/badge.svg)](https://github.com/kamiyaowl/rust-nes-emulator/actions?query=workflow%3A%22Build+for+Windows%22)
 
 NES Emulator written in Rust
 
