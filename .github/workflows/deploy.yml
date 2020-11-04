@@ -32,7 +32,7 @@ jobs:
         submodules: true
     # for node crash W.A.
     - name: npm install
-      run: npm i
+      run: cd wasm && npm i
     - name: build binary for wasm
       run: docker-compose run build-wasm-release
     - name: build page for wasm
