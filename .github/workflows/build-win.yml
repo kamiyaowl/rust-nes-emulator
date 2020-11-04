@@ -22,4 +22,4 @@ jobs:
       uses: actions/upload-artifact@v1
       with:
         name: rust-nes-emulator-windows
-        path: desktop/target/release/rust-nes-emulator-desktop.exe
+        path: desktop\target\release\
