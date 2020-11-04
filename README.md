@@ -40,7 +40,7 @@ $ docker-compose run build-desktop-release
 
 ![wasm](https://raw.githubusercontent.com/kamiyaowl/rust-nes-emulator/master/screenshot/wasm.PNG?raw=true)
 
-[Playgound: http://kamiya.tech/rust-nes-emulator/](rust-nes-emulator)
+[Playgound: http://kamiya.tech/rust-nes-emulator/](http://kamiya.tech/rust-nes-emulator/index.html)
 
 #### Build locally
 
@@ -104,6 +104,12 @@ $ make clean && make
 $ docker-compose run build-embedded-lib
 $ docker-compose run build-mbed
 ```
+
+---
+
+## Build Artifacts
+
+see [Github Actions#Deploy](https://github.com/kamiyaowl/rust-nes-emulator/actions?query=workflow%3ADeploy).
 
 ---
 
