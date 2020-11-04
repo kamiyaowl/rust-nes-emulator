@@ -7,7 +7,7 @@ on:
     branches: [ master ]
 
 jobs:
-  test:
+  test-debug:
     runs-on: ubuntu-latest
     steps:
     - name: checkout
@@ -17,5 +17,12 @@ jobs:
                
     - name: test debug
       run: docker-compose run test
+  test-release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2     
+      with:
+        submodules: true             
     - name: test release
       run: docker-compose run test-release
