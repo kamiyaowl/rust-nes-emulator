@@ -30,13 +30,12 @@ jobs:
       uses: actions/checkout@v2     
       with:
         submodules: true
-    # for node crash W.A.
-    - name: npm install
-      run: cd wasm && npm i
     - name: build binary for wasm
       run: docker-compose run build-wasm-release
-    - name: build page for wasm
-      run: docker-compose run build-wasm-webpage
+    # for node crash W.A.
+    - name: npm install & build
+      run: cd wasm && npm i && npm run build
+#     run: docker-compose run build-wasm-webpage
     - name: save build for wasm
       uses: actions/upload-artifact@v1
       with:
