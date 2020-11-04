@@ -64,7 +64,7 @@ services:
       volumes:
         - ./:/work
       working_dir: /work/wasm
-      command: bash -c "npm audit fix && npm install --no-optional && npm run build"
+      command: npm run build
     # build embedded
     build-embedded-lib:
       build: .
