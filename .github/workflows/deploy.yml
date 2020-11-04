@@ -57,7 +57,7 @@ jobs:
       run: docker-compose run build-embedded-lib
     - name: build binary for embedded
       run: docker-compose run build-mbed
-    - name: save build for desktop
+    - name: save build for embedded
       uses: actions/upload-artifact@v1
       with:
         name: embedded-rust-nes-emulator
