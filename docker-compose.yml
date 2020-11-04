@@ -64,7 +64,7 @@ services:
       volumes:
         - ./:/work
       working_dir: /work/wasm
-      command: npm run build
+      command: bash -c "npm install && npm run build"
     # build embedded
     build-embedded-lib:
       build: .
