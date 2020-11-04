@@ -1,0 +1,67 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-desktop:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2     
+      with:
+        submodules: true
+               
+    - name: build for desktop
+      run: docker-compose run build-desktop-release
+    - name: save build for desktop
+      uses: actions/upload-artifact@v1
+      with:
+        name: rust-nes-emulator-desktop
+        path: desktop/target/release/rust-nes-emulator-desktop
+
+  build-wasm:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2     
+      with:
+        submodules: true
+    - name: build binary for wasm
+      run: docker-compose run build-wasm-release
+    # for node crash W.A.
+    - name: npm install & build
+      run: cd wasm && npm i && npm run build
+#     run: docker-compose run build-wasm-webpage
+    - name: save build for wasm
+      uses: actions/upload-artifact@v1
+      with:
+        name: rust-nes-emulator-wasm
+        path: wasm/dist/
+    - name: deploy gh pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: wasm/dist/
+        force_orphan: true
+
+  build-embedded:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2     
+      with:
+        submodules: true
+    - name: build lib for embedded
+      run: docker-compose run build-embedded-lib
+    - name: build binary for embedded
+      run: docker-compose run build-mbed
+    - name: save build for embedded
+      uses: actions/upload-artifact@v1
+      with:
+        name: rust-nes-emulator-embedded
+        path: embedded/BUILD/
+
