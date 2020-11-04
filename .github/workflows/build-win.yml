@@ -1,4 +1,4 @@
-name: build-win
+name: Build for Windows
 
 on:
   push:
