@@ -1,8 +1,7 @@
 # rust-nes-emulator
 
-[![CircleCI](https://circleci.com/gh/kamiyaowl/rust-nes-emulator.svg?style=svg&circle-token=5863f12e124bd230551101e146947e7a49e5765f)](https://circleci.com/gh/kamiyaowl/rust-nes-emulator)
-[![Netlify Status](https://api.netlify.com/api/v1/badges/7ae6eff9-8c7a-416a-bad7-3e78b00ad95b/deploy-status)](https://app.netlify.com/sites/rust-nes-emulator/deploys)
-
+[![Test](https://github.com/kamiyaowl/rust-nes-emulator/workflows/Test/badge.svg)](https://github.com/kamiyaowl/rust-nes-emulator/actions?query=workflow%3ATest)
+[![Deploy](https://github.com/kamiyaowl/rust-nes-emulator/workflows/Deploy/badge.svg)](https://github.com/kamiyaowl/rust-nes-emulator/actions?query=workflow%3ADeploy)
 
 NES Emulator written in Rust
 
@@ -41,7 +40,7 @@ $ docker-compose run build-desktop-release
 
 ![wasm](https://raw.githubusercontent.com/kamiyaowl/rust-nes-emulator/master/screenshot/wasm.PNG?raw=true)
 
-[Playgound: rust-nes-emulator.netlify.com](https://rust-nes-emulator.netlify.com/)
+[Playgound: http://kamiya.tech/rust-nes-emulator/](rust-nes-emulator)
 
 #### Build locally
 
