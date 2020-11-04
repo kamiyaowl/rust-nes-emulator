@@ -1,0 +1,25 @@
+name: build-win
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: build
+      run: cargo build --release
+    - name: save build for windows
+      uses: actions/upload-artifact@v1
+      with:
+        name: rust-nes-emulator-windows
+        path: desktop/target/release/rust-nes-emulator-desktop.exe
