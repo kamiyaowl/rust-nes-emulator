@@ -81,6 +81,10 @@ $ docker-compose run build-wasm-webpage
 
 Work in Progress...
 
+The following are derived repositories that are analyzing and implementing improvements to the performance issues.
+
+[kamiyaowl/rust-nes-emulator-embedded - GitHub](https://github.com/kamiyaowl/rust-nes-emulator-embedded)
+
 #### Build locally
 
 ##### environment(for ubuntu)
