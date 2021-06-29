@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=UA-135070516-4"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+
+      gtag("config", "UA-135070516-4");
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>rust-nes-emulator-wasm</title>
+    <meta name="description" content="NES Emulator written in Rust" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/element-ui/2.0.0/theme-chalk/index.css"
+    />
+    <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.7.2/css/all.css"
+      integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" type="text/css" href="index.css" />
+
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/element-ui/2.0.0/index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/element-ui/2.0.0/locale/ja.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <!-- Navbar -->
+      <el-button
+        id="toggle-navbar-button"
+        @click="navbarVisible = !navbarVisible"
+        type="info"
+        icon="el-icon-more"
+        size="mini"
+        circle
+      ></el-button>
+      <el-menu
+        v-if="navbarVisible"
+        mode="horizontal"
+        background-color="#545c64"
+        text-color="#fff"
+        active-text-color="#ffd04b"
+      >
+        <el-menu-item index="1"
+          ><a
+            href="https://github.com/kamiyaowl/rust-nes-emulator"
+            target="_blank"
+          >
+            <i class="fab fa-github fa-2x" aria-hidden="true"></i></a
+        ></el-menu-item>
+        <el-menu-item @click="loadRomVisible = true" index="3"
+          >Load</el-menu-item
+        >
+        <el-menu-item @click="reset" index="4">Reset</el-menu-item>
+        <el-menu-item @click="keyconfigVisible = true" index="5"
+          >KeyConfig</el-menu-item
+        >
+      </el-menu>
+
+      <!-- Dialog -->
+      <el-dialog title="Load ROM" :visible.sync="loadRomVisible">
+        <div>
+          <span>Use File API. Will not be uploaded</span>
+          <input type="file" id="rom-file" @change="romSelect" />
+        </div>
+      </el-dialog>
+
+      <el-dialog
+        title="Keyboard Configuration"
+        :visible.sync="keyconfigVisible"
+      >
+        <el-table :data="keyconfig">
+          <el-table-column property="key" label="Key"></el-table-column>
+          <el-table-column property="info" label="Info"></el-table-column>
+        </el-table>
+      </el-dialog>
+
+      <!-- GamePad Button -->
+      <el-button
+        id="toggle-gamepad-button"
+        @click="gamepadVisible = !gamepadVisible"
+        type="info"
+        icon="el-icon-more"
+        size="mini"
+        circle
+      ></el-button>
+      <div id="gamepad-container" v-if="gamepadVisible">
+        <el-button
+          id="gamepad-left-button"
+          @mousedown.native="press_key('a')"
+          @mouseup.native="release_key('a')"
+          @touchstart.native="press_key('a')"
+          @touchend.native="release_key('a')"
+          icon="el-icon-arrow-left"
+          type="info"
+        ></el-button>
+        <el-button
+          id="gamepad-up-button"
+          @mousedown.native="press_key('w')"
+          @mouseup.native="release_key('w')"
+          @touchstart.native="press_key('w')"
+          @touchend.native="release_key('w')"
+          icon="el-icon-arrow-up"
+          type="info"
+        ></el-button>
+        <el-button
+          id="gamepad-down-button"
+          @mousedown.native="press_key('s')"
+          @mouseup.native="release_key('s')"
+          @touchstart.native="press_key('s')"
+          @touchend.native="release_key('s')"
+          icon="el-icon-arrow-down"
+          type="info"
+        ></el-button>
+        <el-button
+          id="gamepad-right-button"
+          @mousedown.native="press_key('d')"
+          @mouseup.native="release_key('d')"
+          @touchstart.native="press_key('d')"
+          @touchend.native="release_key('d')"
+          icon="el-icon-arrow-right"
+          type="info"
+        ></el-button>
+        <el-button
+          id="gamepad-select-button"
+          @mousedown.native="press_key('u')"
+          @mouseup.native="release_key('u')"
+          @touchstart.native="press_key('u')"
+          @touchend.native="release_key('u')"
+          type="info"
+          >select</el-button
+        >
+        <el-button
+          id="gamepad-start-button"
+          @mousedown.native="press_key('i')"
+          @mouseup.native="release_key('i')"
+          @touchstart.native="press_key('i')"
+          @touchend.native="release_key('i')"
+          type="info"
+          >start</el-button
+        >
+        <el-button
+          id="gamepad-b-button"
+          @mousedown.native="press_key('k')"
+          @mouseup.native="release_key('k')"
+          @touchstart.native="press_key('k')"
+          @touchend.native="release_key('k')"
+          type="info"
+          >B</el-button
+        >
+        <el-button
+          id="gamepad-a-button"
+          @mousedown.native="press_key('j')"
+          @mouseup.native="release_key('j')"
+          @touchstart.native="press_key('j')"
+          @touchend.native="release_key('j')"
+          type="info"
+          >A</el-button
+        >
+      </div>
+
+      <!-- 画面表示本体様 -->
+      <canvas id="fb" width="256" height="240"></canvas>
+    </div>
+  <script type="text/javascript" src="index.js"></script></body>
+</html>

@@ -1,0 +1,78 @@
+#app {
+    width: 100vw;
+    height: 100vh;
+}
+
+#toggle-navbar-button {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 1;
+}
+
+#toggle-gamepad-button {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    z-index: 2;
+}
+
+#gamepad-container {
+    position: fixed;
+    bottom: 0;
+    z-index: 1;
+    opacity: 0.5;
+}
+#gamepad-left-button {
+    position: fixed;
+    left: 5%;
+    bottom: 20%;
+}
+#gamepad-up-button {
+    position: fixed;
+    left: 20%;
+    bottom: 30%;
+}
+#gamepad-down-button {
+    position: fixed;
+    left: 20%;
+    bottom: 10%;
+}
+#gamepad-right-button {
+    position: fixed;
+    left: 35%;
+    bottom: 20%;
+}
+#gamepad-select-button {
+    position: fixed;
+    left: 25%;
+    bottom: 1%;
+}
+#gamepad-start-button {
+    position: fixed;
+    right: 25%;
+    bottom: 1%;
+}
+#gamepad-b-button {
+    position: fixed;
+    right: 25%;
+    bottom: 20%;
+}
+#gamepad-a-button {
+    position: fixed;
+    right: 5%;
+    bottom: 20%;
+}
+
+#fb {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);   
+    z-index: -1;
+        
+    max-width:   100vw;
+    max-height:  100vh;
+    width:  calc(100vh * 256 / 240);
+    height: calc(100vw * 240 / 256);
+}
