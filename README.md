@@ -41,7 +41,7 @@ $ docker-compose run build-desktop-release
 
 ![wasm](https://raw.githubusercontent.com/kamiyaowl/rust-nes-emulator/master/screenshot/wasm.PNG?raw=true)
 
-[Playgound: http://kamiya.tech/rust-nes-emulator/](http://kamiya.tech/rust-nes-emulator/index.html)
+[Playgound](https://kamiyaowl.github.io/rust-nes-emulator/index.html)
 
 #### Build locally
 
