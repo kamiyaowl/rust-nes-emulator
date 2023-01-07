@@ -23,7 +23,7 @@
   "dependencies": {
     "copy-webpack-plugin": "^5.0.4",
     "html-loader": "^0.5.5",
-    "html-webpack-plugin": "^3.2.0",
+    "html-webpack-plugin": "^5.5.0",
     "rust-nes-emulator-wasm": "file:pkg",
     "webpack": "^4.40.2",
     "webpack-cli": "^3.3.8",
